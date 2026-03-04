@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Zap, ArrowRight, Star, CheckCircle, Users } from "lucide-react";
 import Section from "@/components/Section";
 import ServiceCard from "@/components/ServiceCard";
-import { services } from "@/data/services";
-import { teamMembers } from "@/data/team";
-import { testimonials } from "@/data/testimonials";
+import { supabase } from "@/integrations/supabase/client";
+import { services as staticServices } from "@/data/services";
+import { teamMembers as staticTeam } from "@/data/team";
+import { testimonials as staticTestimonials } from "@/data/testimonials";
 
 const stats = [
   { value: "500+", label: "Projects Completed" },
@@ -15,6 +17,20 @@ const stats = [
 ];
 
 const Index = () => {
+  const [dbServices, setDbServices] = useState<any[]>([]);
+  const [dbTeam, setDbTeam] = useState<any[]>([]);
+  const [dbTestimonials, setDbTestimonials] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase.from("services").select("*").order("sort_order").limit(4).then(({ data }) => setDbServices(data || []));
+    supabase.from("team_members").select("*").order("sort_order").then(({ data }) => setDbTeam(data || []));
+    supabase.from("testimonials").select("*").order("created_at", { ascending: false }).then(({ data }) => setDbTestimonials(data || []));
+  }, []);
+
+  const displayServices = dbServices.length > 0 ? dbServices : staticServices.slice(0, 4).map(s => ({ id: s.id, title: s.title, description: s.description, icon_name: "Zap", whatsapp_enabled: true, call_enabled: true, book_now_enabled: true }));
+  const displayTeam = dbTeam.length > 0 ? dbTeam : staticTeam;
+  const displayTestimonials = dbTestimonials.length > 0 ? dbTestimonials : staticTestimonials;
+
   return (
     <>
       {/* Hero */}
@@ -84,7 +100,7 @@ const Index = () => {
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">From simple repairs to complex installations, our certified electricians handle it all.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {services.slice(0, 4).map((s) => (
+          {displayServices.map((s) => (
             <ServiceCard key={s.id} service={s} />
           ))}
         </div>
@@ -129,7 +145,7 @@ const Index = () => {
           <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mt-2">Meet Our Team</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {teamMembers.map((m) => (
+          {displayTeam.map((m) => (
             <div key={m.id} className="bg-card border border-border rounded-xl p-6 text-center hover-lift">
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-primary" />
@@ -149,7 +165,7 @@ const Index = () => {
           <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mt-2">What Our Clients Say</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {testimonials.map((t) => (
+          {displayTestimonials.map((t) => (
             <div key={t.id} className="bg-card border border-border rounded-xl p-6 hover-lift">
               <div className="flex gap-0.5 mb-3">
                 {Array.from({ length: t.rating }).map((_, i) => (
