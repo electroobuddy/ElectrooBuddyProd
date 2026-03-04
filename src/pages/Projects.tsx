@@ -1,10 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
-import { projects, projectCategories } from "@/data/projects";
-import { Zap, FolderOpen } from "lucide-react";
+import { projects as staticProjects, projectCategories as staticCategories } from "@/data/projects";
+import { Zap, FolderOpen, Loader2 } from "lucide-react";
 
 const Projects = () => {
   const [active, setActive] = useState("All");
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("projects").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+      setProjects(data && data.length > 0 ? data : staticProjects);
+      setLoading(false);
+    });
+  }, []);
+
+  const categories = ["All", ...new Set(projects.map((p) => p.category))];
   const filtered = active === "All" ? projects : projects.filter((p) => p.category === active);
 
   return (
@@ -17,35 +29,39 @@ const Projects = () => {
         </div>
       </section>
       <Section>
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {projectCategories.map((c) => (
-            <button
-              key={c}
-              onClick={() => setActive(c)}
-              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
-                active === c
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((p) => (
-            <div key={p.id} className="bg-card border border-border rounded-xl overflow-hidden hover-lift">
-              <div className="h-48 bg-hero flex items-center justify-center">
-                <FolderOpen className="w-12 h-12 text-secondary/60" />
-              </div>
-              <div className="p-5">
-                <span className="text-xs font-medium text-secondary">{p.category}</span>
-                <h3 className="text-lg font-heading font-bold text-foreground mt-1">{p.title}</h3>
-                <p className="text-sm text-muted-foreground mt-2">{p.description}</p>
-              </div>
+        {loading ? (
+          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        ) : (
+          <>
+            <div className="flex flex-wrap justify-center gap-2 mb-10">
+              {categories.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setActive(c)}
+                  className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
+                    active === c ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.map((p) => (
+                <div key={p.id} className="bg-card border border-border rounded-xl overflow-hidden hover-lift">
+                  <div className="h-48 bg-hero flex items-center justify-center">
+                    <FolderOpen className="w-12 h-12 text-secondary/60" />
+                  </div>
+                  <div className="p-5">
+                    <span className="text-xs font-medium text-secondary">{p.category}</span>
+                    <h3 className="text-lg font-heading font-bold text-foreground mt-1">{p.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-2">{p.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </Section>
     </>
   );

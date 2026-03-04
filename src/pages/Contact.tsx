@@ -1,16 +1,31 @@
 import { useState } from "react";
 import Section from "@/components/Section";
-import { Zap, Phone, Mail, MapPin, Send } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Zap, Phone, Mail, MapPin, Send, Loader2 } from "lucide-react";
 import { PHONE_NUMBER } from "@/data/services";
 import { toast } from "sonner";
 
 const Contact = () => {
   const [form, setForm] = useState({ name: "", phone: "", email: "", service: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Message sent! We'll get back to you shortly.");
-    setForm({ name: "", phone: "", email: "", service: "", message: "" });
+    setSubmitting(true);
+    const { error } = await supabase.from("contact_messages").insert({
+      name: form.name,
+      phone: form.phone,
+      email: form.email,
+      service: form.service || null,
+      message: form.message,
+    });
+    if (error) {
+      toast.error("Failed to send message. Please try again.");
+    } else {
+      toast.success("Message sent! We'll get back to you shortly.");
+      setForm({ name: "", phone: "", email: "", service: "", message: "" });
+    }
+    setSubmitting(false);
   };
 
   return (
@@ -38,7 +53,7 @@ const Contact = () => {
                   <label className="block text-sm font-medium text-foreground mb-1.5">{f.label}</label>
                   <input
                     type={f.type}
-                    required
+                    required={f.name !== "service"}
                     value={(form as any)[f.name]}
                     onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -57,9 +72,11 @@ const Contact = () => {
               </div>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                <Send className="w-4 h-4" /> Send Message
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Send Message
               </button>
             </form>
           </div>

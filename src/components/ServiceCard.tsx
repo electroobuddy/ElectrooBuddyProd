@@ -1,9 +1,34 @@
-import { type Service, WHATSAPP_NUMBER, PHONE_NUMBER } from "@/data/services";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { type Service as StaticService, WHATSAPP_NUMBER, PHONE_NUMBER } from "@/data/services";
 import { Phone, MessageCircle, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
+import * as LucideIcons from "lucide-react";
 
-const ServiceCard = ({ service }: { service: Service }) => {
-  const Icon = service.icon;
+interface DbService {
+  id: string;
+  title: string;
+  description: string;
+  icon_name: string;
+  whatsapp_enabled: boolean;
+  call_enabled: boolean;
+  book_now_enabled: boolean;
+}
+
+const ServiceCard = ({ service }: { service: DbService }) => {
+  const [settings, setSettings] = useState({ whatsapp: WHATSAPP_NUMBER, phone: PHONE_NUMBER });
+
+  useEffect(() => {
+    supabase.from("site_settings").select("*").then(({ data }) => {
+      if (data) {
+        const phone = data.find((s: any) => s.key === "phone_number")?.value || PHONE_NUMBER;
+        const wa = data.find((s: any) => s.key === "whatsapp_number")?.value || WHATSAPP_NUMBER;
+        setSettings({ whatsapp: wa, phone });
+      }
+    });
+  }, []);
+
+  const Icon = (LucideIcons as any)[service.icon_name] || LucideIcons.Zap;
   const whatsappMsg = encodeURIComponent(
     `Hello Electroobuddy, I would like to book the service: ${service.title}. Please provide details.`
   );
@@ -16,9 +41,9 @@ const ServiceCard = ({ service }: { service: Service }) => {
       <h3 className="text-lg font-heading font-bold text-foreground mb-2">{service.title}</h3>
       <p className="text-sm text-muted-foreground leading-relaxed mb-5 flex-1">{service.description}</p>
       <div className="flex flex-wrap gap-2">
-        {service.whatsappEnabled && (
+        {service.whatsapp_enabled && (
           <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMsg}`}
+            href={`https://wa.me/${settings.whatsapp}?text=${whatsappMsg}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-[hsl(142,70%,45%)]/10 text-[hsl(142,70%,35%)] hover:bg-[hsl(142,70%,45%)]/20 transition-colors"
@@ -26,15 +51,15 @@ const ServiceCard = ({ service }: { service: Service }) => {
             <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
           </a>
         )}
-        {service.callEnabled && (
+        {service.call_enabled && (
           <a
-            href={`tel:${PHONE_NUMBER}`}
+            href={`tel:${settings.phone}`}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
           >
             <Phone className="w-3.5 h-3.5" /> Call
           </a>
         )}
-        {service.bookNowEnabled && (
+        {service.book_now_enabled && (
           <Link
             to={`/booking?service=${encodeURIComponent(service.title)}`}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-secondary/20 text-secondary-foreground hover:bg-secondary/30 transition-colors"
