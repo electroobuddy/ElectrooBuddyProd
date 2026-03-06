@@ -1,75 +1,3 @@
-// import { motion } from "framer-motion";
-// import { ClipboardList, UserCheck, Wrench, CreditCard } from "lucide-react";
-
-// const steps = [
-//   {
-//     icon: ClipboardList,
-//     title: "Request Service",
-//     description: "Submit your service request online or via WhatsApp with details of your electrical needs.",
-//   },
-//   {
-//     icon: UserCheck,
-//     title: "Technician Assigned",
-//     description: "We assign a certified electrician matched to your specific requirement and location.",
-//   },
-//   {
-//     icon: Wrench,
-//     title: "Work Completed",
-//     description: "Our expert completes the job efficiently with quality materials and safety compliance.",
-//   },
-//   {
-//     icon: CreditCard,
-//     title: "Payment & Feedback",
-//     description: "Pay securely and share your feedback to help us maintain our service quality.",
-//   },
-// ];
-
-// const ProcessTimeline = () => {
-//   return (
-//     <div className="relative">
-//       {/* Connecting line */}
-//       <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border hidden lg:block" />
-
-//       <div className="grid lg:grid-cols-4 gap-8 relative">
-//         {steps.map((step, i) => (
-//           <motion.div
-//             key={step.title}
-//             initial={{ opacity: 0, y: 40 }}
-//             whileInView={{ opacity: 1, y: 0 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: i * 0.15, duration: 0.5 }}
-//             className="relative text-center"
-//           >
-//             {/* Step number */}
-//             <div className="relative z-10 mx-auto mb-4">
-//               <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto group hover:bg-primary hover:border-primary transition-all duration-500">
-//                 <step.icon className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors duration-500" />
-//               </div>
-//               <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-secondary text-secondary-foreground text-xs font-bold flex items-center justify-center shadow-lg">
-//                 {i + 1}
-//               </div>
-//             </div>
-
-//             <h3 className="font-heading font-bold text-foreground text-lg mb-2">{step.title}</h3>
-//             <p className="text-sm text-muted-foreground leading-relaxed max-w-[220px] mx-auto">{step.description}</p>
-
-//             {/* Connector arrow for desktop */}
-//             {i < steps.length - 1 && (
-//               <div className="hidden lg:block absolute top-8 -right-4 w-8">
-//                 <svg viewBox="0 0 32 16" fill="none" className="text-primary/30">
-//                   <path d="M0 8h28M22 2l6 6-6 6" stroke="currentColor" strokeWidth="2" />
-//                 </svg>
-//               </div>
-//             )}
-//           </motion.div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default ProcessTimeline;
-
 import { motion } from "framer-motion";
 import { ClipboardList, UserCheck, Wrench, CreditCard } from "lucide-react";
 
@@ -78,29 +6,29 @@ const steps = [
     icon: ClipboardList,
     title: "Request Service",
     description: "Submit your service request online or via WhatsApp with details of your electrical needs.",
-    accent: "#ffc800",
-    glow: "rgba(255, 200, 0, 0.35)",
+    accent: "hsl(var(--primary))",
+    glow: "hsl(var(--primary) / 0.35)",
   },
   {
     icon: UserCheck,
     title: "Technician Assigned",
     description: "We assign a certified electrician matched to your specific requirement and location.",
-    accent: "#38bdf8",
-    glow: "rgba(56, 189, 248, 0.35)",
+    accent: "hsl(var(--secondary))",
+    glow: "hsl(var(--secondary) / 0.35)",
   },
   {
     icon: Wrench,
     title: "Work Completed",
     description: "Our expert completes the job efficiently with quality materials and safety compliance.",
-    accent: "#a78bfa",
-    glow: "rgba(167, 139, 250, 0.35)",
+    accent: "hsl(var(--info))",
+    glow: "hsl(var(--info) / 0.35)",
   },
   {
     icon: CreditCard,
     title: "Payment & Feedback",
     description: "Pay securely and share your feedback to help us maintain our service quality.",
-    accent: "#34d399",
-    glow: "rgba(52, 211, 153, 0.35)",
+    accent: "hsl(var(--success))",
+    glow: "hsl(var(--success) / 0.35)",
   },
 ];
 
@@ -122,10 +50,10 @@ const ProcessTimeline = () => {
           right: 10%;
           height: 2px;
           background: linear-gradient(90deg,
-            rgba(255,200,0,0.6),
-            rgba(56,189,248,0.6),
-            rgba(167,139,250,0.6),
-            rgba(52,211,153,0.6)
+            hsl(var(--primary) / 0.6),
+            hsl(var(--secondary) / 0.6),
+            hsl(var(--info) / 0.6),
+            hsl(var(--success) / 0.6)
           );
           display: none;
         }
@@ -140,7 +68,7 @@ const ProcessTimeline = () => {
           left: 0;
           height: 100%;
           width: 40px;
-          background: rgba(255,255,255,0.6);
+          background: hsl(var(--foreground) / 0.6);
           filter: blur(3px);
           animation: trackSlide 3s ease-in-out infinite;
         }
@@ -195,13 +123,13 @@ const ProcessTimeline = () => {
           position: absolute;
           inset: 16px;
           border-radius: 50%;
-          background: rgba(10, 15, 30, 0.95);
+          background: hsl(var(--card) / 0.95);
           border: 1.5px solid var(--accent);
           display: flex;
           align-items: center;
           justify-content: center;
           transition: all 0.4s ease;
-          box-shadow: 0 0 20px var(--glow), inset 0 0 20px rgba(0,0,0,0.5);
+          box-shadow: 0 0 20px var(--glow), inset 0 0 20px hsl(var(--foreground) / 0.1);
         }
 
         .step-col:hover .node-bg {
@@ -217,7 +145,7 @@ const ProcessTimeline = () => {
         }
 
         .step-col:hover .node-icon {
-          color: #0a0f1e;
+          color: hsl(var(--card-foreground));
           transform: scale(1.15);
         }
 
@@ -229,7 +157,7 @@ const ProcessTimeline = () => {
           height: 24px;
           border-radius: 50%;
           background: var(--accent);
-          color: #0a0f1e;
+          color: hsl(var(--card-foreground));
           font-size: 11px;
           font-weight: 800;
           font-family: 'Barlow Condensed', sans-serif;
@@ -244,7 +172,7 @@ const ProcessTimeline = () => {
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 20px;
           font-weight: 700;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           text-transform: uppercase;
           letter-spacing: 0.5px;
           margin-bottom: 10px;
@@ -252,7 +180,7 @@ const ProcessTimeline = () => {
 
         .step-desc {
           font-size: 13px;
-          color: rgba(180, 195, 230, 0.65);
+          color: hsl(var(--muted-foreground) / 0.65);
           line-height: 1.6;
           max-width: 200px;
         }

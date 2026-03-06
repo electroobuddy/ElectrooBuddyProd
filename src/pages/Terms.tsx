@@ -1,39 +1,3 @@
-// import Section from "@/components/Section";
-// import { Zap } from "lucide-react";
-
-// const Terms = () => (
-//   <>
-//     <section className="bg-hero py-20">
-//       <div className="container mx-auto px-4 text-center">
-//         <Zap className="w-10 h-10 text-secondary mx-auto mb-4" />
-//         <h1 className="text-3xl md:text-5xl font-heading font-extrabold text-primary-foreground">Terms & Conditions</h1>
-//       </div>
-//     </section>
-//     <Section>
-//       <div className="max-w-3xl mx-auto space-y-6">
-//         <div>
-//           <h2 className="text-xl font-heading font-bold text-foreground">Service Agreement</h2>
-//           <p className="text-muted-foreground mt-2">By booking a service through Electroobuddy, you agree to provide accurate information and be available at the scheduled time. Cancellations must be made at least 2 hours before the appointment.</p>
-//         </div>
-//         <div>
-//           <h2 className="text-xl font-heading font-bold text-foreground">Payment Terms</h2>
-//           <p className="text-muted-foreground mt-2">Payment is due upon completion of service unless otherwise agreed. We accept cash, bank transfers, and digital payments.</p>
-//         </div>
-//         <div>
-//           <h2 className="text-xl font-heading font-bold text-foreground">Warranty</h2>
-//           <p className="text-muted-foreground mt-2">All work performed comes with a service warranty. The warranty period varies by service type and will be communicated at the time of booking.</p>
-//         </div>
-//         <div>
-//           <h2 className="text-xl font-heading font-bold text-foreground">Liability</h2>
-//           <p className="text-muted-foreground mt-2">Electroobuddy is not liable for damages resulting from pre-existing electrical issues. Our team will inform you of any risks before proceeding with work.</p>
-//         </div>
-//       </div>
-//     </Section>
-//   </>
-// );
-
-// export default Terms;
-
 import Section from "@/components/Section";
 import { motion } from "framer-motion";
 import { Zap, FileText, CreditCard, ShieldCheck, AlertTriangle } from "lucide-react";
@@ -74,7 +38,7 @@ const Terms = () => (
         position: relative;
         padding: 96px 0 80px;
         overflow: hidden;
-        background: #050b18;
+        background: hsl(var(--background));
         text-align: center;
         font-family: 'DM Sans', sans-serif;
       }
@@ -83,8 +47,8 @@ const Terms = () => (
         position: absolute;
         inset: 0;
         background-image:
-          linear-gradient(rgba(255,200,0,0.035) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255,200,0,0.035) 1px, transparent 1px);
+          linear-gradient(hsl(var(--primary) / 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
         background-size: 60px 60px;
         mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
       }
@@ -94,7 +58,7 @@ const Terms = () => (
         top: -80px; left: 50%;
         transform: translateX(-50%);
         width: 500px; height: 350px;
-        background: radial-gradient(ellipse, rgba(255,200,0,0.08) 0%, transparent 70%);
+        background: radial-gradient(ellipse, hsl(var(--primary) / 0.08) 0%, transparent 70%);
         pointer-events: none;
       }
 
@@ -103,13 +67,13 @@ const Terms = () => (
         align-items: center;
         gap: 8px;
         padding: 7px 18px;
-        border: 1px solid rgba(255,200,0,0.3);
+        border: 1px solid hsl(var(--border) / 0.3);
         border-radius: 100px;
-        background: rgba(255,200,0,0.06);
+        background: hsl(var(--primary) / 0.06);
         margin-bottom: 20px;
         font-size: 12px;
         font-weight: 600;
-        color: #ffc800;
+        color: hsl(var(--secondary));
         letter-spacing: 1px;
         text-transform: uppercase;
         font-family: 'Barlow Condensed', sans-serif;
@@ -120,20 +84,20 @@ const Terms = () => (
         font-size: clamp(44px, 6vw, 76px);
         font-weight: 900;
         line-height: 0.93;
-        color: #f0f4ff;
+        color: hsl(var(--foreground));
         text-transform: uppercase;
         letter-spacing: -1px;
       }
 
       .th-title span {
-        background: linear-gradient(135deg, #ffc800, #ffec6e 50%, #ffa000);
+        background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
       }
 
       .th-sub {
-        color: rgba(180,200,240,0.4);
+        color: hsl(var(--muted-foreground) / 0.5);
         font-size: 14px;
         margin-top: 14px;
         max-width: 360px;
@@ -156,8 +120,8 @@ const Terms = () => (
         gap: 22px;
         align-items: flex-start;
         padding: 28px 28px;
-        background: #0a0f1e;
-        border: 1px solid rgba(255,200,0,0.1);
+        background: hsl(var(--card));
+        border: 1px solid hsl(var(--border) / 0.3);
         border-radius: 18px;
         overflow: hidden;
         font-family: 'DM Sans', sans-serif;
@@ -165,29 +129,29 @@ const Terms = () => (
       }
 
       .term-card:hover {
-        border-color: rgba(255,200,0,0.3);
-        background: rgba(255,200,0,0.02);
+        border-color: hsl(var(--primary) / 0.5);
+        background: hsl(var(--primary) / 0.02);
         transform: translateX(4px);
-        box-shadow: -3px 0 0 rgba(255,200,0,0.5), 0 8px 32px rgba(0,0,0,0.3);
+        box-shadow: -3px 0 0 hsl(var(--primary) / 0.5), 0 8px 32px hsl(var(--foreground) / 0.1);
       }
 
       .term-icon-box {
         width: 48px;
         height: 48px;
         border-radius: 12px;
-        background: rgba(255,200,0,0.08);
-        border: 1px solid rgba(255,200,0,0.18);
+        background: hsl(var(--primary) / 0.08);
+        border: 1px solid hsl(var(--border) / 0.3);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #ffc800;
+        color: hsl(var(--secondary));
         flex-shrink: 0;
         transition: all 0.35s;
       }
 
       .term-card:hover .term-icon-box {
-        background: rgba(255,200,0,0.15);
-        box-shadow: 0 0 16px rgba(255,200,0,0.2);
+        background: hsl(var(--primary) / 0.15);
+        box-shadow: 0 0 16px hsl(var(--primary) / 0.2);
       }
 
       .term-num {
@@ -196,7 +160,7 @@ const Terms = () => (
         font-family: 'Barlow Condensed', sans-serif;
         font-size: 52px;
         font-weight: 900;
-        color: rgba(255,200,0,0.03);
+        color: hsl(var(--primary) / 0.03);
         line-height: 1;
         user-select: none;
         pointer-events: none;
@@ -207,25 +171,25 @@ const Terms = () => (
         font-size: 20px;
         font-weight: 800;
         text-transform: uppercase;
-        color: #f0f4ff;
+        color: hsl(var(--foreground));
         letter-spacing: 0.4px;
         margin-bottom: 8px;
       }
 
       .term-text {
         font-size: 14px;
-        color: rgba(180,200,240,0.6);
+        color: hsl(var(--muted-foreground) / 0.6);
         line-height: 1.75;
       }
 
       .terms-footer-note {
         margin-top: 40px;
         padding: 20px 24px;
-        background: rgba(255,200,0,0.04);
-        border: 1px solid rgba(255,200,0,0.1);
+        background: hsl(var(--primary) / 0.04);
+        border: 1px solid hsl(var(--border) / 0.3);
         border-radius: 14px;
         font-size: 13px;
-        color: rgba(180,200,240,0.4);
+        color: hsl(var(--muted-foreground) / 0.6);
         text-align: center;
         font-family: 'DM Sans', sans-serif;
         line-height: 1.65;

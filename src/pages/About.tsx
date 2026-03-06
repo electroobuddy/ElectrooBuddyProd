@@ -1,154 +1,3 @@
-// import { useEffect, useState } from "react";
-// import { motion } from "framer-motion";
-// import { supabase } from "@/integrations/supabase/client";
-// import Section from "@/components/Section";
-// import { teamMembers as staticTeam } from "@/data/team";
-// import { Zap, Target, Eye, CheckCircle, Users } from "lucide-react";
-
-// const About = () => {
-//   const [team, setTeam] = useState<any[]>([]);
-
-//   useEffect(() => {
-//     supabase.from("team_members").select("*").order("sort_order").then(({ data }) => setTeam(data && data.length > 0 ? data : staticTeam));
-//   }, []);
-
-//   return (
-//     <>
-//       {/* Page Header */}
-//       <section className="bg-hero-premium py-28 relative overflow-hidden">
-//         {/* Enhanced background */}
-//         <div className="absolute inset-0">
-//           <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-primary/10 blur-3xl float-animation" />
-//           <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full bg-secondary/10 blur-3xl float-animation" style={{ animationDelay: '2s' }} />
-//           <div className="absolute inset-0 bg-circuit-pattern opacity-20" />
-//         </div>
-        
-//         <div className="container mx-auto px-4 text-center relative z-10">
-//           <motion.div 
-//             initial={{ opacity: 0, y: 30 }} 
-//             animate={{ opacity: 1, y: 0 }} 
-//             transition={{ duration: 0.7 }}
-//           >
-//             {/* Trust badge */}
-//             <motion.div
-//               initial={{ opacity: 0, scale: 0.9 }}
-//               animate={{ opacity: 1, scale: 1 }}
-//               transition={{ delay: 0.2, duration: 0.4 }}
-//               className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-primary/15 backdrop-blur-sm border border-primary/30 text-primary-foreground/90 text-sm font-semibold mb-6 shadow-lg shadow-primary/10"
-//             >
-//               <Shield className="w-4 h-4 text-secondary" />
-//               Licensed & Certified Professionals
-//             </motion.div>
-            
-//             <motion.h1 
-//               initial={{ opacity: 0, y: 20 }}
-//               animate={{ opacity: 1, y: 0 }}
-//               transition={{ delay: 0.3, duration: 0.6 }}
-//               className="text-4xl md:text-5xl lg:text-6xl font-heading font-extrabold text-primary-foreground mb-6 tracking-tight"
-//             >
-//               About <span className="gradient-text">Electroobuddy</span>
-//             </motion.h1>
-            
-//             <motion.p 
-//               initial={{ opacity: 0, y: 20 }}
-//               animate={{ opacity: 1, y: 0 }}
-//               transition={{ delay: 0.4, duration: 0.6 }}
-//               className="text-primary-foreground/70 mt-5 max-w-2xl mx-auto text-lg leading-relaxed"
-//             >
-//               Your Trusted Electrical Service Partner since 2012 - Delivering Excellence in Every Connection
-//             </motion.p>
-//           </motion.div>
-//         </div>
-//       </section>
-
-//       <Section>
-//         <div className="max-w-3xl mx-auto text-center">
-//           <h2 className="text-2xl md:text-3xl font-heading font-bold text-foreground mb-6">Who We Are</h2>
-//           <p className="text-muted-foreground leading-relaxed text-lg">
-//             Electroobuddy is a leading electrical services company dedicated to providing top-notch electrical solutions for residential, commercial, and industrial clients. With over 12 years of experience and a team of certified master electricians, we deliver safe, reliable, and cost-effective services that exceed expectations.
-//           </p>
-//         </div>
-//       </Section>
-
-//       <Section className="bg-muted/50">
-//         <div className="grid md:grid-cols-2 gap-8">
-//           {[
-//             { icon: Target, title: "Our Mission", text: "To provide exceptional electrical services that prioritize safety, quality, and customer satisfaction while making professional electrical expertise accessible and affordable for everyone.", color: "primary" },
-//             { icon: Eye, title: "Our Vision", text: "To become the most trusted name in electrical services, known for innovation, reliability, and an unwavering commitment to excellence in every project we undertake.", color: "secondary" },
-//           ].map((item, i) => (
-//             <motion.div
-//               key={item.title}
-//               initial={{ opacity: 0, x: i === 0 ? -30 : 30 }}
-//               whileInView={{ opacity: 1, x: 0 }}
-//               viewport={{ once: true }}
-//               transition={{ duration: 0.6 }}
-//               className="group bg-card border border-border rounded-2xl p-8 hover-lift hover-glow"
-//             >
-//               <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500">
-//                 <item.icon className="w-7 h-7 text-primary" />
-//               </div>
-//               <h3 className="text-xl font-heading font-bold text-foreground mb-3">{item.title}</h3>
-//               <p className="text-muted-foreground leading-relaxed">{item.text}</p>
-//             </motion.div>
-//           ))}
-//         </div>
-//       </Section>
-
-//       <Section>
-//         <div className="text-center mb-12">
-//           <h2 className="text-2xl md:text-3xl font-heading font-bold text-foreground">
-//             Why Choose <span className="text-gradient-blue">Electroobuddy?</span>
-//           </h2>
-//         </div>
-//         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-4xl mx-auto">
-//           {["Licensed & insured professionals", "Transparent, upfront pricing", "24/7 emergency support", "Quality materials & workmanship", "100% satisfaction guarantee", "On-time service delivery"].map((item, i) => (
-//             <motion.div
-//               key={item}
-//               initial={{ opacity: 0, y: 20 }}
-//               whileInView={{ opacity: 1, y: 0 }}
-//               viewport={{ once: true }}
-//               transition={{ delay: i * 0.08, duration: 0.4 }}
-//               className="flex items-center gap-3 p-4 bg-card border border-border rounded-xl hover-glow transition-all"
-//             >
-//               <CheckCircle className="w-5 h-5 text-secondary shrink-0" />
-//               <span className="text-sm font-medium text-foreground">{item}</span>
-//             </motion.div>
-//           ))}
-//         </div>
-//       </Section>
-
-//       <Section className="bg-muted/50">
-//         <div className="text-center mb-12">
-//           <h2 className="text-2xl md:text-3xl font-heading font-bold text-foreground">
-//             Our <span className="text-gradient">Team</span>
-//           </h2>
-//         </div>
-//         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-//           {team.map((m, i) => (
-//             <motion.div
-//               key={m.id}
-//               initial={{ opacity: 0, y: 30 }}
-//               whileInView={{ opacity: 1, y: 0 }}
-//               viewport={{ once: true }}
-//               transition={{ delay: i * 0.1, duration: 0.5 }}
-//               className="group bg-card border border-border rounded-2xl p-7 text-center hover-lift hover-glow"
-//             >
-//               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-500">
-//                 <Users className="w-8 h-8 text-primary" />
-//               </div>
-//               <h3 className="font-heading font-bold text-foreground">{m.name}</h3>
-//               <p className="text-sm text-primary font-medium mt-1">{m.role}</p>
-//               <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{m.bio}</p>
-//             </motion.div>
-//           ))}
-//         </div>
-//       </Section>
-//     </>
-//   );
-// };
-
-// export default About;
-
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -184,7 +33,7 @@ const About = () => {
           position: relative;
           padding: 100px 0 90px;
           overflow: hidden;
-          background: #050b18;
+          background: hsl(var(--background));
           font-family: 'DM Sans', sans-serif;
           text-align: center;
         }
@@ -193,8 +42,8 @@ const About = () => {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(255,200,0,0.035) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,200,0,0.035) 1px, transparent 1px);
+            linear-gradient(hsl(var(--primary) / 0.035) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
           background-size: 60px 60px;
           mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
         }
@@ -204,7 +53,7 @@ const About = () => {
           top: -100px; left: 50%;
           transform: translateX(-50%);
           width: 600px; height: 400px;
-          background: radial-gradient(ellipse, rgba(255,200,0,0.08) 0%, transparent 70%);
+          background: radial-gradient(ellipse, hsl(var(--primary) / 0.08) 0%, transparent 70%);
           pointer-events: none;
         }
 
@@ -213,13 +62,13 @@ const About = () => {
           align-items: center;
           gap: 8px;
           padding: 7px 18px;
-          border: 1px solid rgba(255,200,0,0.3);
+          border: 1px solid hsl(var(--primary) / 0.3);
           border-radius: 100px;
-          background: rgba(255,200,0,0.06);
+          background: hsl(var(--primary) / 0.06);
           margin-bottom: 20px;
           font-size: 12px;
           font-weight: 600;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           letter-spacing: 1px;
           text-transform: uppercase;
         }
@@ -229,20 +78,20 @@ const About = () => {
           font-size: clamp(48px, 7vw, 88px);
           font-weight: 900;
           line-height: 0.92;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           text-transform: uppercase;
           letter-spacing: -1px;
         }
 
         .about-hero-title span {
-          background: linear-gradient(135deg, #ffc800, #ffec6e 50%, #ffa000);
+          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
 
         .about-hero-sub {
-          color: rgba(180,200,240,0.45);
+          color: hsl(var(--muted-foreground) / 0.45);
           font-size: 15px;
           margin-top: 16px;
           max-width: 400px;
@@ -254,7 +103,7 @@ const About = () => {
         /* ─── WHO WE ARE ─── */
         .who-section {
           padding: 80px 0;
-          background: #070d1c;
+          background: hsl(var(--card));
         }
 
         .who-inner {
@@ -269,7 +118,7 @@ const About = () => {
           font-weight: 700;
           letter-spacing: 2px;
           text-transform: uppercase;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           margin-bottom: 16px;
           font-family: 'Barlow Condensed', sans-serif;
         }
@@ -278,14 +127,14 @@ const About = () => {
           font-family: 'Barlow Condensed', sans-serif;
           font-size: clamp(30px, 4vw, 48px);
           font-weight: 800;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           text-transform: uppercase;
           letter-spacing: 0.3px;
           margin-bottom: 20px;
         }
 
         .section-title span {
-          background: linear-gradient(135deg, #ffc800, #ffec6e);
+          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -294,14 +143,14 @@ const About = () => {
         .who-text {
           font-family: 'DM Sans', sans-serif;
           font-size: 16px;
-          color: rgba(180,200,240,0.65);
+          color: hsl(var(--muted-foreground));
           line-height: 1.8;
         }
 
         .who-divider {
           width: 60px;
           height: 3px;
-          background: linear-gradient(90deg, transparent, #ffc800, transparent);
+          background: linear-gradient(90deg, transparent, hsl(var(--secondary)), transparent);
           margin: 28px auto;
           border-radius: 2px;
         }
@@ -309,13 +158,13 @@ const About = () => {
         /* ─── MISSION / VISION CARDS ─── */
         .mv-section {
           padding: 80px 0;
-          background: #050b18;
+          background: hsl(var(--background));
         }
 
         .mv-card {
           position: relative;
-          background: #0a0f1e;
-          border: 1px solid rgba(255,200,0,0.12);
+          background: hsl(var(--card));
+          border: 1px solid hsl(var(--border) / 0.5);
           border-radius: 20px;
           padding: 40px 36px;
           overflow: hidden;
@@ -328,15 +177,15 @@ const About = () => {
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, var(--card-accent), transparent);
+          background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
           opacity: 0;
           transition: opacity 0.4s;
         }
 
         .mv-card:hover {
           transform: translateY(-6px);
-          border-color: rgba(255,200,0,0.35);
-          box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 40px var(--card-glow);
+          border-color: hsl(var(--primary) / 0.5);
+          box-shadow: 0 24px 60px hsl(var(--foreground) / 0.1), 0 0 40px hsl(var(--primary) / 0.2);
         }
 
         .mv-card:hover::before { opacity: 1; }
@@ -347,7 +196,7 @@ const About = () => {
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 120px;
           font-weight: 900;
-          color: rgba(255,200,0,0.03);
+          color: hsl(var(--primary) / 0.03);
           line-height: 1;
           user-select: none;
           pointer-events: none;
@@ -364,13 +213,13 @@ const About = () => {
         .hex-bg {
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, rgba(255,200,0,0.15), rgba(255,200,0,0.05));
+          background: linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--primary) / 0.05));
           clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
           transition: all 0.4s ease;
         }
 
         .mv-card:hover .hex-bg {
-          background: linear-gradient(135deg, rgba(255,200,0,0.9), rgba(255,140,0,0.8));
+          background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
         }
 
         .hex-icon {
@@ -379,32 +228,32 @@ const About = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #ffc800;
+          color: hsl(var(--primary));
           transition: color 0.4s;
         }
 
-        .mv-card:hover .hex-icon { color: #0a0f1e; }
+        .mv-card:hover .hex-icon { color: hsl(var(--primary-foreground)); }
 
         .mv-title {
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 26px;
           font-weight: 800;
           text-transform: uppercase;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           margin-bottom: 12px;
           letter-spacing: 0.4px;
         }
 
         .mv-text {
           font-size: 14px;
-          color: rgba(180,200,240,0.6);
+          color: hsl(var(--muted-foreground));
           line-height: 1.75;
         }
 
         /* ─── PERKS ─── */
         .perks-section {
           padding: 80px 0;
-          background: #070d1c;
+          background: hsl(var(--card));
         }
 
         .perk-item {
@@ -412,56 +261,56 @@ const About = () => {
           align-items: center;
           gap: 12px;
           padding: 16px 20px;
-          background: #0a0f1e;
-          border: 1px solid rgba(255,200,0,0.1);
+          background: hsl(var(--background));
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 14px;
           font-family: 'DM Sans', sans-serif;
           transition: all 0.3s ease;
         }
 
         .perk-item:hover {
-          border-color: rgba(255,200,0,0.35);
-          background: rgba(255,200,0,0.04);
+          border-color: hsl(var(--primary) / 0.5);
+          background: hsl(var(--primary) / 0.04);
           transform: translateX(4px);
-          box-shadow: -3px 0 0 #ffc800, 0 8px 24px rgba(0,0,0,0.3);
+          box-shadow: -3px 0 0 hsl(var(--secondary)), 0 8px 24px hsl(var(--foreground) / 0.1);
         }
 
         .perk-check {
           width: 28px;
           height: 28px;
           border-radius: 50%;
-          background: rgba(255,200,0,0.1);
-          border: 1px solid rgba(255,200,0,0.25);
+          background: hsl(var(--primary) / 0.1);
+          border: 1px solid hsl(var(--primary) / 0.25);
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           transition: all 0.3s;
         }
 
         .perk-item:hover .perk-check {
-          background: #ffc800;
-          color: #0a0f1e;
-          box-shadow: 0 0 12px rgba(255,200,0,0.3);
+          background: hsl(var(--secondary));
+          color: hsl(var(--card-foreground));
+          box-shadow: 0 0 12px hsl(var(--primary) / 0.3);
         }
 
         .perk-text {
           font-size: 14px;
           font-weight: 500;
-          color: rgba(200,215,245,0.8);
+          color: hsl(var(--muted-foreground));
         }
 
         /* ─── TEAM ─── */
         .team-section {
           padding: 80px 0;
-          background: #050b18;
+          background: hsl(var(--background));
         }
 
         .team-card {
           position: relative;
-          background: #0a0f1e;
-          border: 1px solid rgba(255,200,0,0.12);
+          background: hsl(var(--card));
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 20px;
           padding: 36px 24px 32px;
           text-align: center;
@@ -475,15 +324,15 @@ const About = () => {
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, #ffc800, transparent);
+          background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
           opacity: 0;
           transition: opacity 0.4s;
         }
 
         .team-card:hover {
           transform: translateY(-6px);
-          border-color: rgba(255,200,0,0.35);
-          box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(255,200,0,0.06);
+          border-color: hsl(var(--border) / 0.5);
+          box-shadow: 0 20px 50px hsl(var(--foreground) / 0.1), 0 0 30px hsl(var(--primary) / 0.06);
         }
 
         .team-card:hover::after { opacity: 1; }
@@ -499,7 +348,7 @@ const About = () => {
           position: absolute;
           inset: -4px;
           border-radius: 50%;
-          border: 1.5px solid rgba(255,200,0,0.2);
+          border: 1.5px solid hsl(var(--primary) / 0.2);
           animation: avatarSpin 8s linear infinite;
         }
 
@@ -511,8 +360,8 @@ const About = () => {
           width: 88px;
           height: 88px;
           border-radius: 50%;
-          background: linear-gradient(135deg, rgba(255,200,0,0.12), rgba(255,140,0,0.06));
-          border: 1px solid rgba(255,200,0,0.2);
+          background: linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(var(--secondary) / 0.06));
+          border: 1px solid hsl(var(--border) / 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -520,18 +369,18 @@ const About = () => {
         }
 
         .team-card:hover .avatar-inner {
-          background: linear-gradient(135deg, rgba(255,200,0,0.2), rgba(255,140,0,0.1));
-          border-color: rgba(255,200,0,0.4);
-          box-shadow: 0 0 24px rgba(255,200,0,0.15);
+          background: linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--secondary) / 0.1));
+          border-color: hsl(var(--primary) / 0.4);
+          box-shadow: 0 0 24px hsl(var(--primary) / 0.15);
         }
 
         .team-users-icon {
-          color: rgba(255,200,0,0.5);
+          color: hsl(var(--muted-foreground));
           transition: color 0.4s, transform 0.4s;
         }
 
         .team-card:hover .team-users-icon {
-          color: #ffc800;
+          color: hsl(var(--secondary));
           transform: scale(1.15);
         }
 
@@ -540,7 +389,7 @@ const About = () => {
           font-size: 22px;
           font-weight: 700;
           text-transform: uppercase;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           letter-spacing: 0.4px;
           margin-bottom: 4px;
         }
@@ -548,7 +397,7 @@ const About = () => {
         .team-role {
           font-size: 12px;
           font-weight: 600;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           letter-spacing: 0.8px;
           text-transform: uppercase;
           margin-bottom: 14px;
@@ -556,7 +405,7 @@ const About = () => {
 
         .team-bio {
           font-size: 13px;
-          color: rgba(180,200,240,0.55);
+          color: hsl(var(--muted-foreground));
           line-height: 1.65;
         }
       `}</style>

@@ -69,6 +69,69 @@
     --info-foreground: 0 0% 100%;
   }
 
+  /* Light theme - Off white with purple primary */
+  .light {
+    --background: 30 15% 96%;
+    --foreground: 270 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 270 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 15% 15%;
+
+    --primary: 270 60% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 280 50% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 30 10% 90%;
+    --muted-foreground: 270 5% 45%;
+
+    --accent: 280 50% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 270 10% 85%;
+    --input: 270 10% 85%;
+    --ring: 270 60% 55%;
+
+    --sidebar-background: 270 15% 15%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 280 50% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 270 15% 20%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 270 15% 20%;
+    --sidebar-ring: 280 50% 45%;
+
+    /* Premium custom tokens - Purple theme */
+    --navy: 270 60% 55%;
+    --navy-light: 280 50% 50%;
+    --electric-blue: 270 60% 55%;
+    --electric-blue-light: 280 55% 60%;
+    --electric-blue-dark: 270 55% 45%;
+    --electric-yellow: 280 50% 45%;
+    --electric-yellow-light: 290 45% 55%;
+    --electric-yellow-dark: 270 45% 40%;
+    --glow-blue: 270 60% 55%;
+    --glow-yellow: 280 50% 45%;
+    --surface-elevated: 0 0% 100%;
+    --glass-bg: 0 0% 100% / 0.7;
+    --glass-border: 0 0% 100% / 0.2;
+    
+    /* Semantic colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 222 47% 11%;
+    --info: 270 60% 55%;
+    --info-foreground: 0 0% 100%;
+  }
+
   .dark {
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
@@ -127,14 +190,26 @@
     background-image: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(48 96% 53%) 100%);
   }
 
+  .light .text-gradient {
+    background-image: linear-gradient(135deg, hsl(270 60% 55%) 0%, hsl(280 50% 45%) 100%);
+  }
+
   .text-gradient-blue {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(213 94% 68%) 100%);
   }
 
+  .light .text-gradient-blue {
+    background-image: linear-gradient(135deg, hsl(270 60% 55%) 0%, hsl(280 55% 60%) 100%);
+  }
+
   .text-gradient-premium {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(217 91% 60%) 50%, hsl(48 96% 53%) 100%);
+  }
+
+  .light .text-gradient-premium {
+    background-image: linear-gradient(135deg, hsl(270 15% 15%) 0%, hsl(270 60% 55%) 50%, hsl(280 50% 45%) 100%);
   }
 
   .text-gradient-vertical {
@@ -161,12 +236,24 @@
     background: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(215 50% 23%) 50%, hsl(217 91% 40%) 100%);
   }
 
+  .light .bg-hero {
+    background: linear-gradient(135deg, hsl(270 15% 85%) 0%, hsl(280 20% 80%) 50%, hsl(270 30% 75%) 100%);
+  }
+
   .bg-hero-premium {
     background: linear-gradient(160deg, hsl(222 47% 8%) 0%, hsl(222 47% 11%) 30%, hsl(217 60% 20%) 60%, hsl(217 91% 30%) 100%);
   }
 
+  .light .bg-hero-premium {
+    background: linear-gradient(160deg, hsl(270 20% 90%) 0%, hsl(280 25% 88%) 30%, hsl(270 35% 85%) 60%, hsl(280 40% 82%) 100%);
+  }
+
   .bg-cta-gradient {
     background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(222 47% 11%) 50%, hsl(48 96% 53% / 0.3) 100%);
+  }
+
+  .light .bg-cta-gradient {
+    background: linear-gradient(135deg, hsl(270 60% 55%) 0%, hsl(280 50% 45%) 50%, hsl(290 45% 55% / 0.3) 100%);
   }
 
   /* Professional background patterns */

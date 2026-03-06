@@ -1,48 +1,3 @@
-// import { useEffect, useRef, useState } from "react";
-// import { motion, useInView } from "framer-motion";
-
-// interface AnimatedCounterProps {
-//   end: number;
-//   suffix?: string;
-//   prefix?: string;
-//   duration?: number;
-//   label: string;
-// }
-
-// const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }: AnimatedCounterProps) => {
-//   const [count, setCount] = useState(0);
-//   const ref = useRef<HTMLDivElement>(null);
-//   const isInView = useInView(ref, { once: true, margin: "-50px" });
-
-//   useEffect(() => {
-//     if (!isInView) return;
-
-//     let start = 0;
-//     const step = end / (duration * 60);
-//     const timer = setInterval(() => {
-//       start += step;
-//       if (start >= end) {
-//         setCount(end);
-//         clearInterval(timer);
-//       } else {
-//         setCount(Math.floor(start));
-//       }
-//     }, 1000 / 60);
-
-//     return () => clearInterval(timer);
-//   }, [isInView, end, duration]);
-
-//   return (
-//     <div ref={ref} className="text-center">
-//       <div className="text-4xl md:text-5xl font-heading font-extrabold gradient-text">
-//         {prefix}{count}{suffix}
-//       </div>
-//       <div className="text-sm text-muted-foreground mt-2 font-medium">{label}</div>
-//     </div>
-//   );
-// };
-
-// export default AnimatedCounter;
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 
@@ -54,28 +9,46 @@ interface AnimatedCounterProps {
   label: string;
 }
 
+// Dummy data for demonstration
+const COUNTER_DATA = [
+  { end: 500, suffix: "+", label: "Happy Customers" },
+  { end: 1000, suffix: "+", label: "Repairs Done" },
+  { end: 10, suffix: "+", label: "Expert Electricians" },
+  { end: 5, suffix: "+", label: "Years Experience" },
+];
+
 const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }: AnimatedCounterProps) => {
   const [count, setCount] = useState(0);
-  const [fired, setFired] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   useEffect(() => {
-    if (!isInView || fired) return;
-    setFired(true);
+    if (!isInView) return;
+    
     let start = 0;
-    const step = end / (duration * 60);
-    const timer = setInterval(() => {
-      start += step;
+    const frameRate = 60;
+    const totalFrames = duration * frameRate;
+    const increment = end / totalFrames;
+    let animationFrameId: number;
+    
+    const animate = () => {
+      start += increment;
       if (start >= end) {
         setCount(end);
-        clearInterval(timer);
       } else {
         setCount(Math.floor(start));
+        animationFrameId = requestAnimationFrame(animate);
       }
-    }, 1000 / 60);
-    return () => clearInterval(timer);
-  }, [isInView, end, duration, fired]);
+    };
+    
+    animationFrameId = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isInView, end, duration]);
 
   return (
     <>
@@ -88,8 +61,8 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
           flex-direction: column;
           align-items: center;
           padding: 36px 28px 30px;
-          background: linear-gradient(160deg, #0d1428 0%, #0a0f1e 100%);
-          border: 1px solid rgba(255, 200, 0, 0.15);
+          background: hsl(var(--card));
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 20px;
           overflow: hidden;
           font-family: 'DM Sans', sans-serif;
@@ -97,8 +70,8 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
         }
 
         .counter-shell:hover {
-          border-color: rgba(255, 200, 0, 0.4);
-          box-shadow: 0 0 36px rgba(255, 200, 0, 0.08), 0 20px 50px rgba(0,0,0,0.4);
+          border-color: hsl(var(--primary) / 0.5);
+          box-shadow: 0 0 36px hsl(var(--primary) / 0.08), 0 20px 50px hsl(var(--foreground) / 0.1);
         }
 
         .counter-shell::before {
@@ -106,7 +79,7 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, #ffc800, transparent);
+          background: linear-gradient(90deg, transparent, hsl(var(--secondary)), transparent);
           opacity: 0;
           transition: opacity 0.4s;
         }
@@ -128,7 +101,7 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
           width: 120px;
           height: 120px;
           border-radius: 50%;
-          border: 1px solid rgba(255,200,0,0.08);
+          border: 1px solid hsl(var(--primary) / 0.08);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
@@ -140,7 +113,7 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
           width: 80px;
           height: 80px;
           border-radius: 50%;
-          border: 1px solid rgba(255,200,0,0.06);
+          border: 1px solid hsl(var(--primary) / 0.06);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
@@ -161,11 +134,11 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
           font-weight: 900;
           line-height: 1;
           letter-spacing: -1px;
-          background: linear-gradient(135deg, #ffc800 0%, #fff176 50%, #ffa000 100%);
+          background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)) 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          filter: drop-shadow(0 0 16px rgba(255,200,0,0.4));
+          filter: drop-shadow(0 0 16px hsl(var(--primary) / 0.4));
           margin-bottom: 10px;
         }
 
@@ -174,7 +147,7 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
           z-index: 2;
           font-size: 13px;
           font-weight: 500;
-          color: rgba(180, 200, 240, 0.6);
+          color: hsl(var(--muted-foreground) / 0.6);
           letter-spacing: 0.8px;
           text-transform: uppercase;
           text-align: center;
@@ -185,7 +158,7 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
           z-index: 2;
           width: 32px;
           height: 2px;
-          background: linear-gradient(90deg, transparent, #ffc800, transparent);
+          background: linear-gradient(90deg, transparent, hsl(var(--secondary)), transparent);
           margin: 12px auto;
           border-radius: 1px;
         }
@@ -194,10 +167,15 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
       <motion.div
         ref={ref}
         className="counter-shell"
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        role="meter"
+        aria-valuenow={count}
+        aria-valuemin={0}
+        aria-valuemax={end}
+        aria-label={label}
+        initial={{ opacity: 0, y: 24, scale: 0.95 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
       >
         {/* Background rings */}
         <div className="counter-glow-ring" />
@@ -205,18 +183,41 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
 
         {/* Bolt watermark */}
         <svg className="counter-bg-bolt" viewBox="0 0 100 100" fill="none">
-          <path d="M60 5L20 55h30L35 95l45-55H50L60 5z" fill="#ffc800" />
+          <path d="M60 5L20 55h30L35 95l45-55H50L60 5z" fill="hsl(var(--secondary))" />
         </svg>
 
-        <div className="counter-value">
+        <motion.div 
+          className="counter-value"
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
           {prefix}{count}{suffix}
-        </div>
+        </motion.div>
 
         <div className="counter-divider" />
-        <div className="counter-label">{label}</div>
+        <motion.div 
+          className="counter-label"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
+          {label}
+        </motion.div>
       </motion.div>
     </>
   );
+};
+
+// Export the dummy data for use in other components
+export { COUNTER_DATA };
+
+// Pre-configured counter component using dummy data
+export const DummyAnimatedCounter = ({ index = 0 }: { index?: number }) => {
+  const data = COUNTER_DATA[index % COUNTER_DATA.length];
+  return <AnimatedCounter {...data} />;
 };
 
 export default AnimatedCounter;

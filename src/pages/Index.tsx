@@ -1,463 +1,3 @@
-// import { Link } from "react-router-dom";
-// import { useEffect, useState } from "react";
-// import { motion } from "framer-motion";
-// import { Zap, ArrowRight, Shield, Clock, BadgeDollarSign, HeartHandshake, Users } from "lucide-react";
-// import Section from "@/components/Section";
-// import ServiceCard from "@/components/ServiceCard";
-// import AnimatedCounter from "@/components/AnimatedCounter";
-// import ProcessTimeline from "@/components/ProcessTimeline";
-// import TestimonialSlider from "@/components/TestimonialSlider";
-// import { supabase } from "@/integrations/supabase/client";
-// import { services as staticServices } from "@/data/services";
-// import { teamMembers as staticTeam } from "@/data/team";
-// import { testimonials as staticTestimonials } from "@/data/testimonials";
-
-// const whyChooseUs = [
-//   { icon: Shield, title: "Certified Electricians", description: "All our professionals are licensed, insured, and certified with rigorous training." },
-//   { icon: Clock, title: "Fast Response", description: "24/7 availability with average response time under 30 minutes for emergencies." },
-//   { icon: BadgeDollarSign, title: "Affordable Pricing", description: "Transparent, competitive pricing with no hidden fees. Get quotes upfront." },
-//   { icon: HeartHandshake, title: "Safe & Reliable", description: "100% satisfaction guarantee with industry-leading safety standards." },
-// ];
-
-// const Index = () => {
-//   const [dbServices, setDbServices] = useState<any[]>([]);
-//   const [dbTeam, setDbTeam] = useState<any[]>([]);
-//   const [dbTestimonials, setDbTestimonials] = useState<any[]>([]);
-
-//   useEffect(() => {
-//     supabase.from("services").select("*").order("sort_order").limit(4).then(({ data }) => setDbServices(data || []));
-//     supabase.from("team_members").select("*").order("sort_order").then(({ data }) => setDbTeam(data || []));
-//     supabase.from("testimonials").select("*").order("created_at", { ascending: false }).then(({ data }) => setDbTestimonials(data || []));
-//   }, []);
-
-//   const displayServices = dbServices.length > 0 ? dbServices : staticServices.slice(0, 4).map(s => ({ id: s.id, title: s.title, description: s.description, icon_name: "Zap", whatsapp_enabled: true, call_enabled: true, book_now_enabled: true }));
-//   const displayTeam = dbTeam.length > 0 ? dbTeam : staticTeam;
-//   const displayTestimonials = dbTestimonials.length > 0 ? dbTestimonials : staticTestimonials;
-
-//   return (
-//     <>
-//       {/* Hero */}
-//       <section className="relative bg-hero-premium min-h-screen flex items-center overflow-hidden">
-//         {/* Enhanced animated background elements */}
-//         <div className="absolute inset-0 overflow-hidden">
-//           <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl float-animation" />
-//           <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full bg-secondary/10 blur-3xl float-animation" style={{ animationDelay: '3s' }} />
-//           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-primary/10" />
-//           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-primary/5" />
-//           {/* Circuit pattern overlay */}
-//           <div className="absolute inset-0 bg-circuit-pattern opacity-30" />
-//           {/* Mesh gradient */}
-//           <div className="absolute inset-0 bg-mesh-gradient opacity-50" />
-//         </div>
-
-//         <div className="container mx-auto px-4 relative z-10">
-//           <div className="grid lg:grid-cols-2 gap-12 items-center">
-//             <motion.div
-//               initial={{ opacity: 0, x: -40 }}
-//               animate={{ opacity: 1, x: 0 }}
-//               transition={{ duration: 0.8, ease: "easeOut" }}
-//             >
-//               {/* Trust badge */}
-//               <motion.div
-//                 initial={{ opacity: 0, y: 20 }}
-//                 animate={{ opacity: 1, y: 0 }}
-//                 transition={{ delay: 0.2 }}
-//                 className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-primary/30 bg-primary/15 backdrop-blur-sm text-primary-foreground/90 text-sm font-semibold mb-8 shadow-lg shadow-primary/10"
-//               >
-//                 <Zap className="w-4 h-4 text-secondary electric-pulse" /> 
-//                 <span>Trusted by 1000+ Happy Customers</span>
-//               </motion.div>
-
-//               <h1 className="text-4xl md:text-5xl lg:text-7xl font-heading font-extrabold text-primary-foreground leading-tight mb-6 tracking-tight">
-//                 Professional{" "}
-//                 <span className="gradient-text">Electricians</span>{" "}
-//                 at Your Doorstep
-//               </h1>
-
-//               <p className="text-lg md:text-xl text-primary-foreground/70 mb-10 max-w-lg leading-relaxed">
-//                 Book trusted electricians for installation, repair, and maintenance. Fast, reliable, and affordable electrical services with 24/7 support.
-//               </p>
-
-//               <div className="flex flex-wrap gap-4 mb-10">
-//                 <Link
-//                   to="/booking"
-//                   className="group inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-primary to-electric-blue-dark text-primary-foreground font-bold rounded-xl hover:shadow-2xl hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300 ripple text-base"
-//                 >
-//                   Book Service Now
-//                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-//                 </Link>
-//                 <Link
-//                   to="/services"
-//                   className="inline-flex items-center gap-2.5 px-8 py-4 border-2 border-primary-foreground/30 text-primary-foreground font-bold rounded-xl hover:bg-primary-foreground/10 hover:border-primary-foreground/50 hover:-translate-y-1 transition-all duration-300 text-base"
-//                 >
-//                   View All Services
-//                 </Link>
-//               </div>
-
-//               {/* Trust indicators */}
-//               <motion.div
-//                 initial={{ opacity: 0, y: 20 }}
-//                 animate={{ opacity: 1, y: 0 }}
-//                 transition={{ delay: 0.6 }}
-//                 className="flex flex-wrap items-center gap-6 pt-6 border-t border-primary-foreground/10"
-//               >
-//                 <div className="flex items-center gap-2">
-//                   <div className="flex -space-x-2">
-//                     {[1, 2, 3, 4].map((i) => (
-//                       <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary-foreground/20 flex items-center justify-center text-xs text-primary-foreground font-bold">
-//                         {i}
-//                       </div>
-//                     ))}
-//                   </div>
-//                   <div className="text-sm">
-//                     <div className="flex items-center gap-1">
-//                       <span className="text-secondary font-bold">★</span>
-//                       <span className="text-primary-foreground font-semibold">4.9/5</span>
-//                     </div>
-//                     <p className="text-xs text-primary-foreground/50">from 500+ reviews</p>
-//                   </div>
-//                 </div>
-//                 <div className="h-8 w-px bg-primary-foreground/20" />
-//                 <div className="text-sm text-primary-foreground/70">
-//                   <span className="font-semibold text-primary-foreground">24/7</span> Emergency Support
-//                 </div>
-//               </motion.div>
-//             </motion.div>
-
-//             {/* Hero visual */}
-//             <motion.div
-//               initial={{ opacity: 0, scale: 0.9 }}
-//               animate={{ opacity: 1, scale: 1 }}
-//               transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-//               className="hidden lg:flex items-center justify-center"
-//             >
-//               <div className="relative">
-//                 {/* Enhanced concentric circles with glow */}
-//                 <div className="w-96 h-96 rounded-full bg-gradient-to-br from-primary/20 to-secondary/10 border-2 border-primary/30 flex items-center justify-center shadow-2xl shadow-primary/20 backdrop-blur-sm">
-//                   <div className="w-72 h-72 rounded-full bg-gradient-to-br from-primary/25 to-secondary/15 border-2 border-primary/40 flex items-center justify-center shadow-xl shadow-primary/15 backdrop-blur-sm">
-//                     <div className="w-48 h-48 rounded-full bg-gradient-to-br from-primary/30 to-secondary/20 border-2 border-primary/50 flex items-center justify-center shadow-lg shadow-primary/25 backdrop-blur-sm">
-//                       <Zap className="w-28 h-28 text-secondary electric-pulse drop-shadow-2xl" />
-//                     </div>
-//                   </div>
-//                 </div>
-                
-//                 {/* Enhanced floating badges with better styling */}
-//                 <motion.div
-//                   animate={{ y: [-5, 5, -5], x: [0, 3, 0] }}
-//                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-//                   className="absolute -top-6 right-4 glass-card-dark px-5 py-3 rounded-2xl shadow-xl shadow-primary/10 border border-primary/20"
-//                 >
-//                   <div className="flex items-center gap-2.5">
-//                     <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-//                       <Shield className="w-4 h-4 text-secondary" />
-//                     </div>
-//                     <div>
-//                       <p className="text-xs text-primary-foreground/60 font-medium">Certification</p>
-//                       <p className="text-sm text-primary-foreground font-bold">Licensed & Insured</p>
-//                     </div>
-//                   </div>
-//                 </motion.div>
-                
-//                 <motion.div
-//                   animate={{ y: [5, -5, 5], x: [0, -3, 0] }}
-//                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-//                   className="absolute -bottom-6 left-4 glass-card-dark px-5 py-3 rounded-2xl shadow-xl shadow-primary/10 border border-primary/20"
-//                 >
-//                   <div className="flex items-center gap-2.5">
-//                     <div className="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center">
-//                       <Clock className="w-4 h-4 text-secondary" />
-//                     </div>
-//                     <div>
-//                       <p className="text-xs text-primary-foreground/60 font-medium">Availability</p>
-//                       <p className="text-sm text-primary-foreground font-bold">24/7 Service</p>
-//                     </div>
-//                   </div>
-//                 </motion.div>
-
-//                 {/* Additional badge */}
-//                 <motion.div
-//                   animate={{ y: [-3, 3, -3] }}
-//                   transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-//                   className="absolute top-1/2 -right-8 glass-card-dark px-5 py-3 rounded-2xl shadow-xl shadow-primary/10 border border-primary/20"
-//                 >
-//                   <div className="flex items-center gap-2.5">
-//                     <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-//                       <BadgeDollarSign className="w-4 h-4 text-primary" />
-//                     </div>
-//                     <div>
-//                       <p className="text-xs text-primary-foreground/60 font-medium">Pricing</p>
-//                       <p className="text-sm text-primary-foreground font-bold">Transparent</p>
-//                     </div>
-//                   </div>
-//                 </motion.div>
-//               </div>
-//             </motion.div>
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* Stats */}
-//       <section className="relative -mt-20 z-20">
-//         <div className="container mx-auto px-4">
-//           <motion.div
-//             initial={{ opacity: 0, y: 30 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ delay: 0.6, duration: 0.6 }}
-//             className="glass-card rounded-3xl p-8 md:p-12 shadow-2xl shadow-primary/10 border border-primary/20"
-//           >
-//             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
-//               <AnimatedCounter end={500} suffix="+" label="Happy Customers" />
-//               <AnimatedCounter end={1000} suffix="+" label="Repairs Done" />
-//               <AnimatedCounter end={10} suffix="+" label="Expert Electricians" />
-//               <AnimatedCounter end={5} suffix="+" label="Years Experience" />
-//             </div>
-//           </motion.div>
-//         </div>
-//       </section>
-
-//       {/* Services */}
-//       <Section>
-//         <div className="text-center mb-16">
-//           <motion.span
-//             initial={{ opacity: 0, scale: 0.9 }}
-//             whileInView={{ opacity: 1, scale: 1 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: 0.2, duration: 0.4 }}
-//             className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-gradient-to-r from-primary/15 to-secondary/15 text-primary text-sm font-bold mb-6 shadow-lg shadow-primary/10 border border-primary/20"
-//           >
-//             <Zap className="w-4 h-4" />
-//             What We Offer
-//           </motion.span>
-//           <motion.h2 
-//             initial={{ opacity: 0, y: 20 }}
-//             whileInView={{ opacity: 1, y: 0 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: 0.3, duration: 0.5 }}
-//             className="text-3xl md:text-4xl lg:text-5xl font-heading font-extrabold text-foreground tracking-tight"
-//           >
-//             Our Professional <span className="text-gradient-blue">Services</span>
-//           </motion.h2>
-//           <motion.p 
-//             initial={{ opacity: 0, y: 20 }}
-//             whileInView={{ opacity: 1, y: 0 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: 0.4, duration: 0.5 }}
-//             className="text-muted-foreground mt-5 max-w-2xl mx-auto leading-relaxed text-lg"
-//           >
-//             From simple repairs to complex installations, our certified electricians handle it all with precision and care.
-//           </motion.p>
-//         </div>
-//         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-//           {displayServices.map((s, i) => (
-//             <motion.div
-//               key={s.id}
-//               initial={{ opacity: 0, y: 30 }}
-//               whileInView={{ opacity: 1, y: 0 }}
-//               viewport={{ once: true }}
-//               transition={{ delay: i * 0.1, duration: 0.5 }}
-//             >
-//               <ServiceCard service={s} />
-//             </motion.div>
-//           ))}
-//         </div>
-//         <motion.div 
-//           initial={{ opacity: 0, y: 20 }}
-//           whileInView={{ opacity: 1, y: 0 }}
-//           viewport={{ once: true }}
-//           transition={{ delay: 0.5, duration: 0.5 }}
-//           className="text-center mt-16"
-//         >
-//           <Link
-//             to="/services"
-//             className="group inline-flex items-center gap-2.5 px-8 py-4 border-2 border-primary/30 text-primary font-bold rounded-xl hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/20"
-//           >
-//             View All Services 
-//             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-//           </Link>
-//         </motion.div>
-//       </Section>
-
-//       {/* Why Choose Us */}
-//       <Section className="bg-muted/50">
-//         <div className="text-center mb-16">
-//           <motion.span
-//             initial={{ opacity: 0, scale: 0.9 }}
-//             whileInView={{ opacity: 1, scale: 1 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: 0.2, duration: 0.4 }}
-//             className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-gradient-to-r from-secondary/20 to-primary/10 text-secondary-foreground text-sm font-bold mb-6 shadow-lg shadow-secondary/10 border border-secondary/20"
-//           >
-//             Why Choose Us
-//           </motion.span>
-//           <motion.h2
-//             initial={{ opacity: 0, y: 20 }}
-//             whileInView={{ opacity: 1, y: 0 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: 0.3, duration: 0.5 }}
-//             className="text-3xl md:text-4xl lg:text-5xl font-heading font-extrabold text-foreground tracking-tight"
-//           >
-//             Reliable Solutions <span className="text-gradient">You Can Trust</span>
-//           </motion.h2>
-//         </div>
-//         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-//           {whyChooseUs.map((item, i) => (
-//             <motion.div
-//               key={item.title}
-//               initial={{ opacity: 0, y: 30 }}
-//               whileInView={{ opacity: 1, y: 0 }}
-//               viewport={{ once: true }}
-//               transition={{ delay: i * 0.1, duration: 0.5 }}
-//               className="group relative bg-card border-2 border-border/50 rounded-2xl p-8 hover-lift hover-glow-premium cursor-default overflow-hidden"
-//             >
-//               {/* Background gradient on hover */}
-//               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-//               <div className="relative z-10">
-//                 {/* Icon with number badge */}
-//                 <div className="flex items-start justify-between mb-6">
-//                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-secondary/15 flex items-center justify-center group-hover:scale-110 group-hover:from-primary group-hover:to-electric-blue-dark transition-all duration-500 shadow-lg shadow-primary/10 group-hover:shadow-xl group-hover:shadow-primary/25">
-//                     <item.icon className="w-8 h-8 text-primary group-hover:text-primary-foreground transition-colors duration-500" />
-//                   </div>
-//                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary border-2 border-primary/20">
-//                     {i + 1}
-//                   </div>
-//                 </div>
-                
-//                 <h3 className="font-heading font-bold text-foreground text-xl mb-3">{item.title}</h3>
-//                 <p className="text-base text-muted-foreground leading-relaxed">{item.description}</p>
-//               </div>
-//             </motion.div>
-//           ))}
-//         </div>
-//       </Section>
-
-//       {/* Process */}
-//       <Section>
-//         <div className="text-center mb-14">
-//           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
-//             How It Works
-//           </span>
-//           <h2 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-foreground">
-//             Our Simple <span className="text-gradient-blue">Process</span>
-//           </h2>
-//           <p className="text-muted-foreground mt-4 max-w-xl mx-auto">
-//             Getting your electrical issues resolved is easy with our streamlined process.
-//           </p>
-//         </div>
-//         <ProcessTimeline />
-//       </Section>
-
-//       {/* Team */}
-//       <Section className="bg-muted/50">
-//         <div className="text-center mb-16">
-//           <motion.span
-//             initial={{ opacity: 0, scale: 0.9 }}
-//             whileInView={{ opacity: 1, scale: 1 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: 0.2, duration: 0.4 }}
-//             className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-gradient-to-r from-secondary/20 to-primary/10 text-secondary-foreground text-sm font-bold mb-6 shadow-lg shadow-secondary/10 border border-secondary/20"
-//           >
-//             Our Experts
-//           </motion.span>
-//           <motion.h2
-//             initial={{ opacity: 0, y: 20 }}
-//             whileInView={{ opacity: 1, y: 0 }}
-//             viewport={{ once: true }}
-//             transition={{ delay: 0.3, duration: 0.5 }}
-//             className="text-3xl md:text-4xl lg:text-5xl font-heading font-extrabold text-foreground tracking-tight"
-//           >
-//             Meet Our <span className="text-gradient">Team</span>
-//           </motion.h2>
-//         </div>
-//         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-//           {displayTeam.map((m, i) => (
-//             <motion.div
-//               key={m.id}
-//               initial={{ opacity: 0, y: 30 }}
-//               whileInView={{ opacity: 1, y: 0 }}
-//               viewport={{ once: true }}
-//               transition={{ delay: i * 0.1, duration: 0.5 }}
-//               className="group relative bg-card border-2 border-border/50 rounded-2xl p-8 text-center hover-lift hover-glow-premium overflow-hidden"
-//             >
-//               {/* Background gradient */}
-//               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
-//               <div className="relative z-10">
-//                 {/* Enhanced avatar placeholder */}
-//                 <div className="relative mb-6 inline-block">
-//                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/20 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-500 border-4 border-primary/10 group-hover:border-primary/20 shadow-xl shadow-primary/10">
-//                     <Users className="w-10 h-10 text-primary" />
-//                   </div>
-//                   {/* Decorative ring */}
-//                   <div className="absolute inset-0 rounded-full border-2 border-dashed border-primary/30 scale-110 opacity-0 group-hover:scale-125 group-hover:opacity-100 transition-all duration-500 animate-spin-slow" />
-//                 </div>
-                
-//                 <h3 className="font-heading font-bold text-foreground text-xl">{m.name}</h3>
-//                 <p className="text-sm text-primary font-bold mt-2 bg-primary/10 inline-block px-3 py-1 rounded-full">{m.role}</p>
-//                 <p className="text-sm text-muted-foreground mt-4 leading-relaxed line-clamp-3">{m.bio}</p>
-//               </div>
-//             </motion.div>
-//           ))}
-//         </div>
-//       </Section>
-
-//       {/* Testimonials */}
-//       <Section>
-//         <div className="text-center mb-14">
-//           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
-//             Testimonials
-//           </span>
-//           <h2 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold text-foreground">
-//             What Our <span className="text-gradient-blue">Clients Say</span>
-//           </h2>
-//         </div>
-//         <TestimonialSlider testimonials={displayTestimonials} />
-//       </Section>
-
-//       {/* CTA */}
-//       <section className="relative overflow-hidden">
-//         <div className="bg-hero-premium py-24">
-//           <div className="absolute inset-0">
-//             <div className="absolute top-0 left-1/4 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
-//             <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full bg-secondary/10 blur-3xl" />
-//           </div>
-//           <div className="container mx-auto px-4 text-center relative z-10">
-//             <motion.div
-//               initial={{ opacity: 0, y: 30 }}
-//               whileInView={{ opacity: 1, y: 0 }}
-//               viewport={{ once: true }}
-//               transition={{ duration: 0.6 }}
-//             >
-//               <Zap className="w-12 h-12 text-secondary mx-auto mb-6 electric-pulse" />
-//               <h2 className="text-3xl md:text-5xl font-heading font-bold text-primary-foreground mb-4">
-//                 Need an Electrician Today?
-//               </h2>
-//               <p className="text-primary-foreground/60 mb-10 max-w-lg mx-auto text-lg">
-//                 Book a professional electrician and get your electrical issues resolved quickly and safely.
-//               </p>
-//               <div className="flex flex-wrap justify-center gap-4">
-//                 <Link
-//                   to="/booking"
-//                   className="group inline-flex items-center gap-2 px-8 py-4 bg-secondary text-secondary-foreground font-bold rounded-xl hover:shadow-lg hover:shadow-secondary/25 transition-all duration-300"
-//                 >
-//                   Book Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-//                 </Link>
-//                 <Link
-//                   to="/contact"
-//                   className="inline-flex items-center gap-2 px-8 py-4 border border-primary-foreground/20 text-primary-foreground font-bold rounded-xl hover:bg-primary-foreground/5 transition-all duration-300"
-//                 >
-//                   Contact Us
-//                 </Link>
-//               </div>
-//             </motion.div>
-//           </div>
-//         </div>
-//       </section>
-//     </>
-//   );
-// };
-
-// export default Index;
 
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -465,7 +5,7 @@ import { motion } from "framer-motion";
 import { Zap, ArrowRight, Shield, Clock, BadgeDollarSign, HeartHandshake, Users } from "lucide-react";
 import Section from "@/components/Section";
 import ServiceCard from "@/components/ServiceCard";
-import AnimatedCounter from "@/components/AnimatedCounter";
+import AnimatedCounter, { COUNTER_DATA, DummyAnimatedCounter } from "@/components/AnimatedCounter";
 import ProcessTimeline from "@/components/ProcessTimeline";
 import TestimonialSlider from "@/components/TestimonialSlider";
 import { supabase } from "@/integrations/supabase/client";
@@ -507,7 +47,7 @@ const Index = () => {
           display: flex;
           align-items: center;
           overflow: hidden;
-          background: #050b18;
+          background: hsl(var(--background));
           font-family: 'DM Sans', sans-serif;
         }
 
@@ -515,8 +55,8 @@ const Index = () => {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(255,200,0,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,200,0,0.04) 1px, transparent 1px);
+            linear-gradient(hsl(var(--primary) / 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--primary) / 0.04) 1px, transparent 1px);
           background-size: 60px 60px;
           mask-image: radial-gradient(ellipse 80% 80% at 30% 50%, black 0%, transparent 100%);
         }
@@ -526,7 +66,7 @@ const Index = () => {
           top: 20%; left: -120px;
           width: 500px; height: 500px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(255,200,0,0.08) 0%, transparent 70%);
+          background: radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%);
           animation: floatGlow 6s ease-in-out infinite;
         }
 
@@ -535,7 +75,7 @@ const Index = () => {
           bottom: 10%; right: -80px;
           width: 400px; height: 400px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(56,189,248,0.06) 0%, transparent 70%);
+          background: radial-gradient(circle, hsl(var(--secondary) / 0.06) 0%, transparent 70%);
           animation: floatGlow 8s ease-in-out infinite reverse;
           animation-delay: 2s;
         }
@@ -546,7 +86,7 @@ const Index = () => {
           transform: translate(-50%, -50%);
           width: 700px; height: 700px;
           border-radius: 50%;
-          border: 1px solid rgba(255,200,0,0.06);
+          border: 1px solid hsl(var(--primary) / 0.06);
           pointer-events: none;
         }
 
@@ -556,7 +96,7 @@ const Index = () => {
           transform: translate(-50%, -50%);
           width: 500px; height: 500px;
           border-radius: 50%;
-          border: 1px solid rgba(255,200,0,0.05);
+          border: 1px solid hsl(var(--primary) / 0.05);
           pointer-events: none;
         }
 
@@ -571,18 +111,18 @@ const Index = () => {
           align-items: center;
           gap: 10px;
           padding: 9px 20px;
-          border: 1px solid rgba(255,200,0,0.3);
+          border: 1px solid hsl(var(--primary) / 0.3);
           border-radius: 100px;
-          background: rgba(255,200,0,0.07);
+          background: hsl(var(--primary) / 0.07);
           backdrop-filter: blur(8px);
           margin-bottom: 28px;
           font-size: 13px;
           font-weight: 600;
-          color: rgba(220,230,255,0.85);
+          color: hsl(var(--foreground));
           letter-spacing: 0.3px;
         }
 
-        .hero-trust-badge span { color: #ffc800; }
+        .hero-trust-badge span { color: hsl(var(--secondary)); }
 
         .hero-h1 {
           font-family: 'Barlow Condensed', sans-serif;
@@ -591,12 +131,12 @@ const Index = () => {
           line-height: 0.9;
           text-transform: uppercase;
           letter-spacing: -2px;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           margin-bottom: 24px;
         }
 
         .hero-h1-accent {
-          background: linear-gradient(135deg, #ffc800 0%, #ffec6e 50%, #ff8c00 100%);
+          background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)) 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -605,7 +145,7 @@ const Index = () => {
 
         .hero-desc {
           font-size: 17px;
-          color: rgba(180,200,240,0.6);
+          color: hsl(var(--muted-foreground));
           line-height: 1.75;
           max-width: 480px;
           margin-bottom: 36px;
@@ -623,8 +163,8 @@ const Index = () => {
           align-items: center;
           gap: 10px;
           padding: 15px 32px;
-          background: linear-gradient(135deg, #ffc800, #ffaa00);
-          color: #0a0f1e;
+          background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
+          color: hsl(var(--primary-foreground));
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 17px;
           font-weight: 800;
@@ -638,7 +178,7 @@ const Index = () => {
         }
 
         .hero-btn-primary:hover {
-          box-shadow: 0 0 36px rgba(255,200,0,0.45), 0 8px 24px rgba(255,160,0,0.3);
+          box-shadow: 0 0 36px hsl(var(--primary) / 0.45), 0 8px 24px hsl(var(--primary) / 0.3);
           transform: translateY(-2px);
         }
 
@@ -647,8 +187,8 @@ const Index = () => {
           align-items: center;
           gap: 10px;
           padding: 15px 32px;
-          border: 1.5px solid rgba(255,200,0,0.3);
-          color: rgba(220,230,255,0.8);
+          border: 1.5px solid hsl(var(--border) / 0.5);
+          color: hsl(var(--foreground));
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 17px;
           font-weight: 700;
@@ -657,13 +197,13 @@ const Index = () => {
           border-radius: 12px;
           text-decoration: none;
           transition: all 0.3s ease;
-          background: rgba(255,200,0,0.04);
+          background: hsl(var(--muted) / 0.3);
         }
 
         .hero-btn-secondary:hover {
-          border-color: rgba(255,200,0,0.6);
-          color: #ffc800;
-          background: rgba(255,200,0,0.08);
+          border-color: hsl(var(--primary) / 0.6);
+          color: hsl(var(--primary));
+          background: hsl(var(--primary) / 0.08);
         }
 
         /* Trust strip */
@@ -673,7 +213,7 @@ const Index = () => {
           align-items: center;
           gap: 20px;
           padding-top: 24px;
-          border-top: 1px solid rgba(255,200,0,0.1);
+          border-top: 1px solid hsl(var(--border) / 0.5);
         }
 
         .trust-avatars {
@@ -685,15 +225,15 @@ const Index = () => {
           width: 34px;
           height: 34px;
           border-radius: 50%;
-          background: linear-gradient(135deg, rgba(255,200,0,0.2), rgba(255,140,0,0.1));
-          border: 2px solid rgba(255,200,0,0.25);
+          background: linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--secondary) / 0.1));
+          border: 2px solid hsl(var(--border) / 0.5);
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 13px;
           font-weight: 700;
-          color: #ffc800;
+          color: hsl(var(--primary));
           margin-left: -8px;
         }
 
@@ -701,20 +241,20 @@ const Index = () => {
 
         .trust-rating-label {
           font-size: 11px;
-          color: rgba(180,200,240,0.45);
+          color: hsl(var(--muted-foreground) / 0.45);
           margin-top: 2px;
         }
 
         .trust-rating-val {
           font-size: 14px;
           font-weight: 700;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           display: flex;
           align-items: center;
           gap: 4px;
         }
 
-        .trust-star { color: #ffc800; }
+        .trust-star { color: hsl(var(--secondary)); }
 
         .trust-sep {
           width: 1px;
@@ -744,8 +284,8 @@ const Index = () => {
           width: 400px;
           height: 400px;
           border-radius: 50%;
-          border: 1.5px solid rgba(255,200,0,0.2);
-          background: radial-gradient(circle at 40% 40%, rgba(255,200,0,0.07), transparent 60%);
+          border: 1.5px solid hsl(var(--primary) / 0.2);
+          background: radial-gradient(circle at 40% 40%, hsl(var(--primary) / 0.07), transparent 60%);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -761,8 +301,8 @@ const Index = () => {
           width: 290px;
           height: 290px;
           border-radius: 50%;
-          border: 1.5px solid rgba(255,200,0,0.25);
-          background: radial-gradient(circle at 40% 40%, rgba(255,200,0,0.1), transparent 70%);
+          border: 1.5px solid hsl(var(--primary) / 0.25);
+          background: radial-gradient(circle at 40% 40%, hsl(var(--primary) / 0.1), transparent 70%);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -772,23 +312,23 @@ const Index = () => {
           width: 180px;
           height: 180px;
           border-radius: 50%;
-          border: 2px solid rgba(255,200,0,0.4);
-          background: radial-gradient(circle, rgba(255,200,0,0.12), rgba(10,15,30,0.95) 70%);
+          border: 2px solid hsl(var(--primary) / 0.4);
+          background: radial-gradient(circle, hsl(var(--primary) / 0.12), hsl(var(--card) / 0.95) 70%);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 60px rgba(255,200,0,0.15), inset 0 0 40px rgba(255,200,0,0.05);
+          box-shadow: 0 0 60px hsl(var(--primary) / 0.15), inset 0 0 40px hsl(var(--primary) / 0.05);
         }
 
         .orb-zap {
-          color: #ffc800;
-          filter: drop-shadow(0 0 20px rgba(255,200,0,0.6));
+          color: hsl(var(--secondary));
+          filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.6));
           animation: zapPulse 2s ease-in-out infinite;
         }
 
         @keyframes zapPulse {
-          0%, 100% { filter: drop-shadow(0 0 20px rgba(255,200,0,0.6)); transform: scale(1); }
-          50% { filter: drop-shadow(0 0 36px rgba(255,200,0,0.9)); transform: scale(1.05); }
+          0%, 100% { filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.6)); transform: scale(1); }
+          50% { filter: drop-shadow(0 0 36px hsl(var(--primary) / 0.9)); transform: scale(1.05); }
         }
 
         /* Floating badges */
@@ -798,28 +338,28 @@ const Index = () => {
           align-items: center;
           gap: 10px;
           padding: 12px 16px;
-          background: rgba(10,15,30,0.95);
-          border: 1px solid rgba(255,200,0,0.2);
+          background: hsl(var(--card) / 0.95);
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 14px;
           backdrop-filter: blur(12px);
-          box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+          box-shadow: 0 8px 32px hsl(var(--foreground) / 0.1);
         }
 
         .badge-icon {
           width: 34px;
           height: 34px;
           border-radius: 10px;
-          background: rgba(255,200,0,0.1);
+          background: hsl(var(--primary) / 0.1);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           flex-shrink: 0;
         }
 
         .badge-label {
           font-size: 10px;
-          color: rgba(180,200,240,0.45);
+          color: hsl(var(--muted-foreground) / 0.45);
           font-family: 'DM Sans', sans-serif;
           margin-bottom: 2px;
           text-transform: uppercase;
@@ -830,7 +370,7 @@ const Index = () => {
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 15px;
           font-weight: 700;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           line-height: 1;
         }
 
@@ -842,11 +382,11 @@ const Index = () => {
         }
 
         .stats-card {
-          background: #0a0f1e;
-          border: 1px solid rgba(255,200,0,0.18);
+          background: hsl(var(--card));
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 20px;
           padding: 36px 40px;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,200,0,0.06);
+          box-shadow: 0 24px 80px hsl(var(--foreground) / 0.1), 0 0 0 1px hsl(var(--primary) / 0.06);
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 24px;
@@ -859,7 +399,7 @@ const Index = () => {
         .stats-sep {
           display: none;
           width: 1px;
-          background: linear-gradient(180deg, transparent, rgba(255,200,0,0.15), transparent);
+          background: linear-gradient(180deg, transparent, hsl(var(--border) / 0.3), transparent);
         }
 
         @media (min-width: 768px) { .stats-sep { display: block; } }
@@ -870,13 +410,13 @@ const Index = () => {
           align-items: center;
           gap: 8px;
           padding: 7px 18px;
-          border: 1px solid rgba(255,200,0,0.25);
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 100px;
-          background: rgba(255,200,0,0.06);
+          background: hsl(var(--primary) / 0.06);
           margin-bottom: 16px;
           font-size: 12px;
           font-weight: 700;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           letter-spacing: 1px;
           text-transform: uppercase;
           font-family: 'Barlow Condensed', sans-serif;
@@ -887,14 +427,14 @@ const Index = () => {
           font-size: clamp(32px, 4.5vw, 52px);
           font-weight: 900;
           text-transform: uppercase;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           letter-spacing: -0.5px;
           line-height: 1;
           margin-bottom: 16px;
         }
 
         .sec-title span {
-          background: linear-gradient(135deg, #ffc800, #ffec6e);
+          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -902,7 +442,7 @@ const Index = () => {
 
         .sec-desc {
           font-size: 15px;
-          color: rgba(180,200,240,0.55);
+          color: hsl(var(--muted-foreground) / 0.55);
           line-height: 1.7;
           max-width: 560px;
           margin: 0 auto;
@@ -911,8 +451,8 @@ const Index = () => {
         /* ── WHY CHOOSE US CARDS ── */
         .why-card {
           position: relative;
-          background: #0a0f1e;
-          border: 1px solid rgba(255,200,0,0.1);
+          background: hsl(var(--card));
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 20px;
           padding: 32px 28px;
           overflow: hidden;
@@ -933,8 +473,8 @@ const Index = () => {
 
         .why-card:hover {
           transform: translateY(-6px);
-          border-color: rgba(255,200,0,0.3);
-          box-shadow: 0 24px 60px rgba(0,0,0,0.45), 0 0 40px rgba(255,200,0,0.05);
+          border-color: hsl(var(--border) / 0.5);
+          box-shadow: 0 24px 60px hsl(var(--foreground) / 0.1), 0 0 40px hsl(var(--primary) / 0.05);
         }
 
         .why-card:hover::after { opacity: 1; }
@@ -949,13 +489,13 @@ const Index = () => {
         .why-hex-bg {
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, rgba(255,200,0,0.14), rgba(255,200,0,0.04));
+          background: linear-gradient(135deg, hsl(var(--primary) / 0.14), hsl(var(--primary) / 0.04));
           clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
           transition: all 0.4s ease;
         }
 
         .why-card:hover .why-hex-bg {
-          background: linear-gradient(135deg, var(--card-accent), rgba(255,200,0,0.6));
+          background: linear-gradient(135deg, var(--card-accent), hsl(var(--secondary) / 0.6));
         }
 
         .why-hex-icon {
@@ -968,7 +508,7 @@ const Index = () => {
           transition: color 0.4s;
         }
 
-        .why-card:hover .why-hex-icon { color: #0a0f1e; }
+        .why-card:hover .why-hex-icon { color: hsl(var(--card-foreground)); }
 
         .why-num {
           position: absolute;
@@ -976,7 +516,7 @@ const Index = () => {
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 40px;
           font-weight: 900;
-          color: rgba(255,200,0,0.04);
+          color: hsl(var(--primary) / 0.04);
           line-height: 1;
           user-select: none;
         }
@@ -986,22 +526,22 @@ const Index = () => {
           font-size: 20px;
           font-weight: 800;
           text-transform: uppercase;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           margin-bottom: 10px;
           letter-spacing: 0.3px;
         }
 
         .why-desc {
           font-size: 13.5px;
-          color: rgba(180,200,240,0.58);
+          color: hsl(var(--muted-foreground) / 0.58);
           line-height: 1.7;
         }
 
         /* ── TEAM CARDS ── */
         .team-card {
           position: relative;
-          background: #0a0f1e;
-          border: 1px solid rgba(255,200,0,0.1);
+          background: hsl(var(--card));
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 20px;
           padding: 32px 24px;
           text-align: center;
@@ -1015,15 +555,15 @@ const Index = () => {
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, #ffc800, transparent);
+          background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
           opacity: 0;
           transition: opacity 0.4s;
         }
 
         .team-card:hover {
           transform: translateY(-6px);
-          border-color: rgba(255,200,0,0.3);
-          box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+          border-color: hsl(var(--border) / 0.5);
+          box-shadow: 0 20px 50px hsl(var(--foreground) / 0.1);
         }
 
         .team-card:hover::after { opacity: 1; }
@@ -1039,8 +579,8 @@ const Index = () => {
           position: absolute;
           inset: -5px;
           border-radius: 50%;
-          border: 1.5px solid rgba(255,200,0,0.18);
-          border-top-color: rgba(255,200,0,0.6);
+          border: 1.5px solid hsl(var(--border) / 0.3);
+          border-top-color: hsl(var(--secondary));
           animation: avatarSpin 8s linear infinite;
         }
 
@@ -1050,20 +590,20 @@ const Index = () => {
           width: 88px;
           height: 88px;
           border-radius: 50%;
-          background: linear-gradient(135deg, rgba(255,200,0,0.1), rgba(255,140,0,0.05));
-          border: 1.5px solid rgba(255,200,0,0.2);
+          background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--secondary) / 0.05));
+          border: 1.5px solid hsl(var(--border) / 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: rgba(255,200,0,0.5);
+          color: hsl(var(--muted-foreground));
           transition: all 0.4s;
         }
 
         .team-card:hover .avatar-circle {
-          border-color: rgba(255,200,0,0.5);
-          background: rgba(255,200,0,0.12);
-          color: #ffc800;
-          box-shadow: 0 0 24px rgba(255,200,0,0.15);
+          border-color: hsl(var(--primary) / 0.5);
+          background: hsl(var(--primary) / 0.12);
+          color: hsl(var(--secondary));
+          box-shadow: 0 0 24px hsl(var(--primary) / 0.15);
         }
 
         .team-name {
@@ -1071,7 +611,7 @@ const Index = () => {
           font-size: 20px;
           font-weight: 800;
           text-transform: uppercase;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           margin-bottom: 4px;
         }
 
@@ -1079,11 +619,11 @@ const Index = () => {
           display: inline-block;
           font-size: 11px;
           font-weight: 700;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           letter-spacing: 0.8px;
           text-transform: uppercase;
-          background: rgba(255,200,0,0.08);
-          border: 1px solid rgba(255,200,0,0.18);
+          background: hsl(var(--primary) / 0.08);
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 100px;
           padding: 3px 12px;
           margin-bottom: 12px;
@@ -1091,7 +631,7 @@ const Index = () => {
 
         .team-bio {
           font-size: 13px;
-          color: rgba(180,200,240,0.5);
+          color: hsl(var(--muted-foreground) / 0.5);
           line-height: 1.65;
         }
 
@@ -1101,8 +641,8 @@ const Index = () => {
           align-items: center;
           gap: 9px;
           padding: 13px 32px;
-          border: 1.5px solid rgba(255,200,0,0.25);
-          color: #ffc800;
+          border: 1.5px solid hsl(var(--border) / 0.5);
+          color: hsl(var(--secondary));
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 16px;
           font-weight: 800;
@@ -1110,16 +650,16 @@ const Index = () => {
           text-transform: uppercase;
           border-radius: 12px;
           text-decoration: none;
-          background: rgba(255,200,0,0.04);
+          background: hsl(var(--primary) / 0.04);
           transition: all 0.3s ease;
           margin-top: 48px;
         }
 
         .view-all-btn:hover {
-          background: #ffc800;
-          color: #0a0f1e;
-          border-color: #ffc800;
-          box-shadow: 0 0 28px rgba(255,200,0,0.35);
+          background: hsl(var(--secondary));
+          color: hsl(var(--card-foreground));
+          border-color: hsl(var(--secondary));
+          box-shadow: 0 0 28px hsl(var(--primary) / 0.35);
           transform: translateY(-2px);
         }
 
@@ -1127,7 +667,7 @@ const Index = () => {
         .cta-section {
           position: relative;
           overflow: hidden;
-          background: #050b18;
+          background: hsl(var(--background));
           padding: 100px 0;
           text-align: center;
           font-family: 'DM Sans', sans-serif;
@@ -1137,8 +677,8 @@ const Index = () => {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(255,200,0,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,200,0,0.04) 1px, transparent 1px);
+            linear-gradient(hsl(var(--primary) / 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--primary) / 0.04) 1px, transparent 1px);
           background-size: 60px 60px;
           mask-image: radial-gradient(ellipse 70% 80% at 50% 50%, black 20%, transparent 100%);
         }
@@ -1148,7 +688,7 @@ const Index = () => {
           top: 50%; left: 50%;
           transform: translate(-50%, -50%);
           width: 600px; height: 400px;
-          background: radial-gradient(ellipse, rgba(255,200,0,0.08) 0%, transparent 70%);
+          background: radial-gradient(ellipse, hsl(var(--primary) / 0.08) 0%, transparent 70%);
           pointer-events: none;
         }
 
@@ -1158,12 +698,12 @@ const Index = () => {
           height: 80px;
           margin: 0 auto 28px;
           border-radius: 50%;
-          border: 2px solid rgba(255,200,0,0.25);
+          border: 2px solid hsl(var(--border) / 0.3);
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255,200,0,0.06);
-          box-shadow: 0 0 40px rgba(255,200,0,0.15);
+          background: hsl(var(--primary) / 0.06);
+          box-shadow: 0 0 40px hsl(var(--primary) / 0.15);
         }
 
         .cta-title {
@@ -1171,14 +711,14 @@ const Index = () => {
           font-size: clamp(36px, 5vw, 64px);
           font-weight: 900;
           text-transform: uppercase;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           letter-spacing: -1px;
           line-height: 0.95;
           margin-bottom: 16px;
         }
 
         .cta-title span {
-          background: linear-gradient(135deg, #ffc800, #ffec6e);
+          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -1186,7 +726,7 @@ const Index = () => {
 
         .cta-desc {
           font-size: 15px;
-          color: rgba(180,200,240,0.5);
+          color: hsl(var(--muted-foreground) / 0.5);
           max-width: 440px;
           margin: 0 auto 36px;
           line-height: 1.7;
@@ -1204,8 +744,8 @@ const Index = () => {
           align-items: center;
           gap: 9px;
           padding: 15px 36px;
-          background: linear-gradient(135deg, #ffc800, #ffaa00);
-          color: #0a0f1e;
+          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-blue-dark)));
+          color: hsl(var(--primary-foreground));
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 17px;
           font-weight: 800;
@@ -1217,7 +757,7 @@ const Index = () => {
         }
 
         .cta-btn-primary:hover {
-          box-shadow: 0 0 32px rgba(255,200,0,0.45), 0 6px 20px rgba(255,160,0,0.3);
+          box-shadow: 0 0 32px hsl(var(--primary) / 0.45), 0 6px 20px hsl(var(--secondary) / 0.3);
           transform: translateY(-2px);
         }
 
@@ -1226,8 +766,8 @@ const Index = () => {
           align-items: center;
           gap: 9px;
           padding: 15px 32px;
-          border: 1.5px solid rgba(255,200,0,0.25);
-          color: rgba(220,230,255,0.75);
+          border: 1.5px solid hsl(var(--border) / 0.5);
+          color: hsl(var(--foreground));
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 17px;
           font-weight: 700;
@@ -1235,14 +775,14 @@ const Index = () => {
           text-transform: uppercase;
           border-radius: 12px;
           text-decoration: none;
-          background: rgba(255,200,0,0.04);
+          background: hsl(var(--muted) / 0.3);
           transition: all 0.3s;
         }
 
         .cta-btn-secondary:hover {
-          border-color: rgba(255,200,0,0.5);
-          color: #ffc800;
-          background: rgba(255,200,0,0.08);
+          border-color: hsl(var(--primary) / 0.6);
+          color: hsl(var(--secondary));
+          background: hsl(var(--primary) / 0.08);
         }
       `}</style>
 
@@ -1267,7 +807,7 @@ const Index = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <Zap size={14} color="#ffc800" />
+                <Zap size={14} />
                 Trusted by <span>1000+</span> Happy Customers
               </motion.div>
 
@@ -1358,7 +898,7 @@ const Index = () => {
                   animate={{ y: [4, -4, 4] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
                 >
-                  <div className="badge-icon" style={{ color: "#38bdf8", background: "rgba(56,189,248,0.1)" }}>
+                  <div className="badge-icon">
                     <Clock size={16} />
                   </div>
                   <div>
@@ -1374,7 +914,7 @@ const Index = () => {
                   animate={{ y: [-3, 3, -3] }}
                   transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
                 >
-                  <div className="badge-icon" style={{ color: "#34d399", background: "rgba(52,211,153,0.1)" }}>
+                  <div className="badge-icon">
                     <BadgeDollarSign size={16} />
                   </div>
                   <div>
@@ -1397,10 +937,12 @@ const Index = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65, duration: 0.6 }}
           >
-            <AnimatedCounter end={500} suffix="+" label="Happy Customers" />
-            <AnimatedCounter end={1000} suffix="+" label="Repairs Done" />
-            <AnimatedCounter end={10} suffix="+" label="Expert Electricians" />
-            <AnimatedCounter end={5} suffix="+" label="Years Experience" />
+            {/* Using dummy data - Option 1: Use COUNTER_DATA array */}
+            {COUNTER_DATA.map((data, index) => (
+              <AnimatedCounter key={index} {...data} />
+            ))}
+            
+            
           </motion.div>
         </div>
       </div>
@@ -1520,7 +1062,7 @@ const Index = () => {
             transition={{ duration: 0.6 }}
           >
             <div className="cta-zap-ring">
-              <Zap size={36} color="#ffc800" />
+              <Zap size={36} />
             </div>
             <h2 className="cta-title">
               Need an Electrician <span>Today?</span>

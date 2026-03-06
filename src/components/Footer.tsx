@@ -1,134 +1,3 @@
-// import { Link } from "react-router-dom";
-// import { Zap, Phone, Mail, MapPin, ArrowRight } from "lucide-react";
-// import { PHONE_NUMBER } from "@/data/services";
-
-// const Footer = () => (
-//   <footer className="bg-hero-premium text-primary-foreground relative overflow-hidden">
-//     {/* Enhanced background decoration */}
-//     <div className="absolute inset-0 overflow-hidden">
-//       <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
-//       <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-secondary/10 blur-3xl" />
-//       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-primary/5" />
-//       {/* Circuit pattern */}
-//       <div className="absolute inset-0 bg-circuit-pattern opacity-20" />
-//     </div>
-
-//     <div className="container mx-auto px-4 py-16 relative z-10">
-//       <div className="grid md:grid-cols-4 gap-12">
-//         {/* Brand column */}
-//         <div className="md:col-span-1">
-//           <div className="flex items-center gap-3 mb-6">
-//             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-electric-blue-dark flex items-center justify-center shadow-xl shadow-primary/30">
-//               <Zap className="w-6 h-6 text-secondary electric-pulse" />
-//             </div>
-//             <span className="text-2xl font-heading font-bold">Electro<span className="text-gradient">o</span>buddy</span>
-//           </div>
-//           <p className="text-primary-foreground/60 text-sm leading-relaxed mb-6">
-//             Your trusted electrical service partner. Professional electricians for all your residential and commercial needs with 24/7 support.
-//           </p>
-//           <Link
-//             to="/booking"
-//             className="group inline-flex items-center gap-2 text-sm text-secondary font-bold hover:text-secondary/80 transition-all"
-//           >
-//             Book a Service 
-//             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-//           </Link>
-//         </div>
-
-//         {/* Quick Links column */}
-//         <div>
-//           <h4 className="font-heading font-bold mb-6 text-sm uppercase tracking-wider text-secondary flex items-center gap-2">
-//             <span className="w-1 h-4 bg-gradient-to-b from-secondary to-primary rounded-full" />
-//             Quick Links
-//           </h4>
-//           <ul className="space-y-3 text-sm text-primary-foreground/60">
-//             {[
-//               { label: "Home", to: "/" },
-//               { label: "About Us", to: "/about" },
-//               { label: "Services", to: "/services" },
-//               { label: "Projects", to: "/projects" },
-//               { label: "Contact", to: "/contact" },
-//             ].map((l) => (
-//               <li key={l.to}>
-//                 <Link to={l.to} className="group inline-flex items-center gap-2 hover:text-secondary hover:translate-x-1 transition-all duration-300">
-//                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-secondary transition-colors" />
-//                   {l.label}
-//                 </Link>
-//               </li>
-//             ))}
-//           </ul>
-//         </div>
-
-//         {/* Services column */}
-//         <div>
-//           <h4 className="font-heading font-bold mb-6 text-sm uppercase tracking-wider text-secondary flex items-center gap-2">
-//             <span className="w-1 h-4 bg-gradient-to-b from-secondary to-primary rounded-full" />
-//             Our Services
-//           </h4>
-//           <ul className="space-y-3 text-sm text-primary-foreground/60">
-//             {["Electrical Servicing", "Device Installation", "Equipment Repair", "Wiring & Maintenance", "Home Troubleshooting"].map((s) => (
-//               <li key={s}>
-//                 <Link to="/services" className="group inline-flex items-center gap-2 hover:text-secondary hover:translate-x-1 transition-all duration-300">
-//                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-secondary transition-colors" />
-//                   {s}
-//                 </Link>
-//               </li>
-//             ))}
-//           </ul>
-//         </div>
-
-//         {/* Contact Info column */}
-//         <div>
-//           <h4 className="font-heading font-bold mb-6 text-sm uppercase tracking-wider text-secondary flex items-center gap-2">
-//             <span className="w-1 h-4 bg-gradient-to-b from-secondary to-primary rounded-full" />
-//             Contact Info
-//           </h4>
-//           <ul className="space-y-4 text-sm text-primary-foreground/60">
-//             <li className="flex items-start gap-3 group">
-//               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mt-0.5 group-hover:bg-secondary/20 transition-colors">
-//                 <MapPin className="w-4 h-4 text-secondary" />
-//               </div>
-//               <span>123 Electrical Ave, Tech City, India 400001</span>
-//             </li>
-//             <li className="flex items-center gap-3 group">
-//               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
-//                 <Phone className="w-4 h-4 text-secondary" />
-//               </div>
-//               <a href={`tel:${PHONE_NUMBER}`} className="hover:text-secondary transition-colors font-medium">{PHONE_NUMBER}</a>
-//             </li>
-//             <li className="flex items-center gap-3 group">
-//               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
-//                 <Mail className="w-4 h-4 text-secondary" />
-//               </div>
-//               <a href="mailto:hello@electroobuddy.com" className="hover:text-secondary transition-colors font-medium">hello@electroobuddy.com</a>
-//             </li>
-//           </ul>
-//         </div>
-//       </div>
-
-//       {/* Bottom bar */}
-//       <div className="mt-16 pt-8 border-t border-primary-foreground/10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-primary-foreground/40">
-//         <div className="flex items-center gap-2">
-//           <Zap className="w-4 h-4 text-secondary" />
-//           <p>&copy; {new Date().getFullYear()} Electroobuddy. All rights reserved.</p>
-//         </div>
-//         <div className="flex items-center gap-6">
-//           <Link to="/privacy" className="hover:text-secondary transition-colors flex items-center gap-1.5 group">
-//             <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-secondary transition-colors" />
-//             Privacy Policy
-//           </Link>
-//           <Link to="/terms" className="hover:text-secondary transition-colors flex items-center gap-1.5 group">
-//             <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-secondary transition-colors" />
-//             Terms & Conditions
-//           </Link>
-//         </div>
-//       </div>
-//     </div>
-//   </footer>
-// );
-
-// export default Footer;
-
 import { Link } from "react-router-dom";
 import { Zap, Phone, Mail, MapPin, ArrowRight } from "lucide-react";
 import { PHONE_NUMBER } from "@/data/services";
@@ -157,9 +26,10 @@ const Footer = () => (
 
       .footer-root {
         position: relative;
-        background: #050b18;
+        background: hsl(var(--card));
         overflow: hidden;
         font-family: 'DM Sans', sans-serif;
+        border-top: 1px solid hsl(var(--border));
       }
 
       /* Animated grid background */
@@ -167,8 +37,8 @@ const Footer = () => (
         position: absolute;
         inset: 0;
         background-image:
-          linear-gradient(rgba(255,200,0,0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255,200,0,0.03) 1px, transparent 1px);
+          linear-gradient(hsl(var(--foreground) / 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
         background-size: 60px 60px;
         pointer-events: none;
       }
@@ -179,7 +49,7 @@ const Footer = () => (
         top: -120px; right: -80px;
         width: 400px; height: 400px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(255,200,0,0.06) 0%, transparent 70%);
+        background: radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%);
         pointer-events: none;
       }
 
@@ -188,7 +58,7 @@ const Footer = () => (
         bottom: -100px; left: -60px;
         width: 350px; height: 350px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(56,189,248,0.04) 0%, transparent 70%);
+        background: radial-gradient(circle, hsl(var(--secondary) / 0.04) 0%, transparent 70%);
         pointer-events: none;
       }
 
@@ -223,11 +93,11 @@ const Footer = () => (
         width: 42px;
         height: 42px;
         border-radius: 12px;
-        background: linear-gradient(135deg, #ffc800, #ff8c00);
+        background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 0 20px rgba(255,200,0,0.3);
+        box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
         flex-shrink: 0;
       }
 
@@ -237,12 +107,12 @@ const Footer = () => (
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: #f0f4ff;
+        color: hsl(var(--foreground));
         line-height: 1;
       }
 
       .footer-logo-text span {
-        background: linear-gradient(135deg, #ffc800, #ffec6e);
+        background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -250,7 +120,7 @@ const Footer = () => (
 
       .footer-brand-desc {
         font-size: 13.5px;
-        color: rgba(180,200,240,0.45);
+        color: hsl(var(--muted-foreground));
         line-height: 1.75;
         margin-bottom: 24px;
         max-width: 280px;
@@ -262,7 +132,7 @@ const Footer = () => (
         gap: 7px;
         font-size: 13px;
         font-weight: 600;
-        color: #ffc800;
+        color: hsl(var(--primary));
         text-decoration: none;
         letter-spacing: 0.3px;
         transition: all 0.25s;
@@ -277,7 +147,7 @@ const Footer = () => (
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 1.2px;
-        color: #ffc800;
+        color: hsl(var(--primary));
         margin-bottom: 20px;
         display: flex;
         align-items: center;
@@ -288,7 +158,7 @@ const Footer = () => (
         content: '';
         flex: 1;
         height: 1px;
-        background: linear-gradient(90deg, rgba(255,200,0,0.3), transparent);
+        background: linear-gradient(90deg, hsl(var(--primary) / 0.3), transparent);
       }
 
       /* Links */
@@ -306,7 +176,7 @@ const Footer = () => (
         align-items: center;
         gap: 9px;
         font-size: 13.5px;
-        color: rgba(180,200,240,0.5);
+        color: hsl(var(--muted-foreground));
         text-decoration: none;
         transition: all 0.25s ease;
         font-family: 'DM Sans', sans-serif;
@@ -316,19 +186,19 @@ const Footer = () => (
         width: 5px;
         height: 5px;
         border-radius: 50%;
-        background: rgba(255,200,0,0.3);
+        background: hsl(var(--primary) / 0.3);
         flex-shrink: 0;
         transition: all 0.25s;
       }
 
       .footer-link:hover {
-        color: #ffc800;
+        color: hsl(var(--primary));
         transform: translateX(4px);
       }
 
       .footer-link:hover .footer-link-dot {
-        background: #ffc800;
-        box-shadow: 0 0 6px rgba(255,200,0,0.5);
+        background: hsl(var(--primary));
+        box-shadow: 0 0 6px hsl(var(--primary) / 0.5);
       }
 
       /* Contact items */
@@ -345,31 +215,31 @@ const Footer = () => (
         width: 36px;
         height: 36px;
         border-radius: 10px;
-        background: rgba(255,200,0,0.07);
-        border: 1px solid rgba(255,200,0,0.15);
+        background: hsl(var(--primary) / 0.07);
+        border: 1px solid hsl(var(--border) / 0.5);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #ffc800;
+        color: hsl(var(--primary));
         flex-shrink: 0;
         transition: all 0.25s;
       }
 
       .contact-item:hover .contact-icon-box {
-        background: rgba(255,200,0,0.15);
-        box-shadow: 0 0 12px rgba(255,200,0,0.2);
+        background: hsl(var(--primary) / 0.15);
+        box-shadow: 0 0 12px hsl(var(--primary) / 0.2);
       }
 
       .contact-value {
         font-size: 13.5px;
-        color: rgba(180,200,240,0.5);
+        color: hsl(var(--muted-foreground));
         line-height: 1.5;
         padding-top: 8px;
         font-family: 'DM Sans', sans-serif;
         transition: color 0.25s;
       }
 
-      .contact-item:hover .contact-value { color: rgba(220,230,255,0.8); }
+      .contact-item:hover .contact-value { color: hsl(var(--foreground)); }
 
       /* Bottom bar */
       .footer-bottom {
@@ -379,7 +249,7 @@ const Footer = () => (
         margin: 0 auto;
         padding: 24px 24px;
         margin-top: 56px;
-        border-top: 1px solid rgba(255,200,0,0.08);
+        border-top: 1px solid hsl(var(--border) / 0.5);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -395,7 +265,7 @@ const Footer = () => (
         align-items: center;
         gap: 8px;
         font-size: 12.5px;
-        color: rgba(180,200,240,0.3);
+        color: hsl(var(--muted-foreground));
         font-family: 'DM Sans', sans-serif;
       }
 
@@ -407,7 +277,7 @@ const Footer = () => (
 
       .footer-legal-link {
         font-size: 12.5px;
-        color: rgba(180,200,240,0.3);
+        color: hsl(var(--muted-foreground));
         text-decoration: none;
         display: flex;
         align-items: center;
@@ -416,18 +286,18 @@ const Footer = () => (
         font-family: 'DM Sans', sans-serif;
       }
 
-      .footer-legal-link:hover { color: #ffc800; }
+      .footer-legal-link:hover { color: hsl(var(--primary)); }
 
       .legal-dot {
         width: 4px;
         height: 4px;
         border-radius: 50%;
-        background: rgba(255,200,0,0.25);
+        background: hsl(var(--primary) / 0.25);
         flex-shrink: 0;
         transition: background 0.25s;
       }
 
-      .footer-legal-link:hover .legal-dot { background: #ffc800; }
+      .footer-legal-link:hover .legal-dot { background: hsl(var(--primary)); }
 
       /* Animated bottom bolt */
       .footer-bottom-bolt {
@@ -436,7 +306,7 @@ const Footer = () => (
         transform: translateX(-50%);
         width: 600px;
         height: 2px;
-        background: linear-gradient(90deg, transparent, rgba(255,200,0,0.15), transparent);
+        background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.15), transparent);
         pointer-events: none;
       }
     `}</style>
@@ -499,18 +369,30 @@ const Footer = () => (
             <div className="footer-col-title">Contact Info</div>
 
             <div className="contact-item">
-              <div className="contact-icon-box"><MapPin size={16} /></div>
-              <div className="contact-value">123 Electrical Ave, Tech City, India 400001</div>
+              <div className="contact-icon-box">
+                <MapPin size={16} />
+              </div>
+              <div className="contact-value">
+                123 Electrical Ave, Tech City, India 400001
+              </div>
             </div>
 
-            <a href={`tel:${PHONE_NUMBER}`} className="contact-item">
-              <div className="contact-icon-box"><Phone size={16} /></div>
-              <div className="contact-value" style={{ fontWeight: 500, color: "rgba(200,215,245,0.7)" }}>{PHONE_NUMBER}</div>
+            <a href={`tel:${PHONE_NUMBER}`} className="contact-item" style={{ textDecoration: 'none' }}>
+              <div className="contact-icon-box">
+                <Phone size={16} />
+              </div>
+              <div className="contact-value">
+                {PHONE_NUMBER}
+              </div>
             </a>
 
-            <a href="mailto:hello@electroobuddy.com" className="contact-item">
-              <div className="contact-icon-box"><Mail size={16} /></div>
-              <div className="contact-value" style={{ fontWeight: 500, color: "rgba(200,215,245,0.7)" }}>hello@electroobuddy.com</div>
+            <a href="mailto:hello@electroobuddy.com" className="contact-item" style={{ textDecoration: 'none' }}>
+              <div className="contact-icon-box">
+                <Mail size={16} />
+              </div>
+              <div className="contact-value">
+                hello@electroobuddy.com
+              </div>
             </a>
           </div>
         </div>

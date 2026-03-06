@@ -1,160 +1,3 @@
-// import { useState, useEffect } from "react";
-// import { motion, AnimatePresence } from "framer-motion";
-// import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react";
-
-// interface Testimonial {
-//   id: string;
-//   name: string;
-//   text: string;
-//   rating: number;
-//   service?: string | null;
-// }
-
-// const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) => {
-//   const [current, setCurrent] = useState(0);
-//   const [direction, setDirection] = useState(0);
-
-//   useEffect(() => {
-//     if (testimonials.length <= 1) return;
-//     const timer = setInterval(() => {
-//       setDirection(1);
-//       setCurrent((prev) => (prev + 1) % testimonials.length);
-//     }, 5000);
-//     return () => clearInterval(timer);
-//   }, [testimonials.length]);
-
-//   const navigate = (dir: number) => {
-//     setDirection(dir);
-//     setCurrent((prev) => (prev + dir + testimonials.length) % testimonials.length);
-//   };
-
-//   if (testimonials.length === 0) return null;
-
-//   const variants = {
-//     enter: (dir: number) => ({
-//       x: dir > 0 ? 300 : -300,
-//       opacity: 0,
-//     }),
-//     center: {
-//       x: 0,
-//       opacity: 1,
-//     },
-//     exit: (dir: number) => ({
-//       x: dir > 0 ? -300 : 300,
-//       opacity: 0,
-//     }),
-//   };
-
-//   const t = testimonials[current];
-
-//   return (
-//     <div className="relative max-w-4xl mx-auto">
-//       {/* Enhanced testimonial card */}
-//       <div className="relative min-h-[320px] flex items-center justify-center">
-//         <AnimatePresence mode="wait" custom={direction}>
-//           <motion.div
-//             key={current}
-//             custom={direction}
-//             variants={variants}
-//             initial="enter"
-//             animate="center"
-//             exit="exit"
-//             transition={{ duration: 0.5, ease: "easeInOut" }}
-//             className="w-full px-4"
-//           >
-//             <div className="group relative bg-card border-2 border-border/50 rounded-3xl p-8 md:p-10 shadow-2xl shadow-primary/5 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500">
-//               {/* Decorative quote mark */}
-//               <div className="absolute top-6 left-8 opacity-10">
-//                 <Quote className="w-20 h-20 text-primary" />
-//               </div>
-              
-//               <div className="relative z-10">
-//                 {/* Enhanced rating display */}
-//                 <div className="flex gap-1.5 justify-center mb-6">
-//                   {Array.from({ length: t.rating }).map((_, i) => (
-//                     <motion.div
-//                       key={i}
-//                       initial={{ scale: 0 }}
-//                       animate={{ scale: 1 }}
-//                       transition={{ delay: i * 0.1, duration: 0.3 }}
-//                     >
-//                       <Star className="w-6 h-6 fill-secondary text-secondary drop-shadow-sm" />
-//                     </motion.div>
-//                   ))}
-//                 </div>
-                
-//                 {/* Testimonial text */}
-//                 <p className="text-lg md:text-xl lg:text-2xl text-foreground leading-relaxed mb-8 italic font-light">
-//                   "{t.text}"
-//                 </p>
-                
-//                 {/* Customer info with avatar placeholder */}
-//                 <div className="flex items-center justify-center gap-4">
-//                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border-2 border-primary/20 shadow-lg shadow-primary/10">
-//                     <span className="text-xl font-bold text-primary">
-//                       {t.name.charAt(0).toUpperCase()}
-//                     </span>
-//                   </div>
-//                   <div className="text-left">
-//                     <p className="font-heading font-bold text-foreground text-base">{t.name}</p>
-//                     {t.service && (
-//                       <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
-//                         <span className="w-1 h-1 rounded-full bg-primary" />
-//                         {t.service}
-//                       </p>
-//                     )}
-//                   </div>
-//                 </div>
-//               </div>
-              
-//               {/* Subtle gradient overlay */}
-//               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl pointer-events-none" />
-//             </div>
-//           </motion.div>
-//         </AnimatePresence>
-//       </div>
-
-//       {/* Enhanced navigation */}
-//       <div className="flex items-center justify-center gap-4 mt-10">
-//         <motion.button
-//           whileHover={{ scale: 1.1 }}
-//           whileTap={{ scale: 0.9 }}
-//           onClick={() => navigate(-1)}
-//           className="w-12 h-12 rounded-full border-2 border-border/50 bg-card flex items-center justify-center hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/20"
-//         >
-//           <ChevronLeft className="w-5 h-5" />
-//         </motion.button>
-        
-//         <div className="flex gap-2.5">
-//           {testimonials.map((_, i) => (
-//             <motion.button
-//               key={i}
-//               whileHover={{ scale: 1.2 }}
-//               onClick={() => { setDirection(i > current ? 1 : -1); setCurrent(i); }}
-//               className={`rounded-full transition-all duration-500 ${
-//                 i === current 
-//                   ? "bg-gradient-to-r from-primary to-electric-blue-dark w-10 h-3 shadow-lg shadow-primary/30" 
-//                   : "bg-border w-3 h-3 hover:bg-muted-foreground/50"
-//               }`}
-//             />
-//           ))}
-//         </div>
-        
-//         <motion.button
-//           whileHover={{ scale: 1.1 }}
-//           whileTap={{ scale: 0.9 }}
-//           onClick={() => navigate(1)}
-//           className="w-12 h-12 rounded-full border-2 border-border/50 bg-card flex items-center justify-center hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-primary/20"
-//         >
-//           <ChevronRight className="w-5 h-5" />
-//         </motion.button>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default TestimonialSlider;
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
@@ -216,8 +59,8 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
 
         .testimonial-card {
           position: relative;
-          background: linear-gradient(135deg, #0d1428 0%, #0a0f1e 60%, #0d1428 100%);
-          border: 1px solid rgba(255, 200, 0, 0.18);
+          background: hsl(var(--card));
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 24px;
           padding: 52px 52px 44px;
           overflow: hidden;
@@ -237,8 +80,8 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
           position: absolute;
           top: 0; left: 0;
           width: 80px; height: 80px;
-          border-top: 2px solid rgba(255,200,0,0.4);
-          border-left: 2px solid rgba(255,200,0,0.4);
+          border-top: 2px solid hsl(var(--primary) / 0.4);
+          border-left: 2px solid hsl(var(--primary) / 0.4);
           border-radius: 24px 0 0 0;
         }
 
@@ -246,8 +89,8 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
           position: absolute;
           bottom: 0; right: 0;
           width: 80px; height: 80px;
-          border-bottom: 2px solid rgba(255,200,0,0.2);
-          border-right: 2px solid rgba(255,200,0,0.2);
+          border-bottom: 2px solid hsl(var(--primary) / 0.2);
+          border-right: 2px solid hsl(var(--primary) / 0.2);
           border-radius: 0 0 24px 0;
         }
 
@@ -257,7 +100,7 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 120px;
           font-weight: 800;
-          color: rgba(255, 200, 0, 0.05);
+          color: hsl(var(--primary) / 0.05);
           line-height: 1;
           user-select: none;
           pointer-events: none;
@@ -273,21 +116,21 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
         .star-icon {
           width: 18px;
           height: 18px;
-          color: #ffc800;
-          fill: #ffc800;
-          filter: drop-shadow(0 0 4px rgba(255,200,0,0.6));
+          color: hsl(var(--secondary));
+          fill: hsl(var(--secondary));
+          filter: drop-shadow(0 0 4px hsl(var(--primary) / 0.6));
         }
 
         .star-empty {
-          color: rgba(255,200,0,0.2);
-          fill: rgba(255,200,0,0.2);
+          color: hsl(var(--primary) / 0.2);
+          fill: hsl(var(--primary) / 0.2);
           filter: none;
         }
 
         .testimonial-text {
           font-size: 17px;
           line-height: 1.75;
-          color: rgba(220, 230, 255, 0.88);
+          color: hsl(var(--foreground) / 0.88);
           font-style: italic;
           margin-bottom: 32px;
           max-width: 580px;
@@ -307,16 +150,16 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
           width: 48px;
           height: 48px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #ffc800 0%, #ff8c00 100%);
+          background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-blue-dark)) 100%);
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 18px;
           font-weight: 800;
-          color: #0a0f1e;
+          color: hsl(var(--card-foreground));
           flex-shrink: 0;
-          box-shadow: 0 0 20px rgba(255,200,0,0.3);
+          box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
         }
 
         .author-info { text-align: left; }
@@ -325,7 +168,7 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
           font-family: 'Barlow Condensed', sans-serif;
           font-size: 18px;
           font-weight: 700;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           text-transform: uppercase;
           letter-spacing: 0.4px;
           line-height: 1;
@@ -334,7 +177,7 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
 
         .author-service {
           font-size: 12px;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           font-weight: 500;
           letter-spacing: 0.3px;
         }
@@ -345,7 +188,7 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
           width: 300px;
           height: 300px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(255,200,0,0.06) 0%, transparent 70%);
+          background: radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
@@ -365,9 +208,9 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          border: 1px solid rgba(255,200,0,0.25);
-          background: rgba(255,200,0,0.05);
-          color: rgba(255,200,0,0.7);
+          border: 1px solid hsl(var(--border) / 0.3);
+          background: hsl(var(--primary) / 0.05);
+          color: hsl(var(--primary) / 0.7);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -377,10 +220,10 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
         }
 
         .nav-btn:hover {
-          background: rgba(255,200,0,0.15);
-          border-color: rgba(255,200,0,0.6);
-          color: #ffc800;
-          box-shadow: 0 0 16px rgba(255,200,0,0.2);
+          background: hsl(var(--primary) / 0.15);
+          border-color: hsl(var(--primary) / 0.6);
+          color: hsl(var(--secondary));
+          box-shadow: 0 0 16px hsl(var(--primary) / 0.2);
           transform: scale(1.05);
         }
 
@@ -393,7 +236,7 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
         .dot {
           height: 6px;
           border-radius: 3px;
-          background: rgba(255,200,0,0.25);
+          background: hsl(var(--primary) / 0.25);
           cursor: pointer;
           transition: all 0.3s ease;
           border: none;
@@ -402,13 +245,13 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
         }
 
         .dot.active {
-          background: #ffc800;
-          box-shadow: 0 0 8px rgba(255,200,0,0.5);
+          background: hsl(var(--secondary));
+          box-shadow: 0 0 8px hsl(var(--primary) / 0.5);
           width: 28px;
         }
 
         .dot:not(.active) { width: 6px; }
-        .dot:not(.active):hover { background: rgba(255,200,0,0.5); }
+        .dot:not(.active):hover { background: hsl(var(--primary) / 0.5); }
       `}</style>
 
       <div className="testimonial-outer">

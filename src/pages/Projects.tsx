@@ -120,7 +120,7 @@ const Projects = () => {
           position: relative;
           padding: 100px 0 80px;
           overflow: hidden;
-          background: #050b18;
+          background: hsl(var(--background));
           font-family: 'DM Sans', sans-serif;
         }
 
@@ -128,8 +128,8 @@ const Projects = () => {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(255,200,0,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,200,0,0.04) 1px, transparent 1px);
+            linear-gradient(hsl(var(--secondary) / 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--secondary) / 0.04) 1px, transparent 1px);
           background-size: 60px 60px;
           mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 30%, transparent 100%);
         }
@@ -139,7 +139,7 @@ const Projects = () => {
           top: -80px; left: -80px;
           width: 400px; height: 400px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(255,200,0,0.07) 0%, transparent 70%);
+          background: radial-gradient(circle, hsl(var(--secondary) / 0.07) 0%, transparent 70%);
           pointer-events: none;
         }
 
@@ -148,7 +148,7 @@ const Projects = () => {
           bottom: -60px; right: -60px;
           width: 300px; height: 300px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(56,189,248,0.05) 0%, transparent 70%);
+          background: radial-gradient(circle, hsl(var(--primary) / 0.05) 0%, transparent 70%);
           pointer-events: none;
         }
 
@@ -157,13 +157,13 @@ const Projects = () => {
           align-items: center;
           gap: 8px;
           padding: 7px 18px;
-          border: 1px solid rgba(255,200,0,0.3);
+          border: 1px solid hsl(var(--secondary) / 0.3);
           border-radius: 100px;
-          background: rgba(255,200,0,0.06);
+          background: hsl(var(--secondary) / 0.06);
           margin-bottom: 20px;
           font-size: 12px;
           font-weight: 600;
-          color: #ffc800;
+          color: hsl(var(--secondary));
           letter-spacing: 1px;
           text-transform: uppercase;
         }
@@ -173,20 +173,20 @@ const Projects = () => {
           font-size: clamp(44px, 7vw, 80px);
           font-weight: 900;
           line-height: 0.95;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           text-transform: uppercase;
           letter-spacing: -1px;
         }
 
         .hero-title span {
-          background: linear-gradient(135deg, #ffc800, #ffec6e);
+          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
 
         .hero-sub {
-          color: rgba(180,200,240,0.5);
+          color: hsl(var(--muted-foreground) / 0.5);
           font-size: 15px;
           margin-top: 14px;
           max-width: 440px;
@@ -211,31 +211,31 @@ const Projects = () => {
           font-family: 'DM Sans', sans-serif;
           letter-spacing: 0.3px;
           cursor: pointer;
-          border: 1px solid rgba(255,200,0,0.15);
-          background: rgba(255,200,0,0.04);
-          color: rgba(180,200,240,0.55);
+          border: 1px solid hsl(var(--secondary) / 0.15);
+          background: hsl(var(--secondary) / 0.04);
+          color: hsl(var(--muted-foreground) / 0.55);
           transition: all 0.25s ease;
           outline: none;
         }
 
         .filter-pill:hover {
-          border-color: rgba(255,200,0,0.4);
-          color: #ffc800;
-          background: rgba(255,200,0,0.08);
+          border-color: hsl(var(--secondary) / 0.4);
+          color: hsl(var(--secondary));
+          background: hsl(var(--secondary) / 0.08);
         }
 
         .filter-pill.active {
-          background: linear-gradient(135deg, #ffc800, #ffaa00);
+          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-dark)));
           border-color: transparent;
-          color: #0a0f1e;
-          box-shadow: 0 0 20px rgba(255,200,0,0.3), 0 4px 16px rgba(255,160,0,0.2);
+          color: hsl(var(--card));
+          box-shadow: 0 0 20px hsl(var(--secondary) / 0.3), 0 4px 16px hsl(var(--secondary) / 0.2);
         }
 
         /* ── PROJECT CARDS ── */
         .project-card {
           position: relative;
-          background: #0a0f1e;
-          border: 1px solid rgba(255,200,0,0.12);
+          background: hsl(var(--card));
+          border: 1px solid hsl(var(--border) / 0.3);
           border-radius: 20px;
           overflow: hidden;
           transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
@@ -247,15 +247,15 @@ const Projects = () => {
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, #ffc800, transparent);
+          background: linear-gradient(90deg, transparent, hsl(var(--secondary)), transparent);
           opacity: 0;
           transition: opacity 0.4s;
         }
 
         .project-card:hover {
           transform: translateY(-6px);
-          border-color: rgba(255,200,0,0.4);
-          box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 40px rgba(255,200,0,0.07);
+          border-color: hsl(var(--border) / 0.5);
+          box-shadow: 0 24px 60px hsl(var(--foreground) / 0.1), 0 0 40px hsl(var(--secondary) / 0.07);
         }
 
         .project-card:hover::after { opacity: 1; }
@@ -263,7 +263,7 @@ const Projects = () => {
         .card-thumb {
           position: relative;
           height: 200px;
-          background: linear-gradient(135deg, #0d1428 0%, #111827 100%);
+          background: linear-gradient(135deg, hsl(var(--muted) / 0.5) 0%, hsl(var(--muted)) 100%);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -274,8 +274,8 @@ const Projects = () => {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(rgba(255,200,0,0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,200,0,0.05) 1px, transparent 1px);
+            linear-gradient(hsl(var(--secondary) / 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--secondary) / 0.05) 1px, transparent 1px);
           background-size: 30px 30px;
         }
 
@@ -285,8 +285,8 @@ const Projects = () => {
           width: 72px;
           height: 72px;
           border-radius: 50%;
-          border: 1px solid rgba(255,200,0,0.2);
-          background: rgba(255,200,0,0.06);
+          border: 1px solid hsl(var(--secondary) / 0.2);
+          background: hsl(var(--secondary) / 0.06);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -294,25 +294,25 @@ const Projects = () => {
         }
 
         .project-card:hover .thumb-icon-wrap {
-          background: rgba(255,200,0,0.15);
-          border-color: rgba(255,200,0,0.5);
-          box-shadow: 0 0 30px rgba(255,200,0,0.2);
+          background: hsl(var(--secondary) / 0.15);
+          border-color: hsl(var(--secondary) / 0.5);
+          box-shadow: 0 0 30px hsl(var(--secondary) / 0.2);
           transform: scale(1.1);
         }
 
         .thumb-folder {
           width: 32px;
           height: 32px;
-          color: rgba(255,200,0,0.5);
+          color: hsl(var(--secondary) / 0.5);
           transition: color 0.4s;
         }
 
-        .project-card:hover .thumb-folder { color: #ffc800; }
+        .project-card:hover .thumb-folder { color: hsl(var(--secondary)); }
 
         .thumb-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to bottom, transparent 60%, rgba(10,15,30,0.8) 100%);
+          background: linear-gradient(to bottom, transparent 60%, hsl(var(--background) / 0.8) 100%);
         }
 
         .card-body {
@@ -329,9 +329,9 @@ const Projects = () => {
           font-weight: 700;
           letter-spacing: 0.8px;
           text-transform: uppercase;
-          background: rgba(255,200,0,0.1);
-          color: #ffc800;
-          border: 1px solid rgba(255,200,0,0.2);
+          background: hsl(var(--secondary) / 0.1);
+          color: hsl(var(--secondary));
+          border: 1px solid hsl(var(--secondary) / 0.2);
           margin-bottom: 12px;
         }
 
@@ -340,7 +340,7 @@ const Projects = () => {
           font-size: 22px;
           font-weight: 700;
           text-transform: uppercase;
-          color: #f0f4ff;
+          color: hsl(var(--foreground));
           line-height: 1.15;
           margin-bottom: 8px;
           letter-spacing: 0.3px;
@@ -348,7 +348,7 @@ const Projects = () => {
 
         .card-desc {
           font-size: 13.5px;
-          color: rgba(180,200,240,0.6);
+          color: hsl(var(--muted-foreground) / 0.6);
           line-height: 1.65;
         }
 
@@ -358,15 +358,15 @@ const Projects = () => {
           gap: 8px;
           margin-top: 18px;
           padding-top: 16px;
-          border-top: 1px solid rgba(255,200,0,0.08);
+          border-top: 1px solid hsl(var(--border) / 0.3);
         }
 
         .footer-dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: #ffc800;
-          box-shadow: 0 0 6px rgba(255,200,0,0.6);
+          background: hsl(var(--secondary));
+          box-shadow: 0 0 6px hsl(var(--secondary) / 0.6);
           flex-shrink: 0;
           animation: dotBlink 2s ease-in-out infinite;
         }
@@ -378,7 +378,7 @@ const Projects = () => {
 
         .footer-label {
           font-size: 11px;
-          color: rgba(255,200,0,0.6);
+          color: hsl(var(--secondary) / 0.6);
           font-weight: 500;
           letter-spacing: 0.5px;
           text-transform: uppercase;
@@ -409,8 +409,8 @@ const Projects = () => {
         {loading ? (
           <div className="flex justify-center py-16">
             <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12 }}>
-              <Loader2 className="animate-spin" size={22} style={{ color: "#ffc800" }} />
-              <span style={{ color: "rgba(180,200,240,0.5)", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading projects...</span>
+              <Loader2 className="animate-spin" size={22} style={{ color: "hsl(var(--secondary))" }} />
+              <span style={{ color: "hsl(var(--muted-foreground) / 0.5)", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading projects...</span>
             </div>
           </div>
         ) : (
