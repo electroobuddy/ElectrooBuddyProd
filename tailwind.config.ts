@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -58,8 +59,22 @@ export default {
         electric: {
           blue: "hsl(var(--electric-blue))",
           "blue-light": "hsl(var(--electric-blue-light))",
+          "blue-dark": "hsl(var(--electric-blue-dark))",
           yellow: "hsl(var(--electric-yellow))",
           "yellow-light": "hsl(var(--electric-yellow-light))",
+          "yellow-dark": "hsl(var(--electric-yellow-dark))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -120,8 +135,9 @@ export default {
         "slide-in-right": "slide-in-right 0.6s ease-out forwards",
         "scale-in": "scale-in 0.5s ease-out forwards",
         "blur-in": "blur-in 0.6s ease-out forwards",
+        "float": "float 6s ease-in-out infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

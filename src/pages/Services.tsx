@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
 import ServiceCard from "@/components/ServiceCard";
 import { Zap, Loader2 } from "lucide-react";
+import { services as defaultServices } from "@/data/services";
 
 const Services = () => {
   const [services, setServices] = useState<any[]>([]);
@@ -11,24 +12,141 @@ const Services = () => {
 
   useEffect(() => {
     supabase.from("services").select("*").order("sort_order").then(({ data }) => {
-      setServices(data || []);
+      // Use database services if available, otherwise fallback to default services
+      setServices(data && data.length > 0 ? data : defaultServices);
       setLoading(false);
     });
   }, []);
 
   return (
     <>
-      <section className="bg-hero-premium py-24 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute bottom-0 left-1/4 w-64 h-64 rounded-full bg-primary/5 blur-3xl" />
-        </div>
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <Zap className="w-10 h-10 text-secondary mx-auto mb-4 electric-pulse" />
-            <h1 className="text-3xl md:text-5xl font-heading font-extrabold text-primary-foreground">
-              Our <span className="gradient-text">Services</span>
-            </h1>
-            <p className="text-primary-foreground/50 mt-4 max-w-lg mx-auto">Professional electrical solutions for every need</p>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap');
+
+        .services-hero {
+          position: relative;
+          padding: 112px 0 96px;
+          overflow: hidden;
+          background: hsl(var(--background));
+          text-align: center;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .services-hero-grid {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(hsl(var(--primary) / 0.035) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
+          background-size: 60px 60px;
+          mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+        }
+
+        .services-hero-glow-1,
+        .services-hero-glow-2 {
+          position: absolute;
+          border-radius: 50%;
+          pointer-events: none;
+        }
+
+        .services-hero-glow-1 {
+          bottom: -80px; left: 25%;
+          width: 400px; height: 400px;
+          background: radial-gradient(ellipse, hsl(var(--primary) / 0.08) 0%, transparent 70%);
+        }
+
+        .services-hero-glow-2 {
+          top: -60px; right: 25%;
+          width: 350px; height: 350px;
+          background: radial-gradient(ellipse, hsl(var(--secondary) / 0.06) 0%, transparent 70%);
+        }
+
+        .services-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 20px;
+          border: 1px solid hsl(var(--border) / 0.3);
+          border-radius: 100px;
+          background: hsl(var(--primary) / 0.07);
+          backdrop-filter: blur(8px);
+          margin-bottom: 28px;
+          font-size: 13px;
+          font-weight: 600;
+          color: hsl(var(--foreground));
+          letter-spacing: 0.3px;
+          text-transform: uppercase;
+        }
+
+        .services-badge span {
+          color: hsl(var(--secondary));
+        }
+
+        .services-title {
+          font-family: 'Barlow Condensed', sans-serif;
+          font-size: clamp(48px, 7vw, 88px);
+          font-weight: 900;
+          line-height: 0.92;
+          color: hsl(var(--foreground));
+          text-transform: uppercase;
+          letter-spacing: -1px;
+          margin-bottom: 16px;
+        }
+
+        .services-title span {
+          background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)) 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .services-subtitle {
+          color: hsl(var(--muted-foreground) / 0.5);
+          font-size: 16px;
+          max-width: 500px;
+          margin: 0 auto;
+          line-height: 1.6;
+        }
+      `}</style>
+
+      <section className="services-hero">
+        <div className="services-hero-grid" />
+        <div className="services-hero-glow-1" />
+        <div className="services-hero-glow-2" />
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.7 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="services-badge"
+            >
+              <Zap className="w-4 h-4" />
+              Professional Electrical Solutions
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="services-title"
+            >
+              Our <span>Services</span>
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="services-subtitle"
+            >
+              Professional electrical solutions for residential, commercial, and industrial needs with certified experts
+            </motion.p>
           </motion.div>
         </div>
       </section>
