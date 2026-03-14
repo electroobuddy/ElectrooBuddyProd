@@ -7,6 +7,7 @@ import Section from "@/components/Section";
 import ServiceCard from "@/components/ServiceCard";
 import AnimatedCounter, { COUNTER_DATA, DummyAnimatedCounter } from "@/components/AnimatedCounter";
 import ProcessTimeline from "@/components/ProcessTimeline";
+import VideoSection from "@/components/VideoSection";
 import TestimonialSlider from "@/components/TestimonialSlider";
 import { supabase } from "@/integrations/supabase/client";
 import { services as staticServices } from "@/data/services";
