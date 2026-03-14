@@ -1014,7 +1014,10 @@ const Index = () => {
         <ProcessTimeline />
       </Section>
 
-      {/* ── TEAM ── */}
+      {/* ── VIDEO ── */}
+      <VideoSection />
+
+
       <Section>
         <div className="text-center mb-14">
           <div className="sec-badge"><Users size={12} /> Our Experts</div>

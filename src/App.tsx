@@ -41,32 +41,34 @@ const AppContent = () => {
     <>
       {!isAdmin && <Navbar />}
       <main className={isAdmin ? "" : "min-h-screen"}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/booking" element={<BookingForm />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+            <Route path="/about" element={<PageTransition><About /></PageTransition>} />
+            <Route path="/services" element={<PageTransition><Services /></PageTransition>} />
+            <Route path="/projects" element={<PageTransition><Projects /></PageTransition>} />
+            <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
+            <Route path="/booking" element={<PageTransition><BookingForm /></PageTransition>} />
+            <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
+            <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
+            <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
 
-          {/* Admin routes - hidden, no public links */}
-          <Route path="/admin" element={<AdminLogin />} />
-          <Route element={<AdminLayout />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/services" element={<AdminServices />} />
-            <Route path="/admin/bookings" element={<AdminBookings />} />
-            <Route path="/admin/team" element={<AdminTeam />} />
-            <Route path="/admin/testimonials" element={<AdminTestimonials />} />
-            <Route path="/admin/projects" element={<AdminProjects />} />
-            <Route path="/admin/messages" element={<AdminMessages />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-          </Route>
+            {/* Admin routes - hidden, no public links */}
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route element={<AdminLayout />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/services" element={<AdminServices />} />
+              <Route path="/admin/bookings" element={<AdminBookings />} />
+              <Route path="/admin/team" element={<AdminTeam />} />
+              <Route path="/admin/testimonials" element={<AdminTestimonials />} />
+              <Route path="/admin/projects" element={<AdminProjects />} />
+              <Route path="/admin/messages" element={<AdminMessages />} />
+              <Route path="/admin/settings" element={<AdminSettings />} />
+            </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AnimatePresence>
       </main>
       {!isAdmin && <Footer />}
       {!isAdmin && <WhatsAppFloat />}
