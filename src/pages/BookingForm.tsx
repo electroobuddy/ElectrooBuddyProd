@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import Section from "@/components/Section";
 import { CalendarDays, Loader2, Zap, Phone, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
