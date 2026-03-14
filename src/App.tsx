@@ -55,6 +55,8 @@ const AppContent = () => {
             <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
             <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
+            <Route path="/login" element={<PageTransition><UserAuth /></PageTransition>} />
+            <Route path="/dashboard" element={<PageTransition><UserDashboard /></PageTransition>} />
 
             {/* Admin routes - hidden, no public links */}
             <Route path="/admin" element={<AdminLogin />} />
