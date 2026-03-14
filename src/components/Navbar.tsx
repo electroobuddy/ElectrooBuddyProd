@@ -478,6 +478,11 @@ const Navbar = () => {
               <ThemeToggle />
             </div>
 
+            <Link to={user ? "/dashboard" : "/login"} className="nav-link" style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <User size={14} />
+              {user ? "Dashboard" : "Login"}
+            </Link>
+
             <Link to="/booking" className="book-btn">
               <Zap size={13} />
               Book Now
