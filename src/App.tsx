@@ -42,7 +42,7 @@ const AppContent = () => {
 
   return (
     <>
-      {!isAdmin && <Navbar />}
+      {!isAdmin && !isUserAuth && <Navbar />}
       <main className={isAdmin ? "" : "min-h-screen"}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
