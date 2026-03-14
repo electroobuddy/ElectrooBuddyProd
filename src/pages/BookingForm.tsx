@@ -13,6 +13,7 @@ const BookingForm = () => {
   const [services, setServices] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const { user } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
