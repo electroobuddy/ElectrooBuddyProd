@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Zap, ChevronDown, ArrowRight } from "lucide-react";
+import { Menu, X, Zap, ChevronDown, ArrowRight, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { label: "Home", to: "/" },
