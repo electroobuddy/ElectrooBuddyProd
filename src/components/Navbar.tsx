@@ -554,6 +554,15 @@ const Navbar = () => {
                     </Link>
                   )
                 )}
+                <Link
+                  to={user ? "/dashboard" : "/login"}
+                  className="mobile-link"
+                  onClick={() => setOpen(false)}
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                >
+                  <User size={14} />
+                  {user ? "My Dashboard" : "Login / Sign Up"}
+                </Link>
                 <Link to="/booking" className="mobile-book-btn" onClick={() => setOpen(false)}>
                   ⚡ Book Now
                 </Link>
