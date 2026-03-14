@@ -75,8 +75,8 @@ const AppContent = () => {
           </Routes>
         </AnimatePresence>
       </main>
-      {!isAdmin && <Footer />}
-      {!isAdmin && <WhatsAppFloat />}
+      {!isAdmin && !isUserAuth && <Footer />}
+      {!isAdmin && !isUserAuth && <WhatsAppFloat />}
     </>
   );
 };
