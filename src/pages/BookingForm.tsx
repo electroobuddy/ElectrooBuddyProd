@@ -38,7 +38,7 @@ const BookingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const { error } = await supabase.from("bookings").insert({
+    const insertData: any = {
       name: form.name,
       phone: form.phone,
       address: form.address,
@@ -46,7 +46,11 @@ const BookingForm = () => {
       preferred_date: form.preferred_date,
       preferred_time: form.preferred_time,
       description: form.description || null,
-    });
+    };
+    if (user) {
+      insertData.user_id = user.id;
+    }
+    const { error } = await supabase.from("bookings").insert(insertData);
     if (error) {
       toast.error("Failed to submit booking. Please try again.");
     } else {
