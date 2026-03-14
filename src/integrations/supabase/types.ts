@@ -27,6 +27,7 @@ export type Database = {
           service_type: string
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address: string
@@ -40,6 +41,7 @@ export type Database = {
           service_type: string
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string
@@ -53,6 +55,7 @@ export type Database = {
           service_type?: string
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

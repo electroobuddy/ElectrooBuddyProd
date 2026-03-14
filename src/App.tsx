@@ -20,6 +20,8 @@ import FAQ from "./pages/FAQ";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
+import UserAuth from "./pages/user/UserAuth";
+import UserDashboard from "./pages/user/UserDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -36,10 +38,11 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin");
+  const isUserAuth = location.pathname === "/login" || location.pathname === "/dashboard";
 
   return (
     <>
-      {!isAdmin && <Navbar />}
+      {!isAdmin && !isUserAuth && <Navbar />}
       <main className={isAdmin ? "" : "min-h-screen"}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
@@ -52,6 +55,8 @@ const AppContent = () => {
             <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
             <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
+            <Route path="/login" element={<PageTransition><UserAuth /></PageTransition>} />
+            <Route path="/dashboard" element={<PageTransition><UserDashboard /></PageTransition>} />
 
             {/* Admin routes - hidden, no public links */}
             <Route path="/admin" element={<AdminLogin />} />
@@ -70,8 +75,8 @@ const AppContent = () => {
           </Routes>
         </AnimatePresence>
       </main>
-      {!isAdmin && <Footer />}
-      {!isAdmin && <WhatsAppFloat />}
+      {!isAdmin && !isUserAuth && <Footer />}
+      {!isAdmin && !isUserAuth && <WhatsAppFloat />}
     </>
   );
 };

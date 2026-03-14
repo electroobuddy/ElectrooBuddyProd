@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import Section from "@/components/Section";
 import { CalendarDays, Loader2, Zap, Phone, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
@@ -12,6 +13,7 @@ const BookingForm = () => {
   const [services, setServices] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const { user } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -36,7 +38,7 @@ const BookingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    const { error } = await supabase.from("bookings").insert({
+    const insertData: any = {
       name: form.name,
       phone: form.phone,
       address: form.address,
@@ -44,7 +46,11 @@ const BookingForm = () => {
       preferred_date: form.preferred_date,
       preferred_time: form.preferred_time,
       description: form.description || null,
-    });
+    };
+    if (user) {
+      insertData.user_id = user.id;
+    }
+    const { error } = await supabase.from("bookings").insert(insertData);
     if (error) {
       toast.error("Failed to submit booking. Please try again.");
     } else {

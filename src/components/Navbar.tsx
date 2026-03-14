@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Zap, ChevronDown, ArrowRight } from "lucide-react";
+import { Menu, X, Zap, ChevronDown, ArrowRight, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -25,6 +26,7 @@ const Navbar = () => {
   const [pagesOpen, setPagesOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -476,6 +478,11 @@ const Navbar = () => {
               <ThemeToggle />
             </div>
 
+            <Link to={user ? "/dashboard" : "/login"} className="nav-link" style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <User size={14} />
+              {user ? "Dashboard" : "Login"}
+            </Link>
+
             <Link to="/booking" className="book-btn">
               <Zap size={13} />
               Book Now
@@ -547,6 +554,15 @@ const Navbar = () => {
                     </Link>
                   )
                 )}
+                <Link
+                  to={user ? "/dashboard" : "/login"}
+                  className="mobile-link"
+                  onClick={() => setOpen(false)}
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                >
+                  <User size={14} />
+                  {user ? "My Dashboard" : "Login / Sign Up"}
+                </Link>
                 <Link to="/booking" className="mobile-book-btn" onClick={() => setOpen(false)}>
                   ⚡ Book Now
                 </Link>
