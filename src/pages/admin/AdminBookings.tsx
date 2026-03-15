@@ -18,10 +18,18 @@ const AdminBookings = () => {
 
   useEffect(() => { fetch(); }, [filter]);
 
-  const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("bookings").update({ status }).eq("id", id);
+  const updateStatus = async (id: string, newStatus: string) => {
+    const booking = bookings.find(b => b.id === id);
+    const oldStatus = booking?.status;
+    const { error } = await supabase.from("bookings").update({ status: newStatus }).eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Status updated");
+    
+    // Trigger email notification
+    supabase.functions.invoke("notify-booking-status", {
+      body: { bookingId: id, oldStatus, newStatus },
+    }).catch(console.error);
+    
+    toast.success("Status updated & notification sent");
     fetch();
   };
 
