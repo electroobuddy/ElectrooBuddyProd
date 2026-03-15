@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_notifications: {
+        Row: {
+          booking_id: string
+          created_at: string | null
+          id: string
+          new_status: string
+          old_status: string | null
+          sent: boolean | null
+          user_email: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string | null
+          id?: string
+          new_status: string
+          old_status?: string | null
+          sent?: boolean | null
+          user_email?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string | null
+          id?: string
+          new_status?: string
+          old_status?: string | null
+          sent?: boolean | null
+          user_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           address: string
