@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import ImageUpload from "@/components/admin/ImageUpload";
 
-const emptyService = { title: "", description: "", icon_name: "Zap", whatsapp_enabled: true, call_enabled: true, book_now_enabled: true, sort_order: 0 };
+const emptyService = { title: "", description: "", icon_name: "Zap", whatsapp_enabled: true, call_enabled: true, book_now_enabled: true, sort_order: 0, image_url: "" };
 
 const AdminServices = () => {
   const [services, setServices] = useState<any[]>([]);
@@ -11,28 +12,29 @@ const AdminServices = () => {
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState(emptyService);
 
-  const fetch = async () => {
+  const fetchData = async () => {
     const { data } = await supabase.from("services").select("*").order("sort_order");
     setServices(data || []);
     setLoading(false);
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
     if (!form.title || !form.description) return toast.error("Title and description required");
+    const payload = { ...form, image_url: form.image_url || null };
     if (editing?.id) {
-      const { error } = await supabase.from("services").update(form).eq("id", editing.id);
+      const { error } = await supabase.from("services").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
       toast.success("Service updated");
     } else {
-      const { error } = await supabase.from("services").insert(form);
+      const { error } = await supabase.from("services").insert(payload);
       if (error) return toast.error(error.message);
       toast.success("Service added");
     }
     setEditing(null);
     setForm(emptyService);
-    fetch();
+    fetchData();
   };
 
   const handleDelete = async (id: string) => {
@@ -40,12 +42,12 @@ const AdminServices = () => {
     const { error } = await supabase.from("services").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Service deleted");
-    fetch();
+    fetchData();
   };
 
   const startEdit = (s: any) => {
     setEditing(s);
-    setForm({ title: s.title, description: s.description, icon_name: s.icon_name, whatsapp_enabled: s.whatsapp_enabled, call_enabled: s.call_enabled, book_now_enabled: s.book_now_enabled, sort_order: s.sort_order });
+    setForm({ title: s.title, description: s.description, icon_name: s.icon_name, whatsapp_enabled: s.whatsapp_enabled, call_enabled: s.call_enabled, book_now_enabled: s.book_now_enabled, sort_order: s.sort_order, image_url: s.image_url || "" });
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -62,6 +64,12 @@ const AdminServices = () => {
       {editing && (
         <div className="bg-card border border-border rounded-xl p-6 mb-6 space-y-4">
           <h2 className="font-heading font-semibold text-foreground">{editing.id ? "Edit" : "Add"} Service</h2>
+          <ImageUpload
+            folder="services"
+            currentUrl={form.image_url || null}
+            onUpload={(url) => setForm({ ...form, image_url: url })}
+            onRemove={() => setForm({ ...form, image_url: "" })}
+          />
           <input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
           <textarea placeholder="Description" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
           <input placeholder="Icon name (e.g. Zap, Plug, Wrench)" value={form.icon_name} onChange={(e) => setForm({ ...form, icon_name: e.target.value })} className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
@@ -84,6 +92,7 @@ const AdminServices = () => {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
+              <th className="text-left px-4 py-3 font-medium text-muted-foreground">Image</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">WhatsApp</th>
               <th className="text-left px-4 py-3 font-medium text-muted-foreground hidden md:table-cell">Call</th>
@@ -93,10 +102,13 @@ const AdminServices = () => {
           </thead>
           <tbody>
             {services.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No services yet</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No services yet</td></tr>
             ) : (
               services.map((s) => (
                 <tr key={s.id} className="border-b border-border last:border-0">
+                  <td className="px-4 py-3">
+                    {s.image_url ? <img src={s.image_url} alt={s.title} className="w-10 h-10 rounded object-cover" /> : <div className="w-10 h-10 rounded bg-muted" />}
+                  </td>
                   <td className="px-4 py-3 text-foreground font-medium">{s.title}</td>
                   <td className="px-4 py-3 hidden md:table-cell">{s.whatsapp_enabled ? "✅" : "❌"}</td>
                   <td className="px-4 py-3 hidden md:table-cell">{s.call_enabled ? "✅" : "❌"}</td>
