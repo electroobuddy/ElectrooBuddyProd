@@ -10,6 +10,7 @@ interface DbService {
   title: string;
   description: string;
   icon_name: string;
+  image_url?: string | null;
   whatsapp_enabled: boolean;
   call_enabled: boolean;
   book_now_enabled: boolean;
