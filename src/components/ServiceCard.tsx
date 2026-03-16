@@ -112,6 +112,15 @@ const ServiceCard = ({ service }: { service: DbService }) => {
           transform: rotate(10deg) scale(1.1);
         }
 
+        .service-image {
+          width: 100%;
+          height: 160px;
+          object-fit: cover;
+          border-radius: 12px;
+          margin-bottom: 18px;
+          border: 1px solid hsl(var(--border) / 0.2);
+        }
+
         .icon-shell {
           position: relative;
           width: 60px;
