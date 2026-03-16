@@ -442,10 +442,16 @@ const Projects = () => {
                     className="project-card"
                   >
                     <div className="card-thumb">
-                      <div className="thumb-grid" />
-                      <div className="thumb-icon-wrap">
-                        <FolderOpen className="thumb-folder" />
-                      </div>
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <>
+                          <div className="thumb-grid" />
+                          <div className="thumb-icon-wrap">
+                            <FolderOpen className="thumb-folder" />
+                          </div>
+                        </>
+                      )}
                       <div className="thumb-overlay" />
                     </div>
 

@@ -10,6 +10,7 @@ interface DbService {
   title: string;
   description: string;
   icon_name: string;
+  image_url?: string | null;
   whatsapp_enabled: boolean;
   call_enabled: boolean;
   book_now_enabled: boolean;
@@ -109,6 +110,15 @@ const ServiceCard = ({ service }: { service: DbService }) => {
         .service-card:hover .card-bolt-bg {
           opacity: 0.09;
           transform: rotate(10deg) scale(1.1);
+        }
+
+        .service-image {
+          width: 100%;
+          height: 160px;
+          object-fit: cover;
+          border-radius: 12px;
+          margin-bottom: 18px;
+          border: 1px solid hsl(var(--border) / 0.2);
         }
 
         .icon-shell {
@@ -258,12 +268,16 @@ const ServiceCard = ({ service }: { service: DbService }) => {
           <path d="M60 5L20 55h30L35 95l45-55H50L60 5z" fill="#ffc800" />
         </svg>
 
-        <div className="icon-shell">
-          <div className="icon-hex" />
-          <div className="icon-inner">
-            <Icon className="icon-svg" />
+        {service.image_url ? (
+          <img src={service.image_url} alt={service.title} className="service-image" />
+        ) : (
+          <div className="icon-shell">
+            <div className="icon-hex" />
+            <div className="icon-inner">
+              <Icon className="icon-svg" />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="service-title">{service.title}</div>
         <p className="service-desc">{service.description}</p>
