@@ -535,7 +535,11 @@ const About = () => {
                 <div className="team-avatar">
                   <div className="avatar-ring" />
                   <div className="avatar-inner">
-                    <Users className="team-users-icon" size={32} />
+                    {m.photo_url ? (
+                      <img src={m.photo_url} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    ) : (
+                      <Users className="team-users-icon" size={32} />
+                    )}
                   </div>
                 </div>
                 <div className="team-name">{m.name}</div>

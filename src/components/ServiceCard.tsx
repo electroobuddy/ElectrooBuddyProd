@@ -268,12 +268,16 @@ const ServiceCard = ({ service }: { service: DbService }) => {
           <path d="M60 5L20 55h30L35 95l45-55H50L60 5z" fill="#ffc800" />
         </svg>
 
-        <div className="icon-shell">
-          <div className="icon-hex" />
-          <div className="icon-inner">
-            <Icon className="icon-svg" />
+        {service.image_url ? (
+          <img src={service.image_url} alt={service.title} className="service-image" />
+        ) : (
+          <div className="icon-shell">
+            <div className="icon-hex" />
+            <div className="icon-inner">
+              <Icon className="icon-svg" />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="service-title">{service.title}</div>
         <p className="service-desc">{service.description}</p>
