@@ -1035,7 +1035,11 @@ const Index = () => {
             >
               <div className="team-avatar">
                 <div className="avatar-spin-ring" />
-                <div className="avatar-circle"><Users size={32} /></div>
+                {m.photo_url ? (
+                  <img src={m.photo_url} alt={m.name} className="avatar-circle" style={{ objectFit: 'cover', width: 80, height: 80, borderRadius: '50%', border: '3px solid hsl(var(--primary) / 0.3)' }} />
+                ) : (
+                  <div className="avatar-circle"><Users size={32} /></div>
+                )}
               </div>
               <div className="team-name">{m.name}</div>
               <div className="team-role">{m.role}</div>
