@@ -94,5 +94,5 @@ export const services: Service[] = [
   },
 ];
 
-export const PHONE_NUMBER = "+911234567890";
-export const WHATSAPP_NUMBER = "911234567890";
+export const PHONE_NUMBER = "+918370056724";
+export const WHATSAPP_NUMBER = "918370056724";

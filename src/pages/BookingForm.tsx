@@ -61,7 +61,7 @@ const BookingForm = () => {
     setSubmitting(false);
   };
 
-  const phoneFromSettings = "+911234567890";
+  const phoneFromSettings = "+918370056724";
 
   const fields = [
     { name: "name", label: "Full Name", type: "text", placeholder: "John Doe" },

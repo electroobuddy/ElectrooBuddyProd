@@ -32,9 +32,9 @@ const Contact = () => {
   };
 
   const contactItems = [
-    { icon: MapPin, label: "Address", value: "123 Electrical Ave, Tech City, India 400001", href: undefined },
+    { icon: MapPin, label: "Address", value: "05, Nagziri Dewas Road, Ujjain(456010)", href: undefined },
     { icon: Phone, label: "Phone", value: PHONE_NUMBER, href: `tel:${PHONE_NUMBER}` },
-    { icon: Mail, label: "Email", value: "hello@electroobuddy.com", href: "mailto:hello@electroobuddy.com" },
+    { icon: Mail, label: "Email", value: "electroobuddy@gmail.com", href: "mailto:electroobuddy@gmail.com" },
   ];
 
   const inputFields = [
