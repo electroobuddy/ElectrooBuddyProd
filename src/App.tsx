@@ -46,8 +46,8 @@ const AppContent = () => {
 
   return (
     <>
-      {!isAdmin && !isUserAuth && <Navbar />}
-      <main className={isAdmin ? "" : "min-h-screen"}>
+      {!isAdmin && !isUserPanel && <Navbar />}
+      <main className={isAdmin || isUserPanel ? "" : "min-h-screen"}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<PageTransition><Index /></PageTransition>} />
