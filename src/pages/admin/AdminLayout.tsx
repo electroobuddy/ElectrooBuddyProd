@@ -73,9 +73,46 @@ const AdminLayout = () => {
 
       {/* Mobile header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground flex items-center justify-between px-4 py-3">
-        <span className="font-heading font-bold text-sm">Admin</span>
-        <button onClick={signOut} className="text-xs text-primary-foreground/70">Sign Out</button>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+            <Zap className="w-3.5 h-3.5 text-secondary-foreground" />
+          </div>
+          <span className="font-heading font-bold text-sm">Admin</span>
+        </div>
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-primary-foreground p-1">
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
       </div>
+
+      {/* Mobile menu overlay */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
+          <div className="absolute top-14 left-0 right-0 bg-primary text-primary-foreground shadow-lg p-3 space-y-0.5 max-h-[70vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {navItems.map((item) => {
+              const active = location.pathname === item.to;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    active ? "bg-primary-foreground/15 text-secondary" : "text-primary-foreground/70"
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+            <button
+              onClick={() => { signOut(); setMobileOpen(false); }}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-primary-foreground/70 w-full"
+            >
+              <LogOut className="w-4 h-4" /> Sign Out
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile bottom nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border flex justify-around py-2">
