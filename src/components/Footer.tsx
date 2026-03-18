@@ -373,7 +373,7 @@ const Footer = () => (
                 <MapPin size={16} />
               </div>
               <div className="contact-value">
-                123 Electrical Ave, Tech City, India 400001
+                05, Nagziri Dewas Road, Ujjain(456010), India
               </div>
             </div>
 
@@ -386,12 +386,12 @@ const Footer = () => (
               </div>
             </a>
 
-            <a href="mailto:hello@electroobuddy.com" className="contact-item" style={{ textDecoration: 'none' }}>
+            <a href="mailto:electroobuddy@gmail.com" className="contact-item" style={{ textDecoration: 'none' }}>
               <div className="contact-icon-box">
                 <Mail size={16} />
               </div>
               <div className="contact-value">
-                hello@electroobuddy.com
+                electroobuddy@gmail.com
               </div>
             </a>
           </div>
