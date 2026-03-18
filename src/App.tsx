@@ -60,7 +60,11 @@ const AppContent = () => {
             <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
             <Route path="/login" element={<PageTransition><UserAuth /></PageTransition>} />
-            <Route path="/dashboard" element={<PageTransition><UserDashboard /></PageTransition>} />
+            <Route element={<UserLayout />}>
+              <Route path="/dashboard" element={<UserDashboard />} />
+              <Route path="/dashboard/bookings" element={<UserBookings />} />
+              <Route path="/dashboard/profile" element={<UserProfile />} />
+            </Route>
 
             {/* Admin routes - hidden, no public links */}
             <Route path="/admin" element={<AdminLogin />} />
