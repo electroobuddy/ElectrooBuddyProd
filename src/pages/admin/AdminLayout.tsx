@@ -1,11 +1,13 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen, Mail, Settings, LogOut, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen, Mail, Settings, LogOut, Loader2, UserCog, Menu, X } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Services", to: "/admin/services", icon: Wrench },
   { label: "Bookings", to: "/admin/bookings", icon: CalendarDays },
+  { label: "Users", to: "/admin/users", icon: UserCog },
   { label: "Team", to: "/admin/team", icon: Users },
   { label: "Testimonials", to: "/admin/testimonials", icon: Star },
   { label: "Projects", to: "/admin/projects", icon: FolderOpen },
