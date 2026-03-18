@@ -42,7 +42,7 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin");
-  const isUserAuth = location.pathname === "/login" || location.pathname === "/dashboard";
+  const isUserPanel = location.pathname.startsWith("/dashboard") || location.pathname === "/login";
 
   return (
     <>
