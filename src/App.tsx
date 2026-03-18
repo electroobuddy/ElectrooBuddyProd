@@ -76,6 +76,7 @@ const AppContent = () => {
               <Route path="/admin/testimonials" element={<AdminTestimonials />} />
               <Route path="/admin/projects" element={<AdminProjects />} />
               <Route path="/admin/messages" element={<AdminMessages />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
 
