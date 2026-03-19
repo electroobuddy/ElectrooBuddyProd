@@ -7,6 +7,7 @@ import { AnimatePresence } from "framer-motion";
 import PageTransition from "@/components/PageTransition";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
+import { CartProvider } from "@/contexts/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -20,11 +21,17 @@ import FAQ from "./pages/FAQ";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
+import Products from "./pages/Products";
+import ProductDetails from "./pages/ProductDetails";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import OrderSuccess from "./pages/OrderSuccess";
 import UserAuth from "./pages/user/UserAuth";
 import UserLayout from "./pages/user/UserLayout";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserBookings from "./pages/user/UserBookings";
 import UserProfile from "./pages/user/UserProfile";
+import UserOrders from "./pages/user/UserOrders";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -36,6 +43,9 @@ import AdminProjects from "./pages/admin/AdminProjects";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminPayments from "./pages/admin/AdminPayments";
 
 const queryClient = new QueryClient();
 
@@ -59,10 +69,16 @@ const AppContent = () => {
             <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
             <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
+            <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
+            <Route path="/products/:slug" element={<PageTransition><ProductDetails /></PageTransition>} />
+            <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
+            <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
+            <Route path="/order-success" element={<PageTransition><OrderSuccess /></PageTransition>} />
             <Route path="/login" element={<PageTransition><UserAuth /></PageTransition>} />
             <Route element={<UserLayout />}>
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
+              <Route path="/dashboard/orders" element={<UserOrders />} />
               <Route path="/dashboard/profile" element={<UserProfile />} />
             </Route>
 
@@ -70,6 +86,8 @@ const AppContent = () => {
             <Route path="/admin" element={<AdminLogin />} />
             <Route element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/products" element={<AdminProducts />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/services" element={<AdminServices />} />
               <Route path="/admin/bookings" element={<AdminBookings />} />
               <Route path="/admin/team" element={<AdminTeam />} />
@@ -77,6 +95,7 @@ const AppContent = () => {
               <Route path="/admin/projects" element={<AdminProjects />} />
               <Route path="/admin/messages" element={<AdminMessages />} />
               <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/payments" element={<AdminPayments />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
 
@@ -95,11 +114,13 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
+          <CartProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </CartProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

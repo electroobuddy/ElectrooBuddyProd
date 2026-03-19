@@ -1,10 +1,13 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
-import { Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen, Mail, Settings, LogOut, Loader2, UserCog, Menu, X } from "lucide-react";
+import { Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen, Mail, Settings, LogOut, Loader2, UserCog, Menu, X, Package, ShoppingCart, DollarSign } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Products", to: "/admin/products", icon: Package },
+  { label: "Orders", to: "/admin/orders", icon: ShoppingCart },
+  { label: "Payments", to: "/admin/payments", icon: DollarSign },
   { label: "Services", to: "/admin/services", icon: Wrench },
   { label: "Bookings", to: "/admin/bookings", icon: CalendarDays },
   { label: "Users", to: "/admin/users", icon: UserCog },
@@ -116,7 +119,13 @@ const AdminLayout = () => {
 
       {/* Mobile bottom nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border flex justify-around py-2">
-        {navItems.slice(0, 5).map((item) => {
+        {[
+          { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
+          { label: "Products", to: "/admin/products", icon: Package },
+          { label: "Orders", to: "/admin/orders", icon: ShoppingCart },
+          { label: "Bookings", to: "/admin/bookings", icon: CalendarDays },
+          { label: "Settings", to: "/admin/settings", icon: Settings },
+        ].map((item) => {
           const active = location.pathname === item.to;
           return (
             <Link
