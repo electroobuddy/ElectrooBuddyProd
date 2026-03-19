@@ -844,6 +844,51 @@ export type Database = {
           },
         ]
       }
+      shipping_settings: {
+        Row: {
+          id: number
+          enabled: boolean
+          auto_create_shipment: boolean
+          email: string | null
+          password: string | null
+          webhook_url: string | null
+          default_weight: number | null
+          default_length: number | null
+          default_breadth: number | null
+          default_height: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          enabled?: boolean
+          auto_create_shipment?: boolean
+          email?: string | null
+          password?: string | null
+          webhook_url?: string | null
+          default_weight?: number | null
+          default_length?: number | null
+          default_breadth?: number | null
+          default_height?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          enabled?: boolean
+          auto_create_shipment?: boolean
+          email?: string | null
+          password?: string | null
+          webhook_url?: string | null
+          default_weight?: number | null
+          default_length?: number | null
+          default_breadth?: number | null
+          default_height?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

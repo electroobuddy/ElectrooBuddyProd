@@ -204,6 +204,25 @@ const Checkout = () => {
 
       // Clear cart and redirect to success page
       clearCart();
+      
+      // For paid orders or COD, auto-create Shiprocket shipment if enabled
+      if (paymentMethod === "razorpay" || paymentMethod === "cod") {
+        try {
+          // Attempt to create Shiprocket order in background
+          const { data: shiprocketData, error: srError } = await supabase.functions.invoke(
+            'create-shiprocket-order',
+            { body: { order_id: orderId } }
+          );
+          
+          if (!srError && shiprocketData?.success) {
+            toast.success(`Shipment created! AWB: ${shiprocketData.awb_code}`);
+          }
+        } catch (srErr) {
+          console.error('Shiprocket creation failed:', srErr);
+          // Don't block checkout - admin can create manually later
+        }
+      }
+      
       navigate("/order-success", { 
         state: { 
           orderId: orderNumber, 

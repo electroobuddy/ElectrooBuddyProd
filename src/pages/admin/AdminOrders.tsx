@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Package, Truck, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, XCircle, RotateCcw, ExternalLink, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 interface Order {
   id: string;
@@ -90,6 +91,32 @@ const AdminOrders = () => {
     }
   };
 
+  const createShipment = async (orderId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'create-shiprocket-order',
+        { body: { order_id: orderId } }
+      );
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`✅ Shipment created! AWB: ${data.awb_code}`);
+        fetchOrders(); // Refresh orders list
+      } else {
+        toast.error('Failed to create shipment');
+      }
+    } catch (error: any) {
+      console.error('Shipment creation error:', error);
+      toast.error(`Failed to create shipment: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  const copyTrackingNumber = (trackingNumber: string) => {
+    navigator.clipboard.writeText(trackingNumber);
+    toast.success('Tracking number copied to clipboard');
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "pending": return <Clock className="text-yellow-500" />;
@@ -145,12 +172,23 @@ const AdminOrders = () => {
                   </td>
                   <td className="px-6 py-4 font-medium">₹{order.total_amount.toFixed(2)}</td>
                   <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="text-primary hover:underline text-sm"
-                    >
-                      View Details
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="text-primary hover:underline text-sm font-medium"
+                      >
+                        View Details
+                      </button>
+                      {!order.tracking_number && order.status !== 'cancelled' && (
+                        <button
+                          onClick={() => createShipment(order.id)}
+                          className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center gap-1"
+                        >
+                          <Truck className="w-4 h-4" />
+                          Create Shipment
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -286,6 +324,119 @@ const AdminOrders = () => {
                         {selectedOrder.shipping_address_data.phone && (
                           <div className="mt-1">📞 {selectedOrder.shipping_address_data.phone}</div>
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tracking Information */}
+                  {selectedOrder.tracking_number ? (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-blue-900 flex items-center gap-2">
+                          <Truck className="w-5 h-5" />
+                          Tracking Information
+                        </h3>
+                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full font-medium">
+                          Live Tracking Active
+                        </span>
+                      </div>
+                      
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-blue-700 font-medium">AWB / Tracking Number:</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <code className="text-lg font-bold bg-white px-3 py-1 rounded border border-blue-200">
+                              {selectedOrder.tracking_number}
+                            </code>
+                            <button
+                              onClick={() => copyTrackingNumber(selectedOrder.tracking_number!)}
+                              className="text-blue-600 hover:text-blue-700 p-1"
+                              title="Copy tracking number"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm text-blue-700 font-medium">Courier:</p>
+                          <p className="text-lg font-bold text-blue-900 mt-1">
+                            {selectedOrder.courier_name || 'Shiprocket'}
+                          </p>
+                        </div>
+                        
+                        {selectedOrder.estimated_delivery_date && (
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-blue-700 font-medium">Estimated Delivery:</p>
+                            <p className="text-lg font-bold text-blue-900 mt-1">
+                              {new Date(selectedOrder.estimated_delivery_date).toLocaleDateString('en-IN', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Tracking History Timeline */}
+                      {selectedOrder.tracking_history && Array.isArray(selectedOrder.tracking_history) && selectedOrder.tracking_history.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="font-semibold text-blue-900 mb-3">Tracking History</h4>
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {selectedOrder.tracking_history.map((event: any, index: number) => (
+                              <div key={index} className="flex items-start gap-3 bg-white/50 rounded p-2">
+                                <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-blue-900">{event.location || event.message}</p>
+                                  <p className="text-xs text-blue-700 mt-1">
+                                    {event.timestamp ? new Date(event.timestamp).toLocaleString() : 'Date not available'}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Shiprocket Details */}
+                      {selectedOrder.shiprocket_order_id && (
+                        <div className="pt-3 border-t border-blue-200">
+                          <div className="grid md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="text-blue-700">Shiprocket Order ID:</span>
+                              <p className="font-mono font-bold text-blue-900">{selectedOrder.shiprocket_order_id}</p>
+                            </div>
+                            {selectedOrder.shiprocket_shipment_id && (
+                              <div>
+                                <span className="text-blue-700">Shipment ID:</span>
+                                <p className="font-mono font-bold text-blue-900">{selectedOrder.shiprocket_shipment_id}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-yellow-900 mb-1">No Tracking Available</h3>
+                          <p className="text-sm text-yellow-800 mb-3">
+                            This order hasn't been shipped yet. Create a shipment in Shiprocket to enable tracking.
+                          </p>
+                          {selectedOrder.status !== 'cancelled' && (
+                            <button
+                              onClick={() => createShipment(selectedOrder.id)}
+                              className="btn-sm bg-yellow-600 hover:bg-yellow-700 text-white flex items-center gap-2"
+                            >
+                              <Truck className="w-4 h-4" />
+                              Create Shipment Now
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
