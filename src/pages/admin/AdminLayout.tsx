@@ -1,13 +1,14 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
-import { Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen, Mail, Settings, LogOut, Loader2, UserCog, Menu, X, Package, ShoppingCart, DollarSign } from "lucide-react";
+import { Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen, Mail, Settings, LogOut, Loader2, UserCog, Menu, X, Package, ShoppingCart, DollarSign, Truck } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Products", to: "/admin/products", icon: Package },
   { label: "Orders", to: "/admin/orders", icon: ShoppingCart },
   { label: "Payments", to: "/admin/payments", icon: DollarSign },
+  { label: "Shipping", to: "/admin/shipping", icon: Truck },
   { label: "Services", to: "/admin/services", icon: Wrench },
   { label: "Bookings", to: "/admin/bookings", icon: CalendarDays },
   { label: "Users", to: "/admin/users", icon: UserCog },
@@ -123,6 +124,7 @@ const AdminLayout = () => {
           { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
           { label: "Products", to: "/admin/products", icon: Package },
           { label: "Orders", to: "/admin/orders", icon: ShoppingCart },
+          { label: "Shipping", to: "/admin/shipping", icon: Truck },
           { label: "Bookings", to: "/admin/bookings", icon: CalendarDays },
           { label: "Settings", to: "/admin/settings", icon: Settings },
         ].map((item) => {

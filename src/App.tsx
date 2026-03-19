@@ -26,6 +26,7 @@ import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
+import OrderTracking from "./pages/OrderTracking";
 import UserAuth from "./pages/user/UserAuth";
 import UserLayout from "./pages/user/UserLayout";
 import UserDashboard from "./pages/user/UserDashboard";
@@ -46,6 +47,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminPayments from "./pages/admin/AdminPayments";
+import AdminShippingSettings from "./pages/admin/AdminShippingSettings";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +76,7 @@ const AppContent = () => {
             <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
             <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
             <Route path="/order-success" element={<PageTransition><OrderSuccess /></PageTransition>} />
+            <Route path="/track-order/:orderNumber" element={<PageTransition><OrderTracking /></PageTransition>} />
             <Route path="/login" element={<PageTransition><UserAuth /></PageTransition>} />
             <Route element={<UserLayout />}>
               <Route path="/dashboard" element={<UserDashboard />} />
@@ -96,6 +99,7 @@ const AppContent = () => {
               <Route path="/admin/messages" element={<AdminMessages />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/payments" element={<AdminPayments />} />
+              <Route path="/admin/shipping" element={<AdminShippingSettings />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
 
