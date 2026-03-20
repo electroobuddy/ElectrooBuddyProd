@@ -7,11 +7,27 @@ import { Zap, Target, Eye, CheckCircle, Users } from "lucide-react";
 
 const About = () => {
   const [team, setTeam] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("team_members").select("*").order("sort_order").then(({ data }) => {
-      setTeam(data && data.length > 0 ? data : staticTeam);
-    });
+    const fetchTeam = async () => {
+      try {
+        const { data, error } = await supabase.from("team_members").select("*").order("sort_order");
+        if (error) {
+          console.error("Error fetching team:", error);
+          setTeam(staticTeam);
+        } else {
+          setTeam(data && data.length > 0 ? data : staticTeam);
+        }
+      } catch (err) {
+        console.error("Failed to load team:", err);
+        setTeam(staticTeam);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTeam();
   }, []);
 
   const perks = [
@@ -307,6 +323,15 @@ const About = () => {
           background: hsl(var(--background));
         }
 
+        .team-grid {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 24px;
+          max-width: 1100px;
+          margin: 0 auto;
+        }
+
         .team-card {
           position: relative;
           background: hsl(var(--card));
@@ -317,6 +342,8 @@ const About = () => {
           overflow: hidden;
           font-family: 'DM Sans', sans-serif;
           transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          width: 280px;
+          flex: 0 0 280px;
         }
 
         .team-card::after {
@@ -522,31 +549,55 @@ const About = () => {
             <div className="section-label">The Experts</div>
             <div className="section-title">Our <span>Team</span></div>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {team.map((m, i) => (
-              <motion.div
-                key={m.id}
-                className="team-card"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-              >
-                <div className="team-avatar">
-                  <div className="avatar-ring" />
-                  <div className="avatar-inner">
-                    {m.photo_url ? (
-                      <img src={m.photo_url} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                    ) : (
-                      <Users className="team-users-icon" size={32} />
-                    )}
+          <div className="team-grid">
+            {loading ? (
+              // Loading skeletons
+              Array.from({ length: 4 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="team-card"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                >
+                  <div className="team-avatar">
+                    <div className="avatar-ring" />
+                    <div className="avatar-inner bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
                   </div>
-                </div>
-                <div className="team-name">{m.name}</div>
-                <div className="team-role">{m.role}</div>
-                <p className="team-bio">{m.bio}</p>
-              </motion.div>
-            ))}
+                  <div className="h-6 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4 mx-auto mb-2 animate-pulse" />
+                  <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-1/2 mx-auto mb-4 animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />
+                    <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-5/6 mx-auto animate-pulse" />
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              team.map((m, i) => (
+                <motion.div
+                  key={m.id}
+                  className="team-card"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                >
+                  <div className="team-avatar">
+                    <div className="avatar-ring" />
+                    <div className="avatar-inner">
+                      {m.photo_url ? (
+                        <img src={m.photo_url} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                      ) : (
+                        <Users className="team-users-icon" size={32} />
+                      )}
+                    </div>
+                  </div>
+                  <div className="team-name">{m.name}</div>
+                  <div className="team-role">{m.role}</div>
+                  <p className="team-bio">{m.bio}</p>
+                </motion.div>
+              ))
+            )}
           </div>
         </div>
       </section>
