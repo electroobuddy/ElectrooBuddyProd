@@ -246,7 +246,6 @@ const Index = () => {
   const displayTestimonials = dbTestimonials.length > 0 ? dbTestimonials : staticTestimonials;
 
   // State for global booking modal (managed in App.tsx)
-  const [showBookingModal, setShowBookingModal] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -494,6 +493,98 @@ const Index = () => {
           0%, 100% { filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.6)); transform: scale(1); }
           50% { filter: drop-shadow(0 0 36px hsl(var(--primary) / 0.9)); transform: scale(1.05); }
         }
+
+        /* ─── ORBITAL BADGES ─── */
+        .orbit-container {
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          width: 500px; height: 500px;
+          pointer-events: none;
+        }
+
+        .orbit-ring {
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          border: 1px dashed hsl(var(--primary) / 0.15);
+          animation: orbitRotate linear infinite;
+        }
+
+        .orbit-ring-1 {
+          width: 420px; height: 420px;
+          animation-duration: 20s;
+        }
+
+        .orbit-ring-2 {
+          width: 340px; height: 340px;
+          animation-duration: 15s;
+          animation-direction: reverse;
+        }
+
+        .orbit-ring-3 {
+          width: 260px; height: 260px;
+          animation-duration: 12s;
+        }
+
+        @keyframes orbitRotate {
+          to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .badge-wrapper {
+          position: absolute;
+          /* Wrapper rotates with ring */
+        }
+
+        .badge-wrapper-1 {
+          top: 0; left: 50%;
+          transform: translate(-50%, -50%);
+        }
+
+        .badge-wrapper-2 {
+          bottom: 0; left: 50%;
+          transform: translate(-50%, 50%);
+        }
+
+        .badge-wrapper-3 {
+          top: 50%; right: 0;
+          transform: translate(50%, -50%);
+        }
+
+        .orbit-badge {
+          display: flex; align-items: center; gap: 10px;
+          padding: 12px 16px;
+          background: hsl(var(--card) / 0.95);
+          border: 1px solid hsl(var(--border) / 0.3);
+          border-radius: 14px;
+          backdrop-filter: blur(12px);
+          box-shadow: 0 8px 32px hsl(var(--foreground) / 0.1);
+          /* Counter-rotate to stay upright */
+          animation: counterRotate linear infinite;
+        }
+
+        .orbit-badge-1 {
+          animation-duration: 20s;
+        }
+
+        .orbit-badge-2 {
+          animation-duration: 15s;
+          animation-direction: reverse;
+        }
+
+        .orbit-badge-3 {
+          animation-duration: 12s;
+        }
+
+        @keyframes counterRotate {
+          to { transform: rotate(-360deg); }
+        }
+
+        @keyframes counterRotateReverse {
+          to { transform: rotate(360deg); }
+        }
+
         .hero-badge {
           position: absolute;
           display: flex; align-items: center; gap: 10px;
@@ -673,18 +764,39 @@ const Index = () => {
                     </div>
                   </div>
                 </div>
-                <motion.div className="hero-badge" style={{ top: -20, right: 20 }} animate={{ y: [-4, 4, -4] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
-                  <div className="badge-icon"><Shield size={16} /></div>
-                  <div><div className="badge-label">Certification</div><div className="badge-value">Licensed & Insured</div></div>
-                </motion.div>
-                <motion.div className="hero-badge" style={{ bottom: -20, left: 20 }} animate={{ y: [4, -4, 4] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}>
-                  <div className="badge-icon"><Clock size={16} /></div>
-                  <div><div className="badge-label">Availability</div><div className="badge-value">24/7 Service</div></div>
-                </motion.div>
-                <motion.div className="hero-badge" style={{ top: "50%", right: -36, transform: "translateY(-50%)" }} animate={{ y: [-3, 3, -3] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}>
-                  <div className="badge-icon"><BadgeDollarSign size={16} /></div>
-                  <div><div className="badge-label">Pricing</div><div className="badge-value">Transparent</div></div>
-                </motion.div>
+
+                {/* Orbiting Badges - Like Electrons */}
+                <div className="orbit-container">
+                  {/* Ring 1 - Certification Badge */}
+                  <div className="orbit-ring orbit-ring-1">
+                    <div className="badge-wrapper badge-wrapper-1">
+                      <div className="orbit-badge orbit-badge-1">
+                        <div className="badge-icon"><Shield size={16} /></div>
+                        <div><div className="badge-label">Certification</div><div className="badge-value">Licensed & Insured</div></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ring 2 - Availability Badge */}
+                  <div className="orbit-ring orbit-ring-2">
+                    <div className="badge-wrapper badge-wrapper-2">
+                      <div className="orbit-badge orbit-badge-2">
+                        <div className="badge-icon"><Clock size={16} /></div>
+                        <div><div className="badge-label">Availability</div><div className="badge-value">24/7 Service</div></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ring 3 - Pricing Badge */}
+                  <div className="orbit-ring orbit-ring-3">
+                    <div className="badge-wrapper badge-wrapper-3">
+                      <div className="orbit-badge orbit-badge-3">
+                        <div className="badge-icon"><BadgeDollarSign size={16} /></div>
+                        <div><div className="badge-label">Pricing</div><div className="badge-value">Transparent</div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
