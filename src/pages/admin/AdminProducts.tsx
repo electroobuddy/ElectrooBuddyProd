@@ -3,28 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, Upload, X, Save, Package, DollarSign, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tables } from "@/integrations/supabase/types";
 
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  short_description?: string;
-  sku?: string;
-  price: number;
-  compare_at_price?: number;
-  inventory_quantity: number;
-  track_inventory: boolean;
-  installation_available: boolean;
-  installation_charge: number;
-  installation_description?: string;
-  main_image_url?: string;
-  gallery_images?: string[];
-  category?: string;
-  brand?: string;
-  is_active: boolean;
-  is_featured: boolean;
-}
+type Product = Tables<"products">;
 
 const AdminProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -38,21 +19,38 @@ const AdminProducts = () => {
     name: "",
     slug: "",
     description: "",
-    short_description: "",
-    sku: "",
+    short_description: null,
+    sku: null,
     price: 0,
-    compare_at_price: undefined,
+    compare_at_price: null,
+    cost_per_item: null,
     inventory_quantity: 0,
-    track_inventory: true,
+    track_inventory: false,
+    allow_backorder: false,
     installation_available: false,
     installation_charge: 0,
-    installation_description: "",
-    main_image_url: "",
-    gallery_images: [],
-    category: "",
-    brand: "",
+    installation_description: null,
+    main_image_url: null,
+    gallery_images: null,
+    category: null,
+    subcategory: null,
+    brand: null,
+    tags: null,
+    specifications: {},
+    weight: null,
+    weight_unit: null,
+    length: null,
+    width: null,
+    height: null,
+    dimension_unit: null,
+    meta_title: null,
+    meta_description: null,
     is_active: true,
     is_featured: false,
+    is_bestseller: false,
+    sort_order: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
   const [formData, setFormData] = useState<Product>(emptyProduct);
@@ -64,9 +62,9 @@ const AdminProducts = () => {
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
-        .from("products" as any)
+        .from("products")
         .select("*")
-        .order("created_at", { ascending: false });
+        .returns<Product[]>();
 
       if (error) throw error;
       setProducts(data || []);

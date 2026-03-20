@@ -19,6 +19,7 @@ interface Product {
   is_active: boolean;
   is_featured: boolean;
   inventory_quantity: number;
+  track_inventory: boolean;
 }
 
 const Products = () => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Package, Truck, CheckCircle, Clock, XCircle, RotateCcw, ExternalLink, Copy } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, XCircle, RotateCcw, ExternalLink, Copy, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Order {
@@ -33,6 +33,14 @@ interface Order {
   tracking_number?: string | null;
   courier_name?: string | null;
   tracking_url?: string | null;
+  shiprocket_order_id?: number | null;
+  shiprocket_shipment_id?: number | null;
+  estimated_delivery_date?: string | null;
+  tracking_history?: Array<{
+    location?: string;
+    message?: string;
+    timestamp?: string;
+  }>;
 }
 
 const AdminOrders = () => {
