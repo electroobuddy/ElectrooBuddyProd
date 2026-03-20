@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Package, Truck, CheckCircle, Clock, MapPin, Calendar, ArrowLeft, Copy, ExternalLink, RefreshCw } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, MapPin, Calendar, ArrowLeft, Copy, ExternalLink, RefreshCw, XCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";

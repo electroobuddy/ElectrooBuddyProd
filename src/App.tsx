@@ -33,6 +33,8 @@ import UserDashboard from "./pages/user/UserDashboard";
 import UserBookings from "./pages/user/UserBookings";
 import UserProfile from "./pages/user/UserProfile";
 import UserOrders from "./pages/user/UserOrders";
+import UserProducts from "./pages/user/UserProducts";
+import UserServices from "./pages/user/UserServices";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -82,6 +84,8 @@ const AppContent = () => {
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
               <Route path="/dashboard/orders" element={<UserOrders />} />
+              <Route path="/dashboard/products" element={<UserProducts />} />
+              <Route path="/dashboard/services" element={<UserServices />} />
               <Route path="/dashboard/profile" element={<UserProfile />} />
             </Route>
 

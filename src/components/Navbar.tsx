@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Zap, ChevronDown, ArrowRight, User } from "lucide-react";
+import { Menu, X, Zap, ChevronDown, ArrowRight, User, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/contexts/CartContext";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -28,6 +29,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+  const { itemCount } = useCart();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -479,6 +481,15 @@ const Navbar = () => {
               <ThemeToggle />
             </div>
 
+            <Link to="/cart" className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors" style={{ marginRight: 8 }}>
+              <ShoppingCart size={20} className="text-foreground" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
+
             <Link to={user ? "/dashboard" : "/login"} className="nav-link" style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <User size={14} />
               {user ? "Dashboard" : "Login"}
@@ -492,6 +503,14 @@ const Navbar = () => {
 
           {/* Mobile controls */}
           <div className="mobile-controls">
+            <Link to="/cart" className="relative p-2 mr-1" style={{ color: 'hsl(var(--foreground))' }}>
+              <ShoppingCart size={20} />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
             <ThemeToggle />
             <button className="hamburger-btn" onClick={() => setOpen(!open)}>
               {open ? <X size={20} /> : <Menu size={20} />}
@@ -563,6 +582,10 @@ const Navbar = () => {
                 >
                   <User size={14} />
                   {user ? "My Dashboard" : "Login / Sign Up"}
+                </Link>
+                <Link to="/cart" className="mobile-link" onClick={() => setOpen(false)} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <ShoppingCart size={14} />
+                  My Cart {itemCount > 0 && `(${itemCount})`}
                 </Link>
                 <Link to="/booking" className="mobile-book-btn" onClick={() => setOpen(false)}>
                   ⚡ Book Now
