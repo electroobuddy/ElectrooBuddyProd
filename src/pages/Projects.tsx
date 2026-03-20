@@ -94,18 +94,24 @@ import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
 import { projects as staticProjects } from "@/data/projects";
 import { Zap, FolderOpen, Loader2 } from "lucide-react";
+import { useProjects } from "@/hooks/useOptimizedData";
 
 const Projects = () => {
   const [active, setActive] = useState("All");
+  // Use optimized hook with caching instead of direct Supabase query
+  const { projects: dbProjects, loading: projectsLoading } = useProjects();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("projects").select("*").order("created_at", { ascending: false }).then(({ data }) => {
-      setProjects(data && data.length > 0 ? data : staticProjects);
-      setLoading(false);
-    });
-  }, []);
+    // Use cached projects from hook, fallback to static data if empty
+    if (dbProjects && dbProjects.length > 0) {
+      setProjects(dbProjects);
+    } else {
+      setProjects(staticProjects);
+    }
+    setLoading(false);
+  }, [dbProjects]);
 
   const categories = ["All", ...new Set(projects.map((p) => p.category))];
   const filtered = active === "All" ? projects : projects.filter((p) => p.category === active);

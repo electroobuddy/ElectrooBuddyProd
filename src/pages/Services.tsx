@@ -5,18 +5,23 @@ import Section from "@/components/Section";
 import ServiceCard from "@/components/ServiceCard";
 import { Zap, Loader2 } from "lucide-react";
 import { services as defaultServices } from "@/data/services";
+import { useServices } from "@/hooks/useOptimizedData";
 
 const Services = () => {
+  // Use optimized hook with caching instead of direct Supabase query
+  const { services: dbServices, loading: servicesLoading } = useServices();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("services").select("*").order("sort_order").then(({ data }) => {
-      // Use database services if available, otherwise fallback to default services
-      setServices(data && data.length > 0 ? data : defaultServices);
-      setLoading(false);
-    });
-  }, []);
+    // Use cached services from hook, fallback to static data if empty
+    if (dbServices && dbServices.length > 0) {
+      setServices(dbServices);
+    } else {
+      setServices(defaultServices);
+    }
+    setLoading(false);
+  }, [dbServices]);
 
   return (
     <>

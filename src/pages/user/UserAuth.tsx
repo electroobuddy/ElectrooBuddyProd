@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
@@ -9,9 +9,20 @@ const UserAuth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  // Auto-fill remembered email on mount
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('electro_remembered_email');
+    const isRemembered = localStorage.getItem('electro_remember_me');
+    if (rememberedEmail && isRemembered === 'true') {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   if (user) {
     navigate("/dashboard", { replace: true });
@@ -23,11 +34,22 @@ const UserAuth = () => {
     setLoading(true);
 
     if (isLogin) {
-      const { error } = await signIn(email, password);
+      // Use remember me for session persistence
+      const { error } = await signIn(email, password, rememberMe);
       if (error) {
         toast.error(error.message || "Login failed");
       } else {
         toast.success("Welcome back!");
+        
+        // Store email if remember me is checked (for convenience only)
+        if (rememberMe) {
+          localStorage.setItem('electro_remembered_email', email);
+          localStorage.setItem('electro_remember_me', 'true');
+        } else {
+          localStorage.removeItem('electro_remembered_email');
+          localStorage.removeItem('electro_remember_me');
+        }
+        
         navigate("/dashboard");
       }
     } else {
@@ -271,7 +293,27 @@ const UserAuth = () => {
 
         .auth-toggle-btn:hover { opacity: 0.7; }
 
-        .auth-divider {
+        .auth-remember {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 20px;
+        }
+
+        .auth-remember-input {
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
+          accent-color: hsl(var(--primary));
+        }
+
+        .auth-remember-label {
+          font-size: 13px;
+          color: hsl(var(--foreground));
+          cursor: pointer;
+          user-select: none;
+          font-family: 'DM Sans', sans-serif;
+        }
           height: 1px;
           background: linear-gradient(90deg, transparent, hsl(var(--border) / 0.3), transparent);
           margin: 20px 0;
@@ -345,6 +387,19 @@ const UserAuth = () => {
             </button>
           </form>
 
+          <div className="auth-remember">
+            <input
+              type="checkbox"
+              id="remember"
+              className="auth-remember-input"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <label htmlFor="remember" className="auth-remember-label">
+              Remember me for 30 days
+            </label>
+          </div>
+          
           <div className="auth-divider" />
 
           <div className="auth-toggle">

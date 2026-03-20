@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Search, Filter, ShoppingCart, Star, Zap } from "lucide-react";
+import { Search, Filter, ShoppingCart, Star, Zap, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useProducts, useCacheInvalidation } from "@/hooks/useOptimizedData";
+import { CACHE_CONFIG } from "@/lib/optimization-config";
 
 
 interface Product {
@@ -23,65 +25,26 @@ interface Product {
 }
 
 const Products = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [sortBy, setSortBy] = useState("featured");
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
-    }
+  
+  // Use optimized hook with caching and pagination
+  const filters = {
+    category: selectedCategory,
+    brand: selectedBrand,
+    searchTerm,
+    sortBy,
   };
+  
+  const { products, loading, error, hasMore, loadMore } = useProducts(filters);
+  const { invalidateProducts } = useCacheInvalidation();
 
-  // Get unique categories and brands
+  // Get unique categories and brands from loaded products
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
   const brands = ["all", ...Array.from(new Set(products.map(p => p.brand).filter(Boolean)))];
-
-  // Filter and search products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.short_description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    const matchesBrand = selectedBrand === "all" || product.brand === selectedBrand;
-    const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-    
-    return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
-  });
-
-  // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortBy) {
-      case "price-low":
-        return a.price - b.price;
-      case "price-high":
-        return b.price - a.price;
-      case "name":
-        return a.name.localeCompare(b.name);
-      case "featured":
-      default:
-        return (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0);
-    }
-  });
 
   return (
     <>
@@ -173,25 +136,30 @@ const Products = () => {
           </div>
 
           {/* Products Grid */}
-          {loading ? (
+          {loading && products.length === 0 ? (
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
-          ) : sortedProducts.length === 0 ? (
+          ) : error ? (
+            <div className="text-center py-20">
+              <p className="text-red-500 text-lg">Error loading products. Please try again.</p>
+            </div>
+          ) : products.length === 0 ? (
             <div className="text-center py-20">
               <p className="text-muted-foreground text-lg">No products found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {sortedProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group"
-                >
-                  <Link to={`/products/${product.slug}`}>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {products.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group"
+                  >
+                    <Link to={`/products/${product.slug}`}>
                     {/* Product Image */}
                     <div className="aspect-square overflow-hidden bg-muted relative">
                       {product.main_image_url ? (
@@ -257,10 +225,34 @@ const Products = () => {
                         </div>
                       )}
                     </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+              
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="flex justify-center mt-12">
+                  <button
+                    onClick={loadMore}
+                    disabled={loading}
+                    className="px-8 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        Load More Products
+                        <ChevronDown className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
 

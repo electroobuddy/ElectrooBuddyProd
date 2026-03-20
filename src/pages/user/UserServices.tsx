@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { Zap, Loader2, Phone, MessageCircle, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useServices } from "@/hooks/useOptimizedData";
 
 interface Service {
   id: string;
@@ -18,29 +18,8 @@ interface Service {
 }
 
 const UserServices = () => {
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("services")
-        .select("*")
-        .order("sort_order");
-
-      if (error) throw error;
-      setServices(data || []);
-    } catch (error) {
-      console.error("Error fetching services:", error);
-      toast.error("Failed to load services");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use optimized hook with caching
+  const { services, loading, error } = useServices();
 
   const handleBookNow = (serviceTitle: string) => {
     toast.info(`Booking service: ${serviceTitle}`);
@@ -61,6 +40,14 @@ const UserServices = () => {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-destructive">Failed to load services. Please try again.</p>
       </div>
     );
   }

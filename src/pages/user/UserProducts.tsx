@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, ShoppingCart, Zap, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { useProducts } from "@/hooks/useOptimizedData";
 
 interface Product {
   id: string;
@@ -24,35 +24,19 @@ interface Product {
 }
 
 const UserProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("featured");
   const { addToCart } = useCart();
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_active", true)
-        .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      toast.error("Failed to load products");
-    } finally {
-      setLoading(false);
-    }
+  
+  // Use optimized hook with caching and pagination
+  const filters = {
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    searchTerm: searchTerm || undefined,
+    sortBy,
   };
+  
+  const { products, loading, error, hasMore, loadMore } = useProducts(filters);
 
   const handleAddToCart = (product: Product) => {
     if (product.inventory_quantity === 0 && product.track_inventory) {
@@ -62,7 +46,7 @@ const UserProducts = () => {
     addToCart(product, 1);
   };
 
-  // Get unique categories
+  // Get unique categories from loaded products
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
 
   // Filter and search products

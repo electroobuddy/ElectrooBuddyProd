@@ -1,9 +1,7 @@
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Trash2, Plus, Minus, Package, ArrowRight, Zap } from "lucide-react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
+
 import { useCart } from "@/contexts/CartContext";
 
 const Cart = () => {
@@ -17,7 +15,6 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <>
-        <Navbar />
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
           <div className="container mx-auto px-4 py-16">
             <motion.div
@@ -42,15 +39,13 @@ const Cart = () => {
             </motion.div>
           </div>
         </div>
-        <Footer />
-        <WhatsAppFloat />
+   
       </>
     );
   }
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4 py-8">
           <motion.div
@@ -224,8 +219,7 @@ const Cart = () => {
           </div>
         </div>
 
-        <Footer />
-        <WhatsAppFloat />
+     
       </div>
     </>
   );

@@ -18,4 +18,41 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Production optimizations
+    minify: 'esbuild',
+    target: 'esnext',
+    cssMinify: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Manual chunk splitting for better caching
+        manualChunks: {
+          // Framework chunks
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          'animation-vendor': ['framer-motion'],
+          'charts-vendor': ['recharts'],
+          'utils-vendor': ['@tanstack/react-query', 'class-variance-authority', 'clsx', 'tailwind-merge'],
+        },
+        // Asset naming for better caching
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash][extname]',
+      },
+    },
+    // Limit chunk size
+    chunkSizeWarningLimit: 1000,
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'framer-motion',
+      '@tanstack/react-query',
+    ],
+    exclude: ['lucide-react'],
+  },
 }));
