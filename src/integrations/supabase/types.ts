@@ -901,6 +901,52 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_table_sizes: {
+        Args: Record<string, never>
+        Returns: {
+          table_name: string
+          total_size: string
+          data_size: string
+          index_size: string
+          row_count: number
+        }[]
+      }
+      get_index_stats: {
+        Args: Record<string, never>
+        Returns: {
+          tablename: string
+          indexname: string
+          index_size: string
+          idx_scan: number
+        }[]
+      }
+      get_cache_hit_ratio: {
+        Args: Record<string, never>
+        Returns: {
+          ratio: number
+          heap_blks_hit: number
+          heap_blks_read: number
+        }[]
+      }
+      get_database_size: {
+        Args: Record<string, never>
+        Returns: {
+          total_size: string
+          total_bytes: number
+        }[]
+      }
+      get_system_metrics: {
+        Args: Record<string, never>
+        Returns: {
+          uptime: string
+          active_connections: number
+          total_queries: number
+          slow_queries: number
+          dead_tuples: number
+          last_vacuum: string
+          last_analyze: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"

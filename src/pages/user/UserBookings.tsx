@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Calendar, Clock, MapPin, Plus, CheckCircle, AlertCircle, FileText, Phone } from "lucide-react";
+import { toast } from "sonner";
+import { Loader2, Calendar, Clock, MapPin, Plus, CheckCircle, AlertCircle, FileText, Phone, X, Zap } from "lucide-react";
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400", label: "Pending" },
@@ -16,6 +17,18 @@ const UserBookings = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [bookingForm, setBookingForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    service_type: "",
+    preferred_date: "",
+    preferred_time: "",
+    description: "",
+  });
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [services, setServices] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -28,6 +41,42 @@ const UserBookings = () => {
     };
     fetch();
   }, [user, filter]);
+
+  useEffect(() => {
+    supabase.from("services").select("title").order("sort_order").then(({ data }) => {
+      if (data) setServices(data);
+    });
+  }, []);
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBookingSubmitting(true);
+    
+    const insertData: any = {
+      name: bookingForm.name,
+      phone: bookingForm.phone,
+      address: bookingForm.address,
+      service_type: bookingForm.service_type,
+      preferred_date: bookingForm.preferred_date,
+      preferred_time: bookingForm.preferred_time,
+      description: bookingForm.description || null,
+      user_id: user!.id,
+    };
+    
+    const { error } = await supabase.from("bookings").insert(insertData);
+    if (error) {
+      toast.error("Failed to submit booking. Please try again.");
+    } else {
+      toast.success("Booking submitted! We'll confirm your appointment shortly.");
+      setBookingForm({ name: "", phone: "", address: "", service_type: "", preferred_date: "", preferred_time: "", description: "" });
+      setShowBookingForm(false);
+      // Refresh bookings
+      setLoading(true);
+      const { data } = await supabase.from("bookings").select("*").eq("user_id", user!.id).order("created_at", { ascending: false });
+      setBookings(data || []);
+    }
+    setBookingSubmitting(false);
+  };
 
   const stats = {
     total: bookings.length,
@@ -42,13 +91,141 @@ const UserBookings = () => {
           <h1 className="text-2xl font-heading font-bold text-foreground">My Bookings</h1>
           <p className="text-sm text-muted-foreground">View and track all your service bookings</p>
         </div>
-        <Link
-          to="/booking"
+        <button
+          onClick={() => setShowBookingForm(!showBookingForm)}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition self-start"
         >
-          <Plus className="w-4 h-4" /> Book Service
-        </Link>
+          <Plus className="w-4 h-4" /> {showBookingForm ? "Cancel" : "Book Service"}
+        </button>
       </div>
+
+      {/* Quick Booking Form */}
+      {showBookingForm && (
+        <div className="mb-8 bg-card border border-border rounded-xl p-6 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-heading font-bold text-foreground">Quick Booking Form</h2>
+            <button
+              onClick={() => setShowBookingForm(false)}
+              className="w-8 h-8 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <form onSubmit={handleBookingSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="John Doe"
+                  value={bookingForm.name}
+                  onChange={(e) => setBookingForm({ ...bookingForm, name: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="+91 98765 43210"
+                  value={bookingForm.phone}
+                  onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Service Address *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="123 Main St, City"
+                value={bookingForm.address}
+                onChange={(e) => setBookingForm({ ...bookingForm, address: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Service Type *
+              </label>
+              <select
+                required
+                value={bookingForm.service_type}
+                onChange={(e) => setBookingForm({ ...bookingForm, service_type: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+              >
+                <option value="">Select a service...</option>
+                {services.map((s) => (
+                  <option key={s.title} value={s.title}>{s.title}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Preferred Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={bookingForm.preferred_date}
+                  onChange={(e) => setBookingForm({ ...bookingForm, preferred_date: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Preferred Time *
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={bookingForm.preferred_time}
+                  onChange={(e) => setBookingForm({ ...bookingForm, preferred_time: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Description <span className="text-muted-foreground/50 lowercase">(optional)</span>
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Describe your electrical issue or requirement..."
+                value={bookingForm.description}
+                onChange={(e) => setBookingForm({ ...bookingForm, description: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition resize-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={bookingSubmitting}
+              className="w-full py-3.5 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-heading font-bold uppercase tracking-wide rounded-lg hover:shadow-lg hover:shadow-primary/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {bookingSubmitting ? (
+                <><Loader2 size={18} className="animate-spin" /> Processing...</>
+              ) : (
+                <><Zap size={16} /> Submit Booking</>
+              )}
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">

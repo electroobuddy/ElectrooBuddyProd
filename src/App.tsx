@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +12,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { BookingModal } from "./pages/Index"; // Named export
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Services from "./pages/Services";
@@ -57,6 +59,14 @@ const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin");
   const isUserPanel = location.pathname.startsWith("/dashboard") || location.pathname === "/login";
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const timer = setTimeout(() => setShowBookingModal(true), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
@@ -113,6 +123,15 @@ const AppContent = () => {
       </main>
       {!isAdmin && !isUserPanel && <Footer />}
       {!isAdmin && !isUserPanel && <WhatsAppFloat />}
+      
+      {/* Global Booking Modal - appears on all public pages */}
+      {mounted && !isAdmin && !isUserPanel && (
+        <AnimatePresence>
+          {showBookingModal && (
+            <BookingModal onClose={() => setShowBookingModal(false)} />
+          )}
+        </AnimatePresence>
+      )}
     </>
   );
 };
