@@ -15,6 +15,7 @@ const navLinks = [
   {
     label: "Pages",
     children: [
+      { label: "Track Booking",    to: "/track-booking" },
       { label: "FAQs",               to: "/faq" },
       { label: "Privacy Policy",     to: "/privacy" },
       { label: "Terms & Conditions", to: "/terms" },

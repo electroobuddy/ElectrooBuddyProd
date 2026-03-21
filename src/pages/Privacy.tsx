@@ -304,7 +304,7 @@
 //         <div className="privacy-section">
 //           <h2 className="privacy-h2">I. PERSONAL INFORMATION WE COLLECT</h2>
 //           <p className="privacy-intro">We may collect the following categories of information from users of our Services:</p>
-          
+
 //           <h3 className="privacy-h3">Information from Interacting with our Services</h3>
 //           <p className="privacy-intro">
 //             When you access the Services, we may collect certain information automatically such as your Internet protocol (IP) address, user settings, MAC address, cookie identifiers, mobile carrier, mobile advertising and other unique identifiers, details about your browser, operating system or device, location information, Internet service provider, pages that you visit before, during and after using the Services, information about the links you click, and other information about how you use the Services. Information we collect may be associated with accounts and other devices.
@@ -345,7 +345,7 @@
 //         <div className="privacy-section">
 //           <h2 className="privacy-h2">II. HOW WE USE YOUR INFORMATION</h2>
 //           <p className="privacy-intro">We use your information for a variety of purposes, including to:</p>
-          
+
 //           <h3 className="privacy-h3">Fulfill our contract with you and provide you with our Services, such as:</h3>
 //           <ul className="privacy-list">
 //             <li>Managing your information and accounts;</li>
@@ -446,7 +446,7 @@
 //         <div className="privacy-section">
 //           <h2 className="privacy-h2">IV. YOUR CHOICES</h2>
 //           <p className="privacy-intro"><strong>General.</strong> You have certain choices about your personal information. Where you have consented to the processing of your personal information, you may withdraw that consent at any time and prevent further processing by contacting us as described below. Even if you opt out, we may still collect and use non-personal information regarding your activities on our Services and for other legal purposes as described above.</p>
-          
+
 //           <h3 className="privacy-h3">Email and Telephone Communications</h3>
 //           <p className="privacy-intro">
 //             If you receive an unwanted email from us, you can use the unsubscribe link found at the bottom of the email to opt out of receiving future emails. Note that you will continue to receive transaction-related emails regarding products or Services you have requested. We may also send you certain non-promotional communications regarding us and our Services, and you will not be able to opt out of those communications (e.g., communications regarding the Services or updates to our Terms or this Privacy Policy).
@@ -518,9 +518,9 @@
 //         {/* Section VIII - California Privacy Laws */}
 //         <div className="privacy-section">
 //           <h2 className="privacy-h2">VIII. OTHER PROVISIONS</h2>
-          
+
 //           <h3 className="privacy-h3">CALIFORNIA PRIVACY LAWS</h3>
-          
+
 //           <h4 className="privacy-h4">"Shine the Light"</h4>
 //           <p className="privacy-intro">
 //             Users who are California residents have the right to request and obtain from us once a year, free of charge, a list of the Third Parties to whom we have disclosed their Personal Information (if any) for their direct marketing purposes in the prior calendar year, as well as the type of Personal Information disclosed to those parties.
@@ -618,7 +618,7 @@
 //           <p className="privacy-intro">
 //             If you have any questions about our privacy practices or this Privacy Policy, or if you wish to submit a request to exercise your rights as detailed in this Privacy Policy, please contact us at:
 //           </p>
-          
+
 //           <div className="privacy-contact-box">
 //             <div className="privacy-contact-item">
 //               <strong>Electroobuddy</strong>
@@ -627,7 +627,7 @@
 //               📍 <a href="https://goo.gl/maps/vXm1SiPr6QECoqbH7" target="_blank" rel="noopener noreferrer">05 Nagziri Dewas Road Ujjain (456010)</a>
 //             </div>
 //             <div className="privacy-contact-item">
-//               📞 <a href="tel:+917000395039">+91 7000395039</a>
+//               📞 <a href="tel:+918109308287">+91 8109308287</a>
 //             </div>
 //             <div className="privacy-contact-item">
 //               ✉️ <a href="mailto:electroobuddy@gmail.com">electroobuddy@gmail.com</a>
@@ -1329,14 +1329,13 @@ const Privacy = () => (
                 📍 <a href="https://goo.gl/maps/vXm1SiPr6QECoqbH7" target="_blank" rel="noopener noreferrer">05 Nagziri Dewas Road Ujjain(456010)</a>
               </div>
               <div className="privacy-contact-item">
-                📞 <a href="tel:9107000395039">Contact No. +91 7000395039</a>
+                📞 <a href="tel:9108109308287">Contact No. +91 8109308287</a>
               </div>
               <div className="privacy-contact-item">
                 ✉️ <a href="mailto:electroobuddy@gmail.com">electroobuddy@gmail.com</a>
               </div>
             </div>
           </li>
-
         </ol>
 
         {/* Footer note */}

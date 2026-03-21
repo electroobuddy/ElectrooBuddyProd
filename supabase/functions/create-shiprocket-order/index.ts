@@ -35,14 +35,15 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if user is admin
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
+    // Check if user is admin using user_roles table
+    const { data: userRole, error: roleError } = await supabaseClient
+      .from('user_roles')
       .select('role')
-      .eq('id', user.id)
-      .single();
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
 
-    if (profileError || profile?.role !== 'admin') {
+    if (roleError || !userRole) {
       throw new Error('Admin access required');
     }
 
@@ -84,10 +85,16 @@ serve(async (req) => {
       }),
     });
 
+    if (!loginResponse.ok) {
+      const errorData = await loginResponse.json();
+      console.error('Shiprocket login failed:', errorData);
+      throw new Error(`Shiprocket authentication failed: ${errorData.message || 'Unknown error'}`);
+    }
+
     const loginData = await loginResponse.json();
     
     if (!loginData.token) {
-      throw new Error('Shiprocket authentication failed');
+      throw new Error('Shiprocket authentication failed - no token received');
     }
 
     const shiprocketToken = loginData.token;
@@ -95,6 +102,11 @@ serve(async (req) => {
     // Prepare order data for Shiprocket
     const shippingAddress = order.shipping_address_data || {};
     
+    // Validate required fields
+    if (!shippingAddress.city || !shippingAddress.postal_code || !shippingAddress.phone) {
+      throw new Error('Incomplete shipping address. Please ensure city, pincode, and phone are provided.');
+    }
+
     const shiprocketOrder = {
       order_id: order.order_number,
       order_date: order.ordered_at,
@@ -115,11 +127,10 @@ serve(async (req) => {
       length: 10,
       breadth: 10,
       height: 10,
-      weight: 1, // Default weight, should be calculated from products
+      weight: 1,
     };
 
-    // Add order items (you may need to fetch from order_items table)
-    // For now, using basic info from order
+    // Add order items
     shiprocketOrder.order_items = [{
       name: `Order Items - ${order.order_number}`,
       sku: `SKU-${order.order_number}`,
@@ -127,7 +138,7 @@ serve(async (req) => {
       selling_price: order.total_amount,
       price: order.total_amount,
       tax: order.tax_amount || 0,
-      hsn: 8517, // Default HSN code for electronics
+      hsn: 8517,
     }];
 
     // Create order in Shiprocket
@@ -140,27 +151,38 @@ serve(async (req) => {
       body: JSON.stringify(shiprocketOrder),
     });
 
+    if (!createOrderResponse.ok) {
+      const errorData = await createOrderResponse.json();
+      console.error('Shiprocket order creation failed:', errorData);
+      throw new Error(`Shiprocket order creation failed: ${errorData.message || JSON.stringify(errorData)}`);
+    }
+
     const createOrderData = await createOrderResponse.json();
 
-    if (!createOrderData.order_id && !createOrderData.shipment_id) {
-      console.error('Shiprocket order creation failed:', createOrderData);
-      throw new Error('Failed to create Shiprocket order');
+    if (!createOrderData.order_id && !createOrderData.shipment_id && !createOrderData.awb_code) {
+      console.error('Shiprocket response missing required fields:', createOrderData);
+      throw new Error('Invalid response from Shiprocket');
     }
 
     // Update order with Shiprocket details
+    const updateData = {
+      shiprocket_order_id: createOrderData.order_id || order.order_number,
+      shiprocket_shipment_id: createOrderData.shipment_id,
+      tracking_number: createOrderData.awb_code,
+      courier_name: 'Shiprocket',
+      status: 'shipped',
+      fulfillment_status: 'in_transit',
+      updated_at: new Date().toISOString(),
+    };
+
     const { error: updateError } = await supabaseClient
       .from('orders')
-      .update({
-        shiprocket_order_id: createOrderData.order_id || order.order_number,
-        shiprocket_shipment_id: createOrderData.shipment_id,
-        tracking_number: createOrderData.awb_code,
-        courier_name: 'Shiprocket',
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', order_id);
 
     if (updateError) {
-      console.error('Failed to update order:', updateError);
+      console.error('Failed to update order in database:', updateError);
+      throw new Error('Failed to update order tracking');
     }
 
     return new Response(
@@ -182,7 +204,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message || 'Failed to create Shiprocket order'
+        error: error.message || 'Failed to create Shiprocket order',
+        details: error.toString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

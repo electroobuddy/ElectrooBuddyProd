@@ -171,12 +171,44 @@ const AdminOrders = () => {
 
   const createShipment = async (orderId: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke("create-shiprocket-order", { body: { order_id: orderId } });
-      if (error) throw error;
-      if (data?.success) { toast.success(`Shipment created! AWB: ${data.awb_code}`); fetchOrders(); }
-      else toast.error("Failed to create shipment");
+      console.log('Creating shipment for order:', orderId);
+      
+      const { data, error } = await supabase.functions.invoke("create-shiprocket-order", { 
+        body: { order_id: orderId } 
+      });
+      
+      console.log('Function response - Data:', data, 'Error:', error);
+      
+      if (error) {
+        console.error('Shiprocket function error:', error);
+        toast.error(`Failed: ${error.message || "Edge function error"}`);
+        return;
+      }
+      
+      if (!data) {
+        console.error('No data received from function');
+        toast.error("Failed: No response from server");
+        return;
+      }
+      
+      if (data.success) { 
+        toast.success(`Shipment created! AWB: ${data.awb_code}`); 
+        fetchOrders(); 
+      } else {
+        const errorMsg = data.error || data.details || data.message || "Failed to create shipment";
+        console.error('Shipment creation failed:', errorMsg);
+        toast.error(`Failed: ${errorMsg}`);
+      }
     } catch (error: any) {
-      toast.error(`Failed: ${error.message || "Unknown error"}`);
+      console.error('Shipment creation error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        toString: error.toString()
+      });
+      const errorMessage = error.message || "Unknown error occurred";
+      toast.error(`Failed: ${errorMessage}`);
     }
   };
 

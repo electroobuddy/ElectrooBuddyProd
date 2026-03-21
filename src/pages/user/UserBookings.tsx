@@ -21,12 +21,20 @@ const UserBookings = () => {
   const [bookingForm, setBookingForm] = useState({
     name: "",
     phone: "",
+    email: "",
     address: "",
     service_type: "",
     preferred_date: "",
     preferred_time: "",
     description: "",
+    exact_location: "",
+    custom_service_demand: "",
+    is_switch_working: "",
+    has_old_fan: "",
+    is_electricity_supply_on: "",
   });
+  
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [services, setServices] = useState<any[]>([]);
 
@@ -48,6 +56,12 @@ const UserBookings = () => {
     });
   }, []);
 
+  // Add Custom Service option to services list
+  const servicesWithOptions = [
+    ...services,
+    { title: "Custom Service" }
+  ];
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingSubmitting(true);
@@ -55,11 +69,17 @@ const UserBookings = () => {
     const insertData: any = {
       name: bookingForm.name,
       phone: bookingForm.phone,
+      email: bookingForm.email,
       address: bookingForm.address,
-      service_type: bookingForm.service_type,
+      service_type: bookingForm.service_type === "Custom Service" ? `Custom: ${bookingForm.custom_service_demand}` : bookingForm.service_type,
       preferred_date: bookingForm.preferred_date,
       preferred_time: bookingForm.preferred_time,
-      description: bookingForm.description || null,
+      description: bookingForm.service_type === "Custom Service" ? bookingForm.custom_service_demand : (bookingForm.description || null),
+      exact_location: bookingForm.exact_location || null,
+      custom_service_demand: bookingForm.service_type === "Custom Service" ? bookingForm.custom_service_demand : null,
+      is_switch_working: bookingForm.is_switch_working || null,
+      has_old_fan: bookingForm.has_old_fan || null,
+      is_electricity_supply_on: bookingForm.is_electricity_supply_on || null,
       user_id: user!.id,
     };
     
@@ -68,7 +88,21 @@ const UserBookings = () => {
       toast.error("Failed to submit booking. Please try again.");
     } else {
       toast.success("Booking submitted! We'll confirm your appointment shortly.");
-      setBookingForm({ name: "", phone: "", address: "", service_type: "", preferred_date: "", preferred_time: "", description: "" });
+      setBookingForm({ 
+        name: "", 
+        phone: "", 
+        email: "", 
+        address: "", 
+        service_type: "", 
+        preferred_date: "", 
+        preferred_time: "", 
+        description: "",
+        exact_location: "",
+        custom_service_demand: "",
+        is_switch_working: "",
+        has_old_fan: "",
+        is_electricity_supply_on: "",
+      });
       setShowBookingForm(false);
       // Refresh bookings
       setLoading(true);
@@ -76,6 +110,35 @@ const UserBookings = () => {
       setBookings(data || []);
     }
     setBookingSubmitting(false);
+  };
+  
+  const handleGetCurrentLocation = () => {
+    setGettingLocation(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await response.json();
+            const address = data.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            setBookingForm({ ...bookingForm, address, exact_location: address });
+            toast.success("Location fetched successfully!");
+          } catch (error) {
+            setBookingForm({ ...bookingForm, address: `${latitude}, ${longitude}`, exact_location: `${latitude}, ${longitude}` });
+            toast.success("Coordinates fetched! Please provide more details.");
+          }
+          setGettingLocation(false);
+        },
+        (error) => {
+          setGettingLocation(false);
+          toast.error("Unable to get your location. Please enter manually.");
+        }
+      );
+    } else {
+      setGettingLocation(false);
+      toast.error("Geolocation is not supported by your browser.");
+    }
   };
 
   const stats = {
@@ -143,12 +206,41 @@ const UserBookings = () => {
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                Service Address *
+                Email Address *
               </label>
+              <input
+                type="email"
+                required
+                placeholder="your@email.com"
+                value={bookingForm.email}
+                onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+              />
+            </div>
+
+            {/* Address with Location Picker */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-0">
+                  Service Address *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleGetCurrentLocation}
+                  disabled={gettingLocation}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {gettingLocation ? (
+                    <><Loader2 size={12} className="animate-spin" /> Getting Location...</>
+                  ) : (
+                    <><MapPin size={12} /> Use Current Location</>
+                  )}
+                </button>
+              </div>
               <input
                 type="text"
                 required
-                placeholder="123 Main St, City"
+                placeholder="123 Main St, City or use location picker"
                 value={bookingForm.address}
                 onChange={(e) => setBookingForm({ ...bookingForm, address: e.target.value })}
                 className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
@@ -166,11 +258,28 @@ const UserBookings = () => {
                 className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
               >
                 <option value="">Select a service...</option>
-                {services.map((s) => (
+                {servicesWithOptions.map((s) => (
                   <option key={s.title} value={s.title}>{s.title}</option>
                 ))}
               </select>
             </div>
+
+            {/* Custom Service Demand Input - Show only when Custom Service is selected */}
+            {bookingForm.service_type === "Custom Service" && (
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                  Describe Your Custom Service Requirement *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Please describe the specific electrical work you need done..."
+                  value={bookingForm.custom_service_demand}
+                  onChange={(e) => setBookingForm({ ...bookingForm, custom_service_demand: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition resize-none"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -211,6 +320,73 @@ const UserBookings = () => {
                 className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition resize-none"
               />
             </div>
+
+            {/* Exact Location */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Exact Location / Landmark
+              </label>
+              <input
+                type="text"
+                placeholder="Near temple, Behind shopping mall, etc."
+                value={bookingForm.exact_location}
+                onChange={(e) => setBookingForm({ ...bookingForm, exact_location: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+              />
+            </div>
+
+            {/* Fan Installation Questions - Only show if service is Fan Installation */}
+            {bookingForm.service_type.toLowerCase().includes('fan') && (
+              <>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                    Is Your Switch Working? *
+                  </label>
+                  <select
+                    required
+                    value={bookingForm.is_switch_working}
+                    onChange={(e) => setBookingForm({ ...bookingForm, is_switch_working: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                  >
+                    <option value="">Select...</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                    Is There an Old Fan at Installation Location? *
+                  </label>
+                  <select
+                    required
+                    value={bookingForm.has_old_fan}
+                    onChange={(e) => setBookingForm({ ...bookingForm, has_old_fan: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                  >
+                    <option value="">Select...</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                    Is Electricity Supply On at Switch Location? *
+                  </label>
+                  <select
+                    required
+                    value={bookingForm.is_electricity_supply_on}
+                    onChange={(e) => setBookingForm({ ...bookingForm, is_electricity_supply_on: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                  >
+                    <option value="">Select...</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+              </>
+            )}
 
             <button
               type="submit"

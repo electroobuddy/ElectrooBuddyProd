@@ -220,7 +220,7 @@
 //             <br />
 
 //             <strong> How to contact us</strong>. You can contact us for all general enquires by telephoning our
-//             customer service team at <a href="tel:9107000395039">+91 7000395039</a> or by writing to us at
+//             customer service team at <a href="tel:9108109308287">+91 8109308287</a> or by writing to us at
 //             <a href="mailto:electroobuddy@gmail.com">Electrobuddy@gmail.com</a> or Electroobuddy Repair, 05
 //             Nagziri Dewas Road Ujjain .
 
@@ -571,8 +571,8 @@
 //             doing one of the following:
 
 //           <ol style="list-style-type:lower-alpha">
-//             <li><strong>Phone or email</strong>. Call customer services on <a href="tel:9107000395039">+91
-//                 7000395039</a> or email us at <a
+//             <li><strong>Phone or email</strong>. Call customer services on <a href="tel:9108109308287">+91
+//                 8109308287</a> or email us at <a
 //                 href="mailto:electroobuddy@gmail.com"><u>electroobuddy@gmail.com</u></a> Please provide
 //               your name, home address, details of the order and, where available, your phone number and
 //               email address.</li>
@@ -628,7 +628,7 @@
 //           <p>
 //             <strong>How to tell us about problems</strong>. If you have any questions or complaints about the product,
 //             please contact us. You can telephone our customer service team at <a
-//               href="tel:9107000395039">+91 7000395039</a> or write to us at <a
+//               href="tel:9108109308287">+91 8109308287</a> or write to us at <a
 //               href="mailto:electroobuddy@gmail.com"><u>electrobuddy@gmail.com</u></a> or Electroobuddy
 //           Repair 05 Nagziri Dewas Road Ujjain M.P.
 //           </p>
@@ -1083,7 +1083,7 @@ const Terms = () => (
         </p>
         <p>
           <b>How to contact us</b>. You can contact us for all general enquires by telephoning our
-          customer service team at <a href="tel:9107000395039">+91 7000395039</a> or by writing to us at{" "}
+          customer service team at <a href="tel:9108109308287">+91 8109308287</a> or by writing to us at{" "}
           <a href="mailto:electroobuddy@gmail.com">Electrobuddy@gmail.com</a> or Electroobuddy Repair, 05
           Nagziri Dewas Road Ujjain.
         </p>
@@ -1414,7 +1414,7 @@ const Terms = () => (
         <ol style={{ listStyleType: "lower-alpha" }}>
           <li>
             <b>Phone or email</b>. Call customer services on{" "}
-            <a href="tel:9107000395039">+91 7000395039</a> or email us at{" "}
+            <a href="tel:9108109308287">+91 8109308287</a> or email us at{" "}
             <a href="mailto:electroobuddy@gmail.com"><u>electroobuddy@gmail.com</u></a> Please provide
             your name, home address, details of the order and, where available, your phone number and
             email address.
@@ -1464,7 +1464,7 @@ const Terms = () => (
         <p>
           <b>How to tell us about problems</b>. If you have any questions or complaints about the product,
           please contact us. You can telephone our customer service team at{" "}
-          <a href="tel:9107000395039">+91 7000395039</a> or write to us at{" "}
+          <a href="tel:9108109308287">+91 8109308287</a> or write to us at{" "}
           <a href="mailto:electroobuddy@gmail.com"><u>electrobuddy@gmail.com</u></a> or Electroobuddy
           Repair 05 Nagziri Dewas Road Ujjain M.P.
         </p>

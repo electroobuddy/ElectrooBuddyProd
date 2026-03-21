@@ -181,7 +181,8 @@ const AdminLayout = () => {
 
         {/* Sign out — always visible at bottom */}
         <div className="flex-shrink-0 px-2 py-3 border-t border-zinc-800">
-          <button onClick={signOut}
+          <p className="text-xs text-zinc-500 truncate px-3 mb-2">{user.email}</p>
+          <button onClick={async () => { await signOut(); navigate("/admin"); }}
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all w-full group">
             <LogOut className="w-4 h-4 flex-shrink-0 text-zinc-500 group-hover:text-zinc-300" />
             Sign Out
@@ -236,7 +237,8 @@ const AdminLayout = () => {
               })}
             </nav>
             <div className="flex-shrink-0 px-2 py-3 border-t border-zinc-800">
-              <button onClick={() => { signOut(); setMobileOpen(false); }}
+              <p className="text-xs text-zinc-500 truncate px-3 mb-2">{user.email}</p>
+              <button onClick={async () => { await signOut(); setMobileOpen(false); navigate("/admin"); }}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all w-full">
                 <LogOut className="w-4 h-4 flex-shrink-0 text-zinc-500" /> Sign Out
               </button>
