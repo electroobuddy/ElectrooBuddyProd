@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Section from "@/components/Section";
-import { CalendarDays, Loader2, Zap, Phone, CheckCircle } from "lucide-react";
+import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -18,18 +18,32 @@ const BookingForm = () => {
   const [form, setForm] = useState({
     name: "",
     phone: "",
+    email: "",
     address: "",
     service_type: preselected,
     preferred_date: "",
     preferred_time: "",
     description: "",
+    exact_location: "",
+    custom_service_demand: "",
+    is_switch_working: "",
+    has_old_fan: "",
+    is_electricity_supply_on: "",
   });
+  
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     supabase.from("services").select("title").order("sort_order").then(({ data }) => {
       setServices(data || []);
     });
   }, []);
+
+  // Add Custom Service option to services list
+  const servicesWithOptions = [
+    ...services,
+    { title: "Custom Service" }
+  ];
 
   useEffect(() => {
     if (preselected) setForm((f) => ({ ...f, service_type: preselected }));
@@ -41,11 +55,17 @@ const BookingForm = () => {
     const insertData: any = {
       name: form.name,
       phone: form.phone,
+      email: form.email,
       address: form.address,
-      service_type: form.service_type,
+      service_type: form.service_type === "Custom Service" ? `Custom: ${form.custom_service_demand}` : form.service_type,
       preferred_date: form.preferred_date,
       preferred_time: form.preferred_time,
-      description: form.description || null,
+      description: form.service_type === "Custom Service" ? form.custom_service_demand : (form.description || null),
+      exact_location: form.exact_location || null,
+      custom_service_demand: form.service_type === "Custom Service" ? form.custom_service_demand : null,
+      is_switch_working: form.is_switch_working || null,
+      has_old_fan: form.has_old_fan || null,
+      is_electricity_supply_on: form.is_electricity_supply_on || null,
     };
     if (user) {
       insertData.user_id = user.id;
@@ -56,7 +76,21 @@ const BookingForm = () => {
     } else {
       setDone(true);
       toast.success("Booking submitted! We'll confirm your appointment shortly.");
-      setForm({ name: "", phone: "", address: "", service_type: "", preferred_date: "", preferred_time: "", description: "" });
+      setForm({ 
+        name: "", 
+        phone: "", 
+        email: "", 
+        address: "", 
+        service_type: "", 
+        preferred_date: "", 
+        preferred_time: "", 
+        description: "",
+        exact_location: "",
+        custom_service_demand: "",
+        is_switch_working: "",
+        has_old_fan: "",
+        is_electricity_supply_on: "",
+      });
     }
     setSubmitting(false);
   };
@@ -66,8 +100,38 @@ const BookingForm = () => {
   const fields = [
     { name: "name", label: "Full Name", type: "text", placeholder: "John Doe" },
     { name: "phone", label: "Phone Number", type: "tel", placeholder: "+91 98765 43210" },
-    { name: "address", label: "Service Address", type: "text", placeholder: "123 Main St, City" },
+    { name: "email", label: "Email Address", type: "email", placeholder: "your@email.com" },
   ];
+  
+  const handleGetCurrentLocation = () => {
+    setGettingLocation(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          try {
+            // Reverse geocoding using OpenStreetMap Nominatim (free)
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await response.json();
+            const address = data.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            setForm({ ...form, address, exact_location: address });
+            toast.success("Location fetched successfully!");
+          } catch (error) {
+            setForm({ ...form, address: `${latitude}, ${longitude}`, exact_location: `${latitude}, ${longitude}` });
+            toast.success("Coordinates fetched! Please provide more details.");
+          }
+          setGettingLocation(false);
+        },
+        (error) => {
+          setGettingLocation(false);
+          toast.error("Unable to get your location. Please enter manually.");
+        }
+      );
+    } else {
+      setGettingLocation(false);
+      toast.error("Geolocation is not supported by your browser.");
+    }
+  };
 
   return (
     <>
@@ -77,7 +141,7 @@ const BookingForm = () => {
         /* ─── HERO ─── */
         .booking-hero {
           position: relative;
-          padding: 96px 0 80px;
+          padding: 8px 0 8px;
           overflow: hidden;
           background: hsl(var(--background));
           text-align: center;
@@ -419,7 +483,10 @@ const BookingForm = () => {
                 <div className="success-icon"><CheckCircle size={32} /></div>
                 <div className="success-title">Booking Received!</div>
                 <p className="success-sub">We'll reach out to confirm your appointment. Expect a call or message soon.</p>
-                <button className="success-reset" onClick={() => setDone(false)}>Book Another</button>
+                <div className="flex gap-3 mt-4">
+                  <a href="/track-booking" className="success-reset">Track Your Booking</a>
+                  <button className="success-reset" onClick={() => setDone(false)}>Book Another</button>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
@@ -438,6 +505,33 @@ const BookingForm = () => {
                   </div>
                 ))}
 
+                {/* Address with Location Picker */}
+                <div className="field-group">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="field-label mb-0">Service Address *</label>
+                    <button
+                      type="button"
+                      onClick={handleGetCurrentLocation}
+                      disabled={gettingLocation}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      {gettingLocation ? (
+                        <><Loader2 size={12} className="animate-spin" /> Getting Location...</>
+                      ) : (
+                        <><MapPin size={12} /> Use Current Location</>
+                      )}
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="123 Main St, City or use location picker"
+                    className="field-input"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  />
+                </div>
+
                 {/* Service select */}
                 <div className="field-group">
                   <label className="field-label">Service Type</label>
@@ -448,11 +542,26 @@ const BookingForm = () => {
                     onChange={(e) => setForm({ ...form, service_type: e.target.value })}
                   >
                     <option value="">Select a service...</option>
-                    {services.map((s) => (
+                    {servicesWithOptions.map((s) => (
                       <option key={s.title} value={s.title}>{s.title}</option>
                     ))}
                   </select>
                 </div>
+
+                {/* Custom Service Demand Input - Show only when Custom Service is selected */}
+                {form.service_type === "Custom Service" && (
+                  <div className="field-group">
+                    <label className="field-label">Describe Your Custom Service Requirement *</label>
+                    <textarea
+                      required
+                      rows={4}
+                      placeholder="Please describe the specific electrical work you need done..."
+                      className="field-textarea"
+                      value={form.custom_service_demand}
+                      onChange={(e) => setForm({ ...form, custom_service_demand: e.target.value })}
+                    />
+                  </div>
+                )}
 
                 {/* Date + Time */}
                 <div className="grid-2">
@@ -488,6 +597,65 @@ const BookingForm = () => {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
                 </div>
+
+                {/* Exact Location */}
+                <div className="field-group">
+                  <label className="field-label">Exact Location / Landmark</label>
+                  <input
+                    type="text"
+                    placeholder="Near temple, Behind shopping mall, etc."
+                    className="field-input"
+                    value={form.exact_location}
+                    onChange={(e) => setForm({ ...form, exact_location: e.target.value })}
+                  />
+                </div>
+
+                {/* Fan Installation Questions - Only show if service is Fan Installation */}
+                {form.service_type.toLowerCase().includes('fan') && (
+                  <>
+                    <div className="field-group">
+                      <label className="field-label">Is Your Switch Working? *</label>
+                      <select
+                        required
+                        className="field-select"
+                        value={form.is_switch_working}
+                        onChange={(e) => setForm({ ...form, is_switch_working: e.target.value })}
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label">Is There an Old Fan at Installation Location? *</label>
+                      <select
+                        required
+                        className="field-select"
+                        value={form.has_old_fan}
+                        onChange={(e) => setForm({ ...form, has_old_fan: e.target.value })}
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+
+                    <div className="field-group">
+                      <label className="field-label">Is Electricity Supply On at Switch Location? *</label>
+                      <select
+                        required
+                        className="field-select"
+                        value={form.is_electricity_supply_on}
+                        onChange={(e) => setForm({ ...form, is_electricity_supply_on: e.target.value })}
+                      >
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 <button type="submit" className="submit-btn" disabled={submitting}>
                   {submitting ? (

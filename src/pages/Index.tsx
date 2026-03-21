@@ -35,10 +35,46 @@ export const BookingModal = ({ onClose }: { onClose: () => void }) => {
   const [submitting, setSubmitting] = useState(false);
   const [services, setServices] = useState<{ title: string }[]>([]);
   const [form, setForm] = useState({
-    name: "", phone: "", address: "", service_type: "",
+    name: "", phone: "", email: "", address: "", service_type: "",
     preferred_date: "", preferred_time: "", description: "",
+    exact_location: "",
+    custom_service_demand: "",
+    is_switch_working: "",
+    has_old_fan: "",
+    is_electricity_supply_on: "",
   });
   const patch = (u: Partial<typeof form>) => setForm(prev => ({ ...prev, ...u }));
+  
+  const [gettingLocation, setGettingLocation] = useState(false);
+
+  const handleGetCurrentLocation = () => {
+    setGettingLocation(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await response.json();
+            const address = data.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            patch({ address, exact_location: address });
+            toast.success("Location fetched successfully!");
+          } catch (error) {
+            patch({ address: `${latitude}, ${longitude}`, exact_location: `${latitude}, ${longitude}` });
+            toast.success("Coordinates fetched! Please provide more details.");
+          }
+          setGettingLocation(false);
+        },
+        (error) => {
+          setGettingLocation(false);
+          toast.error("Unable to get your location. Please enter manually.");
+        }
+      );
+    } else {
+      setGettingLocation(false);
+      toast.error("Geolocation is not supported by your browser.");
+    }
+  };
 
   useEffect(() => {
     supabase.from("services").select("title").order("sort_order").then(({ data }) => {
@@ -46,13 +82,26 @@ export const BookingModal = ({ onClose }: { onClose: () => void }) => {
     });
   }, []);
 
+  // Add Custom Service option to services list
+  const servicesWithOptions = [
+    ...services,
+    { title: "Custom Service" }
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     const { error } = await supabase.from("bookings").insert({
-      name: form.name, phone: form.phone, address: form.address,
-      service_type: form.service_type, preferred_date: form.preferred_date,
-      preferred_time: form.preferred_time, description: form.description || null,
+      name: form.name, phone: form.phone, email: form.email, address: form.address,
+      service_type: form.service_type === "Custom Service" ? `Custom: ${form.custom_service_demand}` : form.service_type,
+      preferred_date: form.preferred_date,
+      preferred_time: form.preferred_time, 
+      description: form.service_type === "Custom Service" ? form.custom_service_demand : (form.description || null),
+      exact_location: form.exact_location || null,
+      custom_service_demand: form.service_type === "Custom Service" ? form.custom_service_demand : null,
+      is_switch_working: form.is_switch_working || null,
+      has_old_fan: form.has_old_fan || null,
+      is_electricity_supply_on: form.is_electricity_supply_on || null,
     });
     if (error) {
       toast.error("Failed to submit booking. Please try again.");
@@ -119,10 +168,16 @@ export const BookingModal = ({ onClose }: { onClose: () => void }) => {
                     Thank you! We'll reach out to confirm your appointment shortly.
                   </p>
                 </div>
-                <button onClick={onClose}
-                  className="mt-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
-                  Close
-                </button>
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => { onClose(); window.location.href = '/track-booking'; }}
+                    className="px-6 py-2.5 border border-emerald-500 text-emerald-600 dark:text-emerald-400 text-sm font-semibold rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors">
+                    Track Booking
+                  </button>
+                  <button onClick={onClose}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors">
+                    Close
+                  </button>
+                </div>
               </motion.div>
             ) : (
               <motion.form key="form" onSubmit={handleSubmit} className="space-y-4">
@@ -145,13 +200,37 @@ export const BookingModal = ({ onClose }: { onClose: () => void }) => {
                       className={inputCls} />
                   </div>
                 </div>
-
-                {/* Address */}
+                
+                {/* Email */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin size={11} /> Service Address <span className="text-red-400">*</span>
+                    <AlignLeft size={11} /> Email Address <span className="text-red-400">*</span>
                   </label>
-                  <input type="text" required placeholder="123 Main St, City"
+                  <input type="email" required placeholder="your@email.com"
+                    value={form.email} onChange={e => patch({ email: e.target.value })}
+                    className={inputCls} />
+                </div>
+
+                {/* Address with Location Picker */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin size={11} /> Service Address <span className="text-red-400">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleGetCurrentLocation}
+                      disabled={gettingLocation}
+                      className="text-xs px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 font-medium transition-colors flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {gettingLocation ? (
+                        <><Loader2 size={10} className="animate-spin" /> Getting...</>
+                      ) : (
+                        <><MapPin size={10} /> Use Current Location</>
+                      )}
+                    </button>
+                  </div>
+                  <input type="text" required placeholder="123 Main St, City or use location picker"
                     value={form.address} onChange={e => patch({ address: e.target.value })}
                     className={inputCls} />
                 </div>
@@ -165,11 +244,23 @@ export const BookingModal = ({ onClose }: { onClose: () => void }) => {
                     onChange={e => patch({ service_type: e.target.value })}
                     className={inputCls}>
                     <option value="">Select a service…</option>
-                    {services.map(s => (
+                    {servicesWithOptions.map(s => (
                       <option key={s.title} value={s.title}>{s.title}</option>
                     ))}
                   </select>
                 </div>
+
+                {/* Custom Service Demand Input - Show only when Custom Service is selected */}
+                {form.service_type === "Custom Service" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <AlignLeft size={11} /> Describe Your Custom Service Requirement <span className="text-red-400">*</span>
+                    </label>
+                    <textarea rows={4} placeholder="Please describe the specific electrical work you need done…"
+                      value={form.custom_service_demand} onChange={e => patch({ custom_service_demand: e.target.value })}
+                      className={`${inputCls} resize-none`} required />
+                  </div>
+                )}
 
                 {/* Date + Time */}
                 <div className="grid grid-cols-2 gap-3">
@@ -201,6 +292,60 @@ export const BookingModal = ({ onClose }: { onClose: () => void }) => {
                     value={form.description} onChange={e => patch({ description: e.target.value })}
                     className={`${inputCls} resize-none`} />
                 </div>
+
+                {/* Exact Location */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin size={11} /> Exact Location / Landmark
+                  </label>
+                  <input type="text" placeholder="Near temple, Behind shopping mall, etc."
+                    value={form.exact_location} onChange={e => patch({ exact_location: e.target.value })}
+                    className={inputCls} />
+                </div>
+
+                {/* Fan Installation Questions - Only show if service is Fan Installation */}
+                {form.service_type.toLowerCase().includes('fan') && (
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Wrench size={11} /> Is Your Switch Working? <span className="text-red-400">*</span>
+                      </label>
+                      <select required
+                        value={form.is_switch_working} onChange={e => patch({ is_switch_working: e.target.value })}
+                        className={inputCls}>
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Zap size={11} /> Is There an Old Fan at Installation Location? <span className="text-red-400">*</span>
+                      </label>
+                      <select required
+                        value={form.has_old_fan} onChange={e => patch({ has_old_fan: e.target.value })}
+                        className={inputCls}>
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Zap size={11} /> Is Electricity Supply On at Switch Location? <span className="text-red-400">*</span>
+                      </label>
+                      <select required
+                        value={form.is_electricity_supply_on} onChange={e => patch({ is_electricity_supply_on: e.target.value })}
+                        className={inputCls}>
+                        <option value="">Select...</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                  </>
+                )}
 
                 {/* Submit */}
                 <button type="submit" disabled={submitting}

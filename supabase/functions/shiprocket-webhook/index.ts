@@ -93,8 +93,6 @@ serve(async (req) => {
 
     // Store detailed tracking history if available
     if (trackingDetails && Array.isArray(trackingDetails)) {
-      // You could create a separate order_tracking_history table
-      // For now, we'll store as JSONB
       updateData.tracking_history = trackingDetails;
     }
 
@@ -129,7 +127,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message || 'Failed to process webhook'
+        error: error.message || 'Failed to process webhook',
+        stack: error.stack
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

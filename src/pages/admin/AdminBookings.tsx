@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Pencil, Trash2, X, Eye, Calendar, Clock, Phone,
   MapPin, Search, Download, User, Wrench, AlignLeft, Check,
-  CalendarDays, Filter, ChevronRight, Save
+  CalendarDays, Filter, ChevronRight, Save, CheckCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,8 +50,10 @@ const AdminBookings = () => {
   const [editing, setEditing] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: "", phone: "", address: "", service_type: "",
-    preferred_date: "", preferred_time: "", description: "", status: "pending"
+    name: "", phone: "", email: "", address: "", service_type: "",
+    preferred_date: "", preferred_time: "", description: "", status: "pending",
+    exact_location: "", custom_service_demand: "", is_switch_working: "",
+    has_old_fan: "", is_electricity_supply_on: ""
   });
   const patchEdit = (u: any) => setEditForm(prev => ({ ...prev, ...u }));
 
@@ -78,9 +80,22 @@ const AdminBookings = () => {
 
   const handleEdit = (b: any) => {
     setEditing(b);
-    setEditForm({ name: b.name, phone: b.phone, address: b.address, service_type: b.service_type,
-      preferred_date: b.preferred_date, preferred_time: b.preferred_time,
-      description: b.description || "", status: b.status });
+    setEditForm({ 
+      name: b.name, 
+      phone: b.phone, 
+      email: b.email || "", 
+      address: b.address, 
+      service_type: b.service_type,
+      preferred_date: b.preferred_date, 
+      preferred_time: b.preferred_time,
+      description: b.description || "", 
+      status: b.status,
+      exact_location: b.exact_location || "",
+      custom_service_demand: b.custom_service_demand || "",
+      is_switch_working: b.is_switch_working || "",
+      has_old_fan: b.has_old_fan || "",
+      is_electricity_supply_on: b.is_electricity_supply_on || ""
+    });
   };
 
   const handleSaveEdit = async () => {
@@ -199,6 +214,9 @@ const AdminBookings = () => {
                   <td className="px-5 py-4">
                     <p className="font-semibold text-zinc-900 dark:text-white text-sm">{b.name}</p>
                     <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1"><Phone size={10} />{b.phone}</p>
+                    {b.email && (
+                      <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1 truncate max-w-[180px]"><MapPin size={10} style={{transform: "rotate(90deg)"}} />{b.email}</p>
+                    )}
                   </td>
                   <td className="px-4 py-4 hidden sm:table-cell">
                     <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-lg">
@@ -291,12 +309,21 @@ const AdminBookings = () => {
                       <div>
                         <p className="font-bold text-zinc-900 dark:text-white">{viewing.name}</p>
                         <p className="text-zinc-500 flex items-center gap-1"><Phone size={11} />{viewing.phone}</p>
+                        {viewing.email && (
+                          <p className="text-zinc-500 flex items-center gap-1 mt-0.5"><MapPin size={11} style={{transform: "rotate(90deg)"}} />{viewing.email}</p>
+                        )}
                       </div>
                     </div>
                     <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl">
                       <p className="text-xs text-zinc-400 mb-1 flex items-center gap-1"><MapPin size={11} />Address</p>
                       <p className="text-zinc-700 dark:text-zinc-200">{viewing.address}</p>
                     </div>
+                    {viewing.exact_location && (
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl">
+                        <p className="text-xs text-zinc-400 mb-1 flex items-center gap-1"><MapPin size={11} />Exact Location</p>
+                        <p className="text-zinc-700 dark:text-zinc-200">{viewing.exact_location}</p>
+                      </div>
+                    )}
                   </div>
                 </SectionCard>
 
@@ -320,6 +347,38 @@ const AdminBookings = () => {
                     <div className="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl">
                       <p className="text-xs text-zinc-400 mb-1 flex items-center gap-1"><AlignLeft size={11} />Description</p>
                       <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed">{viewing.description}</p>
+                    </div>
+                  )}
+                  {viewing.custom_service_demand && (
+                    <div className="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl">
+                      <p className="text-xs text-zinc-400 mb-1 flex items-center gap-1"><Wrench size={11} />Custom Service Demand</p>
+                      <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed">{viewing.custom_service_demand}</p>
+                    </div>
+                  )}
+                  {/* Fan Installation Details */}
+                  {(viewing.is_switch_working || viewing.has_old_fan || viewing.is_electricity_supply_on) && (
+                    <div className="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl">
+                      <p className="text-xs font-semibold text-zinc-400 mb-2 uppercase tracking-wide">Fan Installation Details</p>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {viewing.is_switch_working && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle size={12} className="text-blue-500" />
+                            <span className="text-zinc-600 dark:text-zinc-300">Switch Working: <strong>{viewing.is_switch_working === 'yes' ? 'Yes' : 'No'}</strong></span>
+                          </div>
+                        )}
+                        {viewing.has_old_fan && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle size={12} className="text-blue-500" />
+                            <span className="text-zinc-600 dark:text-zinc-300">Old Fan Present: <strong>{viewing.has_old_fan === 'yes' ? 'Yes' : 'No'}</strong></span>
+                          </div>
+                        )}
+                        {viewing.is_electricity_supply_on && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle size={12} className="text-blue-500" />
+                            <span className="text-zinc-600 dark:text-zinc-300">Electricity On: <strong>{viewing.is_electricity_supply_on === 'yes' ? 'Yes' : 'No'}</strong></span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </SectionCard>
@@ -376,6 +435,10 @@ const AdminBookings = () => {
                     <div>
                       <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Name</label>
                       <input placeholder="Full name" value={editForm.name} onChange={e => patchEdit({ name: e.target.value })} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Email</label>
+                      <input placeholder="email@example.com" type="email" value={editForm.email} onChange={e => patchEdit({ email: e.target.value })} className={inputCls} />
                     </div>
                     <div>
                       <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Phone</label>
