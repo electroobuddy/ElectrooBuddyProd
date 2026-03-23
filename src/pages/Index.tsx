@@ -1182,6 +1182,7 @@ import AnimatedCounter, { COUNTER_DATA } from "@/components/AnimatedCounter";
 import ProcessTimeline from "@/components/ProcessTimeline";
 import VideoSection from "@/components/VideoSection";
 import TestimonialSlider from "@/components/TestimonialSlider";
+import SEO from "@/components/SEO";
 import { services as staticServices } from "@/data/services";
 import { teamMembers as staticTeam } from "@/data/team";
 import { testimonials as staticTestimonials } from "@/data/testimonials";
@@ -1557,6 +1558,37 @@ const Index = () => {
 
   return (
     <>
+      <SEO
+        title="Electroo Buddy - Professional Electrical Services in Ujjain | 24/7 Emergency Electrician"
+        description="Expert electrical services in Ujjain - residential, commercial & industrial installations, repairs, maintenance. Quality electrical products with certified professionals available 24/7."
+        keywords="electrical services Ujjain, electrician near me, 24/7 emergency electrician, electrical repair, installation services, wiring maintenance, commercial electrical, residential electrician, industrial electrical services, certified electricians Ujjain"
+        canonical="/"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Electrician",
+          "name": "Electroo Buddy",
+          "description": "Professional 24/7 electrical services in Ujjain for residential, commercial, and industrial needs",
+          "url": "https://electroobuddy.com",
+          "telephone": "+91-81093-08287",
+          "priceRange": "₹₹",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ujjain",
+            "addressRegion": "Madhya Pradesh",
+            "addressCountry": "IN"
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Ujjain"
+          },
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+            "opens": "09:00",
+            "closes": "20:00"
+          }
+        }}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap');
 

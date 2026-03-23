@@ -553,7 +553,7 @@
 
 // export default Checkout;
 
-import { useState, useId } from "react";
+import { useState, useId, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -570,6 +570,7 @@ import {
   Zap,
   ChevronRight,
   CheckCircle,
+  Gift,
 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
@@ -699,8 +700,14 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("razorpay");
   const [fieldErrors, setFieldErrors] = useState<FieldError>({});
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [shippingCharge, setShippingCharge] = useState(50);
+  const [taxAmount, setTaxAmount] = useState(0);
+  const [estimatedDelivery, setEstimatedDelivery] = useState("3-5 days");
 
-  const [info, setInfo] = useState<ShippingInfo>({
+  const infoState = useState<ShippingInfo>({
     full_name: "",
     email: user?.email || "",
     phone: "",
@@ -712,8 +719,46 @@ const Checkout = () => {
     landmark: "",
   });
 
-  const shipping = total >= FREE_SHIPPING ? 0 : 50;
-  const grandTotal = total + shipping;
+  const [info, setInfo] = infoState;
+
+  // Calculate totals with coupon and tax
+  const calculateTotals = async () => {
+    const subtotal = total;
+    
+    // Calculate shipping based on state (simplified - will use default for now)
+    if (info.state) {
+      try {
+        // For now, use simple logic - in production call the RPC function
+        // Metro cities get free shipping above ₹500, others above ₹750
+        const metroCities = ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad'];
+        const isMetro = metroCities.includes(info.state);
+        
+        if (subtotal >= (isMetro ? 500 : 750)) {
+          setShippingCharge(0);
+        } else {
+          setShippingCharge(isMetro ? 40 : 60);
+        }
+        
+        setEstimatedDelivery(isMetro ? "1-2 days" : "2-4 days");
+      } catch (error) {
+        console.error('Error calculating shipping:', error);
+        setShippingCharge(50);
+      }
+    }
+    
+    // Calculate tax (18% GST by default)
+    const taxableAmount = subtotal - (appliedCoupon?.discount_amount || 0);
+    const tax = taxableAmount * 0.18;
+    setTaxAmount(tax);
+  };
+
+  useEffect(() => {
+    calculateTotals();
+  }, [info.state, appliedCoupon, total]);
+
+  const discount = appliedCoupon?.discount_amount || 0;
+  const shipping = shippingCharge;
+  const grandTotal = total + shipping + taxAmount - discount;
 
   /* ── empty cart guard ── */
   if (items.length === 0) {
@@ -729,7 +774,54 @@ const Checkout = () => {
     );
   }
 
-  /* ── field change ── */
+  /* ── coupon handler ── */
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !user) return;
+    
+    setApplyingCoupon(true);
+    
+    // Add timeout for better UX
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 10000)
+    );
+    
+    try {
+      const applyPromise = supabase.rpc('apply_coupon', {
+        p_coupon_code: couponCode.toUpperCase(),
+        p_user_id: user.id,
+        p_cart_total: total,
+        p_cart_items: [] as any
+      });
+      
+      // Race between apply and timeout
+      const { data, error } = await Promise.race([applyPromise, timeoutPromise]) as any;
+      
+      if (error || !data || data.length === 0) {
+        toast.error("Invalid coupon code");
+        setAppliedCoupon(null);
+        return;
+      }
+      
+      const result = data[0];
+      if (result.success) {
+        setAppliedCoupon(result);
+        const couponCodeValue = typeof result.coupon_data === 'object' && result.coupon_data !== null ? 
+          (result.coupon_data as any).code || '' : '';
+        toast.success(`Coupon applied! ${couponCodeValue}`);
+      } else {
+        toast.error(result.message || "Cannot apply this coupon");
+        setAppliedCoupon(null);
+      }
+    } catch (error: any) {
+      console.error('Error applying coupon:', error);
+      const errorMsg = error.message === 'Request timeout' 
+        ? 'Request timed out. Please try again.'
+        : 'Failed to apply coupon. Please try again.';
+      toast.error(errorMsg);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setInfo((prev) => ({ ...prev, [name]: value }));
@@ -761,32 +853,70 @@ const Checkout = () => {
     }
 
     const orderNumber = `ORD${Date.now()}`;
-    const { data, error } = await supabase
-      .from("orders")
-      .insert([
-        {
-          order_number: orderNumber,
-          user_id: user.id,
-          status: "pending",
-          payment_status: "pending",
-          fulfillment_status: "pending",
-          subtotal: total,
-          shipping_charge: shipping,
-          installation_total: items.reduce((s, i) => s + i.installation_charge, 0),
-          tax_amount: 0,
-          discount_amount: 0,
-          total_amount: grandTotal,
-          payment_method: paymentMethod,
-          shipping_address_data: info as any,
-          ordered_at: new Date().toISOString(),
-        },
-      ])
-      .select();
-    if (error) {
-      console.error('Database error:', error);
+    
+    try {
+      // First, create the order
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .insert([
+          {
+            order_number: orderNumber,
+            user_id: user.id,
+            status: "pending",
+            payment_status: "pending",
+            fulfillment_status: "pending",
+            subtotal: total,
+            shipping_charge: shipping,
+            installation_total: items.reduce((s, i) => s + i.installation_charge, 0),
+            tax_amount: taxAmount,
+            discount_amount: discount,
+            total_amount: grandTotal,
+            payment_method: paymentMethod,
+            shipping_address_data: info as any,
+            coupon_code: appliedCoupon?.coupon_data?.code || appliedCoupon?.code || null,
+            ordered_at: new Date().toISOString(),
+          },
+        ])
+        .select();
+      
+      if (orderError) {
+        console.error('Database error creating order:', orderError);
+        throw new Error(`Failed to create order: ${orderError.message}`);
+      }
+
+      const orderId = orderData[0].id;
+
+      // Then, insert order items
+      if (items.length > 0) {
+        const orderItems = items.map((item) => ({
+          order_id: orderId,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          product_image: item.product_image || null,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+          installation_service: item.installation_service || false,
+          installation_charge: item.installation_charge || 0,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from("order_items")
+          .insert(orderItems);
+
+        if (itemsError) {
+          console.error('Error inserting order items:', itemsError);
+          // Rollback: delete the order since items failed
+          await supabase.from("orders").delete().eq("id", orderId);
+          throw new Error(`Failed to add order items: ${itemsError.message}`);
+        }
+      }
+
+      return { orderId, orderNumber };
+    } catch (error: any) {
+      console.error('Order creation failed:', error);
       throw error;
     }
-    return { orderId: data[0].id, orderNumber };
   };
 
   /* ── razorpay ── */
@@ -842,13 +972,34 @@ const Checkout = () => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      console.log('🛒 Starting checkout process...');
+      console.log('📦 Cart items:', items.length);
+      console.log('💰 Total amount:', grandTotal);
+      
       const { orderId, orderNumber } = await createOrder();
+
+      console.log('✅ Order created successfully:', { orderId, orderNumber });
 
       if (paymentMethod === "razorpay") {
         const ok = await processRazorpay(orderNumber);
-        if (!ok) { setLoading(false); return; }
+        if (!ok) { 
+          setLoading(false); 
+          return; 
+        }
       } else {
         toast.success("Order placed! Pay on delivery.");
+      }
+
+      // Increment coupon usage if coupon was applied (after successful order)
+      if (appliedCoupon && (appliedCoupon.coupon_data as any)?.code) {
+        try {
+          await supabase.rpc('increment_coupon_usage', {
+            p_coupon_code: (appliedCoupon.coupon_data as any).code
+          });
+        } catch (couponErr) {
+          console.error('Failed to increment coupon usage:', couponErr);
+          // Don't block checkout - this is non-critical
+        }
       }
 
       /* background: shiprocket */
@@ -863,9 +1014,13 @@ const Checkout = () => {
       navigate("/order-success", {
         state: { orderId: orderNumber, amount: grandTotal, paymentMethod },
       });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to place order. Please try again.");
+    } catch (err: any) {
+      console.error('❌ Checkout failed:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+      });
+      toast.error(err.message || "Failed to place order. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -1121,6 +1276,49 @@ const Checkout = () => {
                   exit={{ opacity: 0, x: 20 }}
                   className="space-y-5"
                 >
+                  {/* coupon section */}
+                  <div className="bg-card border border-border rounded-xl p-5">
+                    <h3 className="font-semibold flex items-center gap-2 text-sm mb-3">
+                      <Gift className="w-4 h-4 text-primary" />
+                      Apply Coupon
+                    </h3>
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <div>
+                          <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                            {appliedCoupon.coupon_data?.code || appliedCoupon.code}
+                          </p>
+                          <p className="text-xs text-green-600 dark:text-green-500">
+                            {appliedCoupon.message} - ₹{appliedCoupon.discount_amount?.toFixed(2)} off
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setAppliedCoupon(null)}
+                          className="text-red-500 hover:text-red-700 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          placeholder="Enter coupon code"
+                          className="flex-1 px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        <button
+                          onClick={handleApplyCoupon}
+                          disabled={applyingCoupon || !couponCode.trim()}
+                          className="px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50"
+                        >
+                          {applyingCoupon ? "Applying..." : "Apply"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   {/* address summary */}
                   <div className="bg-card border border-border rounded-xl p-5">
                     <div className="flex items-center justify-between mb-3">
@@ -1263,12 +1461,27 @@ const Checkout = () => {
                     )}
                   </span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span className="font-medium">Coupon Discount</span>
+                    <span>-₹{discount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tax (GST 18%)</span>
+                  <span>₹{taxAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                </div>
                 <div className="border-t border-border pt-3 flex justify-between font-bold text-base">
                   <span>Total</span>
                   <span className="text-primary">
                     ₹{grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                   </span>
                 </div>
+                {estimatedDelivery && (
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                    📦 Estimated delivery: {estimatedDelivery}
+                  </p>
+                )}
               </div>
 
               <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">

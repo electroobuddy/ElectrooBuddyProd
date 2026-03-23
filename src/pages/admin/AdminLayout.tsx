@@ -13,6 +13,7 @@ const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000;
 const navItems = [
   { label: "Dashboard",    to: "/admin/dashboard",    icon: LayoutDashboard, group: "main" },
   { label: "Products",     to: "/admin/products",     icon: Package,         group: "store" },
+  { label: "Categories & Coupons", to: "/admin/coupons-categories", icon: ShoppingCart, group: "store" },
   { label: "Orders",       to: "/admin/orders",       icon: ShoppingCart,    group: "store" },
   { label: "Payments",     to: "/admin/payments",     icon: DollarSign,      group: "store" },
   { label: "Shipping",     to: "/admin/shipping",     icon: Truck,           group: "store" },

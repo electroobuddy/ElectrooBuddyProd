@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
+import SEO from "@/components/SEO";
 import { teamMembers as staticTeam } from "@/data/team";
 import { Zap, Target, Eye, CheckCircle, Users } from "lucide-react";
 
@@ -41,6 +42,28 @@ const About = () => {
 
   return (
     <>
+      <SEO
+        title="About Electroo Buddy - Leading Electrical Service Provider in Ujjain"
+        description="Learn about Electroo Buddy's team of certified electricians with years of experience. We provide reliable, affordable electrical services for residential and commercial needs in Ujjain."
+        keywords="about electroo buddy, electrical company Ujjain, certified electricians, licensed electrical contractors, professional electricians, electrical service team"
+        canonical="/about"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Electroo Buddy",
+          "description": "Professional electrical service provider with certified and experienced electricians",
+          "url": "https://electroobuddy.com",
+          "logo": "https://electroobuddy.com/logo.png",
+          "founder": {
+            "@type": "Person",
+            "name": "Electroo Buddy Team"
+          },
+          "employee": {
+            "@type": "Thing",
+            "description": "Team of certified electricians and electrical professionals"
+          }
+        }}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
 

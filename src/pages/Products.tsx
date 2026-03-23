@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import SEO from "@/components/SEO";
 import { useProducts, useCacheInvalidation } from "@/hooks/useOptimizedData";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
@@ -105,6 +106,27 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <SEO
+        title="Electrical Products Online | Switches, Lighting & Accessories in Ujjain"
+        description="Shop quality electrical products online - switches, sockets, lighting, wiring accessories and more. Best prices in Ujjain with fast delivery and warranty."
+        keywords="electrical products, buy switches online, electrical accessories, lighting products, wiring materials, electrical supplies, MCB, distribution boards, electrical tools"
+        canonical="/products"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Store",
+          "name": "Electroo Buddy Products",
+          "description": "Quality electrical products and accessories at competitive prices",
+          "url": "https://electroobuddy.com/products",
+          "telephone": "+91-81093-08287",
+          "priceRange": "₹",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ujjain",
+            "addressRegion": "Madhya Pradesh",
+            "addressCountry": "IN"
+          }
+        }}
+      />
       {/* ── Hero ── */}
       <section className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 py-14 border-b border-border">
         <div className="container mx-auto px-4 text-center">
