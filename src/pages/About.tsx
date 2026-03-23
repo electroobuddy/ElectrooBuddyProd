@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
+import SEO from "@/components/SEO";
 import { teamMembers as staticTeam } from "@/data/team";
 import { Zap, Target, Eye, CheckCircle, Users } from "lucide-react";
 
@@ -41,6 +42,28 @@ const About = () => {
 
   return (
     <>
+      <SEO
+        title="About Electroo Buddy - Leading Electrical Service Provider in Ujjain"
+        description="Learn about Electroo Buddy's team of certified electricians with years of experience. We provide reliable, affordable electrical services for residential and commercial needs in Ujjain."
+        keywords="about electroo buddy, electrical company Ujjain, certified electricians, licensed electrical contractors, professional electricians, electrical service team"
+        canonical="/about"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Electroo Buddy",
+          "description": "Professional electrical service provider with certified and experienced electricians",
+          "url": "https://electroobuddy.com",
+          "logo": "https://electroobuddy.com/logo.png",
+          "founder": {
+            "@type": "Person",
+            "name": "Electroo Buddy Team"
+          },
+          "employee": {
+            "@type": "Thing",
+            "description": "Team of certified electricians and electrical professionals"
+          }
+        }}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
 
@@ -328,7 +351,7 @@ const About = () => {
           flex-wrap: wrap;
           justify-content: center;
           gap: 24px;
-          max-width: 1100px;
+          max-width: 1200px;
           margin: 0 auto;
         }
 
@@ -443,7 +466,7 @@ const About = () => {
         <div className="about-hero-glow" />
         <div className="container mx-auto px-4 relative z-10">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="about-badge"><Zap size={12} /> Since 2012</div>
+            <div className="about-badge"><Zap size={12} /> Since 2001</div>
             <h1 className="about-hero-title">About <span>Electroobuddy</span></h1>
             <p className="about-hero-sub">Your Trusted Electrical Service Partner with over a decade of proven excellence</p>
           </motion.div>
@@ -463,7 +486,7 @@ const About = () => {
             <div className="section-label">Who We Are</div>
             <div className="who-divider" />
             <p className="who-text">
-              Electroobuddy is a leading electrical services company dedicated to providing top-notch electrical solutions for residential, commercial, and industrial clients. With over 12 years of experience and a team of certified master electricians, we deliver safe, reliable, and cost-effective services that exceed expectations.
+              Electroobuddy is a leading electrical services company dedicated to providing top-notch electrical solutions for residential, commercial, and industrial clients. With over 25 years of experience and a team of certified master electricians, we deliver safe, reliable, and cost-effective services that exceed expectations.
             </p>
           </motion.div>
         </div>

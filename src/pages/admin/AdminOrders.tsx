@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, Truck, CheckCircle, Clock, XCircle, Copy, AlertCircle,
-  ShoppingBag, Search, Filter, X, MapPin, Phone, CreditCard,
-  ChevronRight, ExternalLink, RotateCcw, Eye, Loader2
+  ShoppingBag, Search, Filter, X, MapPin, Phone, CreditCard, Mail, FileText,
+  ChevronRight, ExternalLink, RotateCcw, Eye, Loader2, Gift, Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +21,8 @@ interface Order {
   installation_total?: number;
   tax_amount?: number;
   discount_amount?: number;
+  coupon_code?: string | null;
+  coupon_id?: string | null;
   payment_method: string | null;
   razorpay_payment_id?: string;
   razorpay_order_id?: string;
@@ -32,6 +34,8 @@ interface Order {
   cancelled_at?: string | null;
   updated_at?: string | null;
   customer_email?: string;
+  customer_name?: string;
+  customer_phone?: string;
   customer_notes?: string;
   shipping_address_data?: any;
   tracking_number?: string | null;
@@ -41,6 +45,7 @@ interface Order {
   shiprocket_shipment_id?: number | null;
   estimated_delivery_date?: string | null;
   tracking_history?: Array<{ location?: string; message?: string; timestamp?: string; }>;
+  items?: any[];
 }
 
 // ─── Status config ────────────────────────────────────────────────────────────
@@ -137,17 +142,68 @@ const AdminOrders = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
 
   useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {
     try {
-      const { data, error } = await supabase.from("orders").select("*").order("ordered_at", { ascending: false });
-      if (error) throw error;
-      setOrders(data || []);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally { setLoading(false); }
+      // Fetch orders with items using a proper join
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          items:order_items(
+            id,
+            product_id,
+            product_name,
+            product_sku,
+            product_image,
+            quantity,
+            unit_price,
+            total_price,
+            installation_service,
+            installation_charge
+          )
+        `)
+        .order("ordered_at", { ascending: false });
+
+      if (ordersError) {
+        console.error('Supabase error fetching orders:', ordersError);
+        throw ordersError;
+      }
+      
+      // Transform data to match Order interface with proper type casting
+      const transformedOrders: Order[] = (ordersData || []).map((item: any) => {
+        // Extract customer info from shipping_address_data
+        const shippingAddress = item.shipping_address_data || {};
+        
+        return {
+          ...item,
+          coupon_code: item.coupon_code ?? null,
+          coupon_id: item.coupon_id ?? null,
+          customer_name: shippingAddress.full_name ?? item.customer_name ?? "N/A",
+          customer_email: shippingAddress.email ?? item.customer_email ?? "N/A",
+          customer_phone: shippingAddress.phone ?? item.customer_phone ?? "N/A",
+          items: Array.isArray(item.items) ? item.items : [],
+          tracking_history: Array.isArray(item.tracking_history) ? item.tracking_history : []
+        };
+      });
+      
+      console.log('✅ Fetched orders:', transformedOrders.length);
+      setOrders(transformedOrders);
+    } catch (error: any) {
+      console.error("❌ Error fetching orders:", error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      toast.error('Failed to load orders. Please refresh the page.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateOrderStatus = async (orderId: string, status: string) => {
@@ -212,9 +268,36 @@ const AdminOrders = () => {
     }
   };
 
+  const deleteOrder = async (orderId: string, orderNumber: string) => {
+    if (!confirm(`Are you sure you want to delete order #${orderNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingOrder(orderId);
+    try {
+      const { error } = await supabase.from("orders").delete().eq("id", orderId);
+      if (error) throw error;
+      
+      toast.success("Order deleted successfully");
+      fetchOrders();
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast.error("Failed to delete order");
+    } finally {
+      setDeletingOrder(null);
+    }
+  };
+
   const filtered = orders.filter(o => {
-    const matchesSearch = o.order_number.toLowerCase().includes(search.toLowerCase()) ||
-      (o.customer_email || "").toLowerCase().includes(search.toLowerCase());
+    const searchLower = search.toLowerCase();
+    const matchesSearch = 
+      o.order_number.toLowerCase().includes(searchLower) ||
+      (o.customer_email || "").toLowerCase().includes(searchLower) ||
+      (o.customer_phone || "").includes(search) ||
+      (o.customer_name || "").toLowerCase().includes(searchLower);
     const matchesStatus = statusFilter === "all" || o.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -265,7 +348,7 @@ const AdminOrders = () => {
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by order # or email…"
+            placeholder="Search by order #, email, phone or name…"
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all" />
         </div>
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
@@ -281,15 +364,15 @@ const AdminOrders = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/50">
-                {["Order", "Date", "Status", "Payment", "Amount", "Actions"].map((h, i) => (
-                  <th key={h} className={`px-5 py-3.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider ${i === 5 ? "text-right" : "text-left"}`}>{h}</th>
+                {["Order", "Customer", "Date", "Status", "Payment", "Amount", "Actions"].map((h, i) => (
+                  <th key={h} className={`px-5 py-3.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider ${i === 6 ? "text-right" : "text-left"}`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center">
+                  <td colSpan={7} className="px-6 py-16 text-center">
                     <ShoppingBag size={40} className="mx-auto text-zinc-200 dark:text-zinc-700 mb-3" strokeWidth={1.5} />
                     <p className="font-semibold text-zinc-500">No orders found</p>
                   </td>
@@ -299,7 +382,28 @@ const AdminOrders = () => {
                   <td className="px-5 py-4">
                     <div>
                       <p className="font-bold text-zinc-900 dark:text-white text-sm font-mono">#{order.order_number}</p>
-                      {order.customer_email && <p className="text-xs text-zinc-400 mt-0.5">{order.customer_email}</p>}
+                      {order.coupon_code && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                          <Gift size={10} /> {order.coupon_code}
+                        </p>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="space-y-1">
+                      {order.customer_name && order.customer_name !== "N/A" && (
+                        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
+                          <Package size={10} /> {order.customer_name}
+                        </p>
+                      )}
+                      {order.customer_email && order.customer_email !== "N/A" && (
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">{order.customer_email}</p>
+                      )}
+                      {order.customer_phone && order.customer_phone !== "N/A" && (
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                          <Phone size={10} /> {order.customer_phone}
+                        </p>
+                      )}
                     </div>
                   </td>
                   <td className="px-5 py-4">
@@ -334,6 +438,12 @@ const AdminOrders = () => {
                           <Truck size={12} /> Ship
                         </button>
                       )}
+                      <button 
+                        onClick={() => deleteOrder(order.id, order.order_number)}
+                        disabled={deletingOrder === order.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/30 dark:hover:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <Trash2 size={12} /> {deletingOrder === order.id ? "Deleting..." : "Delete"}
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -411,10 +521,182 @@ const AdminOrders = () => {
                         <span className="text-emerald-600">−₹{selectedOrder.discount_amount.toFixed(2)}</span>
                       </div>
                     ) : null}
+                    {selectedOrder.coupon_code && (
+                      <div className="flex justify-between text-sm items-center bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <span className="text-blue-700 dark:text-blue-300 font-medium">Coupon Applied</span>
+                        <span className="font-mono font-bold text-blue-900 dark:text-blue-200">{selectedOrder.coupon_code}</span>
+                      </div>
+                    )}
                     <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 mt-2 flex justify-between">
                       <span className="font-bold text-zinc-900 dark:text-white">Total</span>
                       <span className="font-bold text-blue-600 text-base">₹{selectedOrder.total_amount.toFixed(2)}</span>
                     </div>
+                  </div>
+                </SectionCard>
+
+                {/* Order Items */}
+                {selectedOrder.items && selectedOrder.items.length > 0 && (
+                  <SectionCard title="Order Items" icon={<Package size={13} />} accent="blue">
+                    <div className="space-y-3">
+                      {selectedOrder.items.map((item: any, index: number) => (
+                        <div key={index} className="flex items-start gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                          {item.product_image ? (
+                            <img
+                              src={item.product_image}
+                              alt={item.product_name}
+                              className="w-20 h-20 object-cover rounded-lg border border-zinc-200 dark:border-zinc-700 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 bg-zinc-200 dark:bg-zinc-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Package size={32} className="text-zinc-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-zinc-900 dark:text-white text-sm mb-1">
+                              {item.product_name || 'Product'}
+                            </h4>
+                            {item.product_sku && (
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+                                SKU: {item.product_sku}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-zinc-600 dark:text-zinc-400">
+                              <span>Qty: <strong>{parseInt(item.quantity) || 1}</strong></span>
+                              <span>Price: ₹{(parseFloat(item.unit_price) || 0).toFixed(2)}</span>
+                              <span className="font-bold text-zinc-900 dark:text-white">
+                                Total: ₹{((parseFloat(item.unit_price) || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}
+                              </span>
+                            </div>
+                            {item.installation_service && (
+                              <p className="text-xs text-green-600 dark:text-green-400 mt-1.5 flex items-center gap-1">
+                                <CheckCircle size={10} /> Installation service included
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </SectionCard>
+                )}
+
+                {/* Shipping & Product Details Section */}
+                <SectionCard title="Shipping & Product Details" icon={<Truck size={13} />} accent="green">
+                  <div className="space-y-4">
+                    {/* Shipping Address Box */}
+                    {selectedOrder.shipping_address_data && (
+                      <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                        <div className="flex items-start gap-2 mb-2">
+                          <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                          <div className="flex-1">
+                            <h5 className="font-semibold text-sm text-blue-900 dark:text-blue-200 mb-2">Ship To:</h5>
+                            <p className="text-sm font-medium text-blue-900 dark:text-blue-200">{selectedOrder.shipping_address_data.full_name || "Customer"}</p>
+                            <p className="text-sm text-blue-800 dark:text-blue-300">{selectedOrder.shipping_address_data.address_line1}</p>
+                            {selectedOrder.shipping_address_data.address_line2 && (
+                              <p className="text-sm text-blue-800 dark:text-blue-300">{selectedOrder.shipping_address_data.address_line2}</p>
+                            )}
+                            <p className="text-sm text-blue-800 dark:text-blue-300">
+                              {selectedOrder.shipping_address_data.city}, {selectedOrder.shipping_address_data.state} - {selectedOrder.shipping_address_data.postal_code}
+                            </p>
+                            {selectedOrder.shipping_address_data.phone && (
+                              <p className="text-sm text-blue-800 dark:text-blue-300 mt-1 flex items-center gap-1">
+                                <Phone size={12} /> {selectedOrder.shipping_address_data.phone}
+                              </p>
+                            )}
+                            {selectedOrder.shipping_address_data.email && (
+                              <p className="text-sm text-blue-800 dark:text-blue-300 flex items-center gap-1">
+                                <Mail size={12} /> {selectedOrder.shipping_address_data.email}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              const addr = selectedOrder.shipping_address_data;
+                              const fullAddress = `${addr.full_name}, ${addr.address_line1}${addr.address_line2 ? ', ' + addr.address_line2 : ''}, ${addr.city}, ${addr.state} - ${addr.postal_code}`;
+                              navigator.clipboard.writeText(`${fullAddress}\nPhone: ${addr.phone}\nEmail: ${addr.email}`);
+                              toast.success('Address copied to clipboard!');
+                            }}
+                            className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-600 hover:bg-blue-200 transition-colors"
+                            title="Copy full address"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Products List for Shipping */}
+                    {selectedOrder.items && selectedOrder.items.length > 0 && (
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                        <h5 className="font-semibold text-sm text-emerald-900 dark:text-emerald-200 mb-3 flex items-center gap-2">
+                          <Package size={14} />
+                          Products to Ship ({selectedOrder.items.length})
+                        </h5>
+                        <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                          {selectedOrder.items.map((item: any, index: number) => (
+                            <div key={index} className="flex items-start gap-3 p-2 bg-white dark:bg-zinc-800 rounded-lg border border-emerald-100 dark:border-emerald-900">
+                              <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-700 rounded flex items-center justify-center flex-shrink-0">
+                                {item.product_image ? (
+                                  <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover rounded" />
+                                ) : (
+                                  <Package size={20} className="text-zinc-400" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-emerald-900 dark:text-emerald-200 truncate">{item.product_name}</p>
+                                {item.product_sku && (
+                                  <p className="text-xs text-emerald-700 dark:text-emerald-400">SKU: {item.product_sku}</p>
+                                )}
+                                <p className="text-xs text-emerald-600 dark:text-emerald-500">
+                                  Qty: <strong>{parseInt(item.quantity) || 1}</strong> × ₹{(parseFloat(item.unit_price) || 0).toFixed(2)}
+                                </p>
+                              </div>
+                              {item.installation_service && (
+                                <div className="flex-shrink-0">
+                                  <span className="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-medium rounded">
+                                    <CheckCircle size={10} className="mr-1" />
+                                    Install
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-800">
+                          <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                            <AlertCircle size={12} />
+                            Verify all products and quantities before shipping
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Quick Actions for Shipping */}
+                    {!selectedOrder.tracking_number && selectedOrder.status !== "cancelled" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => createShipment(selectedOrder.id)}
+                          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors"
+                        >
+                          <Truck size={16} />
+                          Create Shipment
+                        </button>
+                        <button
+                          onClick={() => {
+                            // Generate packing slip
+                            const itemsList = selectedOrder.items?.map((i: any) => 
+                              `• ${i.product_name} (SKU: ${i.product_sku || 'N/A'}) × ${i.quantity}`
+                            ).join('\n');
+                            const packingSlip = `PACKING SLIP\nOrder: ${selectedOrder.order_number}\n\nItems:\n${itemsList}\n\nShip to:\n${selectedOrder.shipping_address_data?.full_name}\n${selectedOrder.shipping_address_data?.address_line1}\n${selectedOrder.shipping_address_data?.city}, ${selectedOrder.shipping_address_data?.state} - ${selectedOrder.shipping_address_data?.postal_code}`;
+                            navigator.clipboard.writeText(packingSlip);
+                            toast.success('Packing slip copied!');
+                          }}
+                          className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors"
+                        >
+                          <FileText size={16} />
+                          Copy Packing Slip
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </SectionCard>
 
@@ -446,6 +728,38 @@ const AdminOrders = () => {
                           </div>
                         )}
                       </>
+                    )}
+                  </div>
+                </SectionCard>
+
+                {/* Customer Information */}
+                <SectionCard title="Customer Information" icon={<Phone size={13} />} accent="blue">
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Customer Name</p>
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-white">{selectedOrder.customer_name || "N/A"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Email Address</p>
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedOrder.customer_email || "N/A"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Phone Number</p>
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedOrder.customer_phone || "N/A"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">User ID</p>
+                        <p className="text-xs font-mono text-zinc-600 dark:text-zinc-400 break-all">{selectedOrder.user_id}</p>
+                      </div>
+                    </div>
+                    {selectedOrder.customer_notes && (
+                      <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Customer Notes</p>
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300 italic bg-zinc-50 dark:bg-zinc-800 p-3 rounded-lg">
+                          {selectedOrder.customer_notes}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </SectionCard>
@@ -563,13 +877,6 @@ const AdminOrders = () => {
                 <SectionCard title="Order Timeline" icon={<Clock size={13} />} accent="slate">
                   <Timeline order={selectedOrder} />
                 </SectionCard>
-
-                {/* Customer notes */}
-                {selectedOrder.customer_notes && (
-                  <SectionCard title="Customer Notes" icon={<Package size={13} />} accent="slate">
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300 italic leading-relaxed">{selectedOrder.customer_notes}</p>
-                  </SectionCard>
-                )}
               </div>
             </motion.div>
           </motion.div>

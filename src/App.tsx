@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { HelmetProvider } from 'react-helmet-async';
 import PageTransition from "@/components/PageTransition";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -49,10 +50,19 @@ import AdminProjects from "./pages/admin/AdminProjects";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminUsers from "./pages/admin/AdminUsers";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminOrders from "./pages/admin/AdminOrders";
+import AdminProducts from "@/pages/admin/AdminProducts";
+import AdminCouponsCategories from "@/pages/admin/AdminCouponsCategories";
+import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminShippingSettings from "./pages/admin/AdminShippingSettings";
+import AdminTechnicians from "./pages/admin/AdminTechnicians";
+import TechnicianLogin from "./pages/technician/TechnicianLogin";
+import TechnicianLayout from "./pages/technician/TechnicianLayout";
+import TechnicianDashboard from "./pages/technician/TechnicianDashboard";
+import TechnicianBookings from "./pages/technician/TechnicianBookings";
+import TechnicianProfile from "./pages/technician/TechnicianProfile";
+import TechnicianSettings from "./pages/technician/TechnicianSettings";
+import TechnicianSignUp from "./pages/technician/TechnicianSignUp";
 
 const queryClient = new QueryClient();
 
@@ -60,19 +70,69 @@ const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin");
   const isUserPanel = location.pathname.startsWith("/dashboard") || location.pathname === "/login";
+  const isTechnicianPanel = location.pathname.startsWith("/technician") && !location.pathname.startsWith("/technician/login") && !location.pathname.startsWith("/technician/signup");
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hasShownInSession, setHasShownInSession] = useState(false);
+  const [shouldCheckModal, setShouldCheckModal] = useState(true);
 
   useEffect(() => {
     setMounted(true);
-    const timer = setTimeout(() => setShowBookingModal(true), 1200);
-    return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !shouldCheckModal) return;
+    
+    // Check if modal should be shown based on localStorage with 30-minute expiry
+    const showModalConfig = localStorage.getItem('bookingModalConfig');
+    const now = Date.now();
+    
+    // Don't show if already shown in this session
+    if (hasShownInSession) {
+      setShouldCheckModal(false);
+      return;
+    }
+    
+    if (!showModalConfig) {
+      // First time ever - show modal after delay
+      const timer = setTimeout(() => {
+        setShowBookingModal(true);
+        setHasShownInSession(true);
+        setShouldCheckModal(false);
+      }, 1200);
+      return () => clearTimeout(timer);
+    } else {
+      try {
+        const { dismissedAt, expiresAt } = JSON.parse(showModalConfig);
+        // Check if expired (30 minutes = 1800000 ms)
+        if (now > expiresAt) {
+          // Expired - show modal again
+          localStorage.removeItem('bookingModalConfig');
+          const timer = setTimeout(() => {
+            setShowBookingModal(true);
+            setHasShownInSession(true);
+            setShouldCheckModal(false);
+          }, 1200);
+          return () => clearTimeout(timer);
+        }
+        // Not expired - don't show (user dismissed within 30 min)
+        setShouldCheckModal(false);
+      } catch {
+        // Invalid data - show modal
+        const timer = setTimeout(() => {
+          setShowBookingModal(true);
+          setHasShownInSession(true);
+          setShouldCheckModal(false);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [mounted, hasShownInSession, shouldCheckModal]);
 
   return (
     <>
-      {!isAdmin && !isUserPanel && <Navbar />}
-      <main className={isAdmin || isUserPanel ? "" : "min-h-screen"}>
+      {!isAdmin && !isUserPanel && !isTechnicianPanel && <Navbar />}
+      <main className={isAdmin || isUserPanel || isTechnicianPanel ? "" : "min-h-screen"}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<PageTransition><Index /></PageTransition>} />
@@ -106,9 +166,11 @@ const AppContent = () => {
             <Route element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/products" element={<AdminProducts />} />
+              <Route path="/admin/coupons-categories" element={<AdminCouponsCategories />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/services" element={<AdminServices />} />
               <Route path="/admin/bookings" element={<AdminBookings />} />
+              <Route path="/admin/technicians" element={<AdminTechnicians />} />
               <Route path="/admin/team" element={<AdminTeam />} />
               <Route path="/admin/testimonials" element={<AdminTestimonials />} />
               <Route path="/admin/projects" element={<AdminProjects />} />
@@ -117,6 +179,16 @@ const AppContent = () => {
               <Route path="/admin/payments" element={<AdminPayments />} />
               <Route path="/admin/shipping" element={<AdminShippingSettings />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
+            </Route>
+
+            {/* Technician routes - hidden, no public links */}
+            <Route path="/technician/login" element={<TechnicianLogin />} />
+            <Route path="/technician/signup" element={<TechnicianSignUp />} />
+            <Route element={<TechnicianLayout />}>
+              <Route path="/technician/dashboard" element={<TechnicianDashboard />} />
+              <Route path="/technician/bookings" element={<TechnicianBookings />} />
+              <Route path="/technician/profile" element={<TechnicianProfile />} />
+              <Route path="/technician/settings" element={<TechnicianSettings />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
@@ -130,7 +202,13 @@ const AppContent = () => {
       {mounted && !isAdmin && !isUserPanel && (
         <AnimatePresence>
           {showBookingModal && (
-            <BookingModal onClose={() => setShowBookingModal(false)} />
+            <BookingModal 
+              onClose={() => {
+                setShowBookingModal(false);
+                setHasShownInSession(true);
+                setShouldCheckModal(false);
+              }} 
+            />
           )}
         </AnimatePresence>
       )}
@@ -139,21 +217,23 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <CartProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
-          </CartProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+  <HelmetProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppContent />
+              </BrowserRouter>
+            </CartProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </HelmetProvider>
 );
 
 export default App;

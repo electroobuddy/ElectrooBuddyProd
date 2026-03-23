@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Section from "@/components/Section";
-import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin } from "lucide-react";
+import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, UserCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ const BookingForm = () => {
   const preselected = params.get("service") || "";
   const [services, setServices] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [assigningTechnician, setAssigningTechnician] = useState(false);
   const [done, setDone] = useState(false);
   const { user } = useAuth();
 
@@ -70,12 +71,36 @@ const BookingForm = () => {
     if (user) {
       insertData.user_id = user.id;
     }
-    const { error } = await supabase.from("bookings").insert(insertData);
-    if (error) {
-      toast.error("Failed to submit booking. Please try again.");
-    } else {
+    
+    try {
+      // Insert booking
+      const { data: bookingData, error } = await supabase.from("bookings").insert(insertData).select().single();
+      
+      if (error) throw error;
+      
+      const bookingId = bookingData.id;
+      toast.success("Booking submitted! Assigning technician...");
+      
+      // Call auto-assign function
+      try {
+        const response = await supabase.functions.invoke("auto-assign-technician", {
+          body: { bookingId },
+        });
+        
+        if (response.error) {
+          console.error("Auto-assign error:", response.error);
+          toast.info("Booking submitted but no technician available right now. Admin will assign manually.");
+        } else if (response.data?.success) {
+          toast.success(`Technician assigned: ${response.data.technician.name} (${response.data.technician.phone})`);
+        } else {
+          toast.info("Booking submitted. No technician available at the moment. Admin will contact you soon.");
+        }
+      } catch (funcError) {
+        console.error("Failed to call auto-assign function:", funcError);
+        // Don't show error to user - booking was successful
+      }
+      
       setDone(true);
-      toast.success("Booking submitted! We'll confirm your appointment shortly.");
       setForm({ 
         name: "", 
         phone: "", 
@@ -91,8 +116,13 @@ const BookingForm = () => {
         has_old_fan: "",
         is_electricity_supply_on: "",
       });
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to submit booking. Please try again.");
+    } finally {
+      setSubmitting(false);
+      setAssigningTechnician(false);
     }
-    setSubmitting(false);
   };
 
   const phoneFromSettings = "+918109308287";
@@ -657,9 +687,9 @@ const BookingForm = () => {
                   </>
                 )}
 
-                <button type="submit" className="submit-btn" disabled={submitting}>
-                  {submitting ? (
-                    <><Loader2 size={18} className="animate-spin" /> Processing...</>
+                <button type="submit" className="submit-btn" disabled={submitting || assigningTechnician}>
+                  {submitting || assigningTechnician ? (
+                    <><Loader2 size={18} className="animate-spin" /> {assigningTechnician ? "Assigning Technician..." : "Processing..."}</>
                   ) : (
                     <><Zap size={16} /> Submit Booking</>
                   )}

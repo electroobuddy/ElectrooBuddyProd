@@ -4,7 +4,7 @@ import {
   Database, HardDrive, Activity, Server, TrendingUp, TrendingDown,
   RefreshCw, CheckCircle, AlertTriangle, Clock, Zap, Users,
   ShoppingCart, Package, FileText, BarChart3, Cpu, Wifi,
-  Star, FolderOpen, Mail, MessageSquare, Loader2
+  Star, FolderOpen, Mail, MessageSquare, Loader2, UserCheck, Wrench
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -134,6 +134,7 @@ const AdminDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
+  const [technicianStats, setTechnicianStats] = useState({ total: 0, active: 0, busy: 0, atCapacity: 0 });
   const { stats: tableCounts, loading: statsLoading, error: statsError } = useAdminDashboardStats();
   const { invalidateDashboardStats } = useAdminCacheInvalidation();
 
@@ -168,10 +169,50 @@ const AdminDashboard = () => {
     setMetrics((data as any[])?.[0] || null);
   };
 
+  const fetchTechnicianStats = async () => {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      
+      // Fetch all technicians
+      const { data: technicians } = await supabase
+        .from("technicians")
+        .select("id, daily_limit, status");
+
+      if (!technicians) return;
+
+      // Calculate stats
+      const activeTechs = technicians.filter(t => t.status === "active");
+      
+      // Get today's assignments for each technician
+      const techsWithCount = await Promise.all(
+        activeTechs.map(async (tech) => {
+          const { count } = await supabase
+            .from("bookings")
+            .select("*", { count: "exact", head: true })
+            .eq("assigned_technician_id", tech.id)
+            .eq("assignment_date", today);
+          
+          return { ...tech, todayCount: count || 0 };
+        })
+      );
+
+      const atCapacity = techsWithCount.filter(t => t.todayCount >= (t.daily_limit || 5)).length;
+
+      setTechnicianStats({
+        total: technicians.length,
+        active: activeTechs.length,
+        busy: technicians.filter(t => t.status === "busy").length,
+        atCapacity,
+      });
+    } catch (error) {
+      console.error("Failed to fetch technician stats:", error);
+    }
+  };
+
   const fetchStats = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     try {
-      await Promise.all([fetchDatabaseStats(), fetchSystemMetrics()]);
+      await Promise.all([fetchDatabaseStats(), fetchSystemMetrics(), fetchTechnicianStats()]);
       if (isRefresh) toast.success("Statistics refreshed");
     } catch (err) {
       console.error(err);
@@ -272,19 +313,56 @@ const AdminDashboard = () => {
           icon={<Clock size={18} />} />
       </div>
 
+      {/* Technician Stats */}
+      <div>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Technician Overview</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { icon: UserCheck,    label: "Total Techs",   count: technicianStats.total,      color: "blue",   delay: 0.04 },
+            { icon: CheckCircle,  label: "Active",        count: technicianStats.active,     color: "emerald", delay: 0.06 },
+            { icon: AlertTriangle, label: "Busy",         count: technicianStats.busy,       color: "orange", delay: 0.08 },
+            { icon: Wrench,       label: "At Capacity",   count: technicianStats.atCapacity, color: "red",    delay: 0.10 },
+          ].map(item => (
+            <motion.div key={item.label} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: item.delay }}
+              className={`p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow ${
+                item.color === "blue" ? "border-blue-100 dark:border-blue-900" :
+                item.color === "emerald" ? "border-emerald-100 dark:border-emerald-900" :
+                item.color === "orange" ? "border-orange-100 dark:border-orange-900" :
+                "border-red-100 dark:border-red-900"
+              }`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                item.color === "blue" ? "bg-blue-50 dark:bg-blue-950/20 text-blue-600" :
+                item.color === "emerald" ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600" :
+                item.color === "orange" ? "bg-orange-50 dark:bg-orange-950/20 text-orange-600" :
+                "bg-red-50 dark:bg-red-950/20 text-red-600"
+              }`}>
+                <item.icon size={18} />
+              </div>
+              <p className={`text-2xl font-bold ${
+                item.color === "blue" ? "text-blue-600" :
+                item.color === "emerald" ? "text-emerald-600" :
+                item.color === "orange" ? "text-orange-600" :
+                "text-red-600"
+              }`}>{fmt(item.count)}</p>
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{item.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
       {/* Content counts */}
       <div>
         <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Content Overview</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           {[
-            { icon: Package,      label: "Products",     count: tableCounts?.products || 0,          color: "blue",   delay: 0.04 },
-            { icon: ShoppingCart, label: "Orders",       count: tableCounts?.orders || 0,            color: "green",  delay: 0.06 },
-            { icon: Users,        label: "Users",        count: tableCounts?.users || 0,             color: "violet", delay: 0.08 },
-            { icon: FileText,     label: "Bookings",     count: tableCounts?.bookings || 0,          color: "orange", delay: 0.10 },
-            { icon: Zap,          label: "Services",     count: tableCounts?.services || 0,          color: "yellow", delay: 0.12 },
-            { icon: FolderOpen,   label: "Projects",     count: tableCounts?.projects || 0,          color: "pink",   delay: 0.14 },
-            { icon: Star,         label: "Testimonials", count: tableCounts?.testimonials || 0,      color: "cyan",   delay: 0.16 },
-            { icon: Mail,         label: "Messages",     count: tableCounts?.contact_messages || 0,  color: "indigo", delay: 0.18 },
+            { icon: Package,      label: "Products",     count: tableCounts?.products || 0,          color: "blue",   delay: 0.12 },
+            { icon: ShoppingCart, label: "Orders",       count: tableCounts?.orders || 0,            color: "green",  delay: 0.14 },
+            { icon: Users,        label: "Users",        count: tableCounts?.users || 0,             color: "violet", delay: 0.16 },
+            { icon: FileText,     label: "Bookings",     count: tableCounts?.bookings || 0,          color: "orange", delay: 0.18 },
+            { icon: Zap,          label: "Services",     count: tableCounts?.services || 0,          color: "yellow", delay: 0.20 },
+            { icon: FolderOpen,   label: "Projects",     count: tableCounts?.projects || 0,          color: "pink",   delay: 0.22 },
+            { icon: Star,         label: "Testimonials", count: tableCounts?.testimonials || 0,      color: "cyan",   delay: 0.24 },
+            { icon: Mail,         label: "Messages",     count: tableCounts?.contact_messages || 0,  color: "indigo", delay: 0.26 },
           ].map(item => <CountCard key={item.label} {...item} />)}
         </div>
       </div>

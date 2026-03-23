@@ -1,4 +1,33 @@
-# Welcome to your Lovable project
+# ElectroBuddy - Professional Electrical Services Platform
+
+A modern web application for electrical service booking, e-commerce, and technician management.
+
+## 🚀 Quick Start
+
+### Database Setup (5 minutes)
+
+1. **Run Migrations in Order:**
+   ```sql
+   -- In Supabase SQL Editor: https://skfpcuiwrcmeiyhvuniv.supabase.co/project/_/sql
+   001-core-setup.sql          ← Run first
+   002-ecommerce-setup.sql     ← Run second
+   003-technicians-setup.sql   ← Run third
+   004-seed-data-and-admin.sql ← Run last
+   ```
+
+2. **Create Admin User:**
+   - Go to Supabase Dashboard > Authentication > Users
+   - Add user: `electroobuddy@gmail.com`
+   - Set secure password
+
+3. **Test Login:**
+   - Navigate to: `http://localhost:5173/admin/login`
+   - Login with your admin credentials
+   - Access admin dashboard
+
+📖 **Full Guide:** See [QUICKSTART.md](./QUICKSTART.md) for detailed setup instructions.
+
+---
 
 ## Project info
 
