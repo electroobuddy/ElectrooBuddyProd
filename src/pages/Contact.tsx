@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Section from "@/components/Section";
+import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { Zap, Phone, Mail, MapPin, Send, Loader2, CheckCircle } from "lucide-react";
 import { PHONE_NUMBER } from "@/data/services";
@@ -46,6 +47,25 @@ const Contact = () => {
 
   return (
     <>
+      <SEO
+        title="Contact Electroo Buddy - Get in Touch for Electrical Services in Ujjain"
+        description="Contact us for all your electrical needs in Ujjain. Call +91-81093-08287 or email electroobuddy@gmail.com. Fast response, expert advice, and free quotes available."
+        keywords="contact electrician, electrical services contact, get quote, free consultation, emergency electrician contact, electrical repair contact"
+        canonical="/contact"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "ContactPage",
+          "url": "https://electroobuddy.com/contact",
+          "description": "Contact Electroo Buddy for professional electrical services",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+91-81093-08287",
+            "email": "electroobuddy@gmail.com",
+            "contactType": "customer service",
+            "availableLanguage": ["English", "Hindi"]
+          }
+        }}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
 

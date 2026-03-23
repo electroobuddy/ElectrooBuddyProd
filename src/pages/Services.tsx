@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
+import SEO from "@/components/SEO";
 import ServiceCard from "@/components/ServiceCard";
 import { Zap, Loader2 } from "lucide-react";
 import { services as defaultServices } from "@/data/services";
@@ -25,6 +26,55 @@ const Services = () => {
 
   return (
     <>
+      <SEO
+        title="Electrical Services in Ujjain | Installation, Repair & Maintenance"
+        description="Comprehensive electrical services including installation, repair, maintenance for residential, commercial and industrial properties. Emergency services available 24/7 with certified professionals."
+        keywords="electrical services, electrical installation, electrical repair, wiring services, maintenance services, emergency electrician, panel upgrade, lighting installation, ceiling fan installation, electrical troubleshooting"
+        canonical="/services"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "Service",
+          "serviceType": "Electrical Services",
+          "provider": {
+            "@type": "LocalBusiness",
+            "name": "Electroo Buddy"
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Ujjain"
+          },
+          "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Electrical Services",
+            "itemListElement": [
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "Service",
+                  "name": "Electrical Installation",
+                  "description": "Professional electrical installation services for homes and businesses"
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "Service",
+                  "name": "Electrical Repair",
+                  "description": "Fast and reliable electrical repair services"
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "Service",
+                  "name": "Maintenance Services",
+                  "description": "Regular electrical maintenance to prevent issues"
+                }
+              }
+            ]
+          }
+        }}
+      />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap');
 
