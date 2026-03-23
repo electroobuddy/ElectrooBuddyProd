@@ -6,6 +6,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
+  isTechnician: boolean;
   loading: boolean;
   signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
@@ -18,17 +19,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isTechnician, setIsTechnician] = useState(false);
   const [loading, setLoading] = useState(true);
   const initialized = useRef(false);
 
-  const checkAdmin = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    setIsAdmin(!!data);
+  const checkUserRoles = async (userId: string) => {
+    try {
+      console.log('🔍 Checking roles for user:', userId);
+      
+      // Fetch all roles for the user
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      
+      if (error) {
+        console.error('❌ Error fetching roles:', error);
+        setIsAdmin(false);
+        setIsTechnician(false);
+        return;
+      }
+      
+      console.log('🎭 Fetched roles:', data);
+      
+      // Check each role
+      const hasAdminRole = data?.some(r => r.role === 'admin') || false;
+      const hasTechnicianRole = data?.some(r => r.role === 'technician') || false;
+      
+      console.log('✅ Is Admin?', hasAdminRole);
+      console.log('✅ Is Technician?', hasTechnicianRole);
+      
+      setIsAdmin(hasAdminRole);
+      setIsTechnician(hasTechnicianRole);
+    } catch (err) {
+      console.error('❌ Exception in checkUserRoles:', err);
+      setIsAdmin(false);
+      setIsTechnician(false);
+    }
   };
 
   useEffect(() => {
@@ -37,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await checkAdmin(session.user.id);
+        await checkUserRoles(session.user.id);
       }
       initialized.current = true;
       setLoading(false);
@@ -52,9 +79,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await checkAdmin(session.user.id);
+          await checkUserRoles(session.user.id);
         } else {
           setIsAdmin(false);
+          setIsTechnician(false);
         }
       }
     );
@@ -84,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, isAdmin, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, user, isAdmin, isTechnician, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

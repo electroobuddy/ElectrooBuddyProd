@@ -53,6 +53,14 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminShippingSettings from "./pages/admin/AdminShippingSettings";
+import AdminTechnicians from "./pages/admin/AdminTechnicians";
+import TechnicianLogin from "./pages/technician/TechnicianLogin";
+import TechnicianLayout from "./pages/technician/TechnicianLayout";
+import TechnicianDashboard from "./pages/technician/TechnicianDashboard";
+import TechnicianBookings from "./pages/technician/TechnicianBookings";
+import TechnicianProfile from "./pages/technician/TechnicianProfile";
+import TechnicianSettings from "./pages/technician/TechnicianSettings";
+import TechnicianSignUp from "./pages/technician/TechnicianSignUp";
 
 const queryClient = new QueryClient();
 
@@ -60,19 +68,24 @@ const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin");
   const isUserPanel = location.pathname.startsWith("/dashboard") || location.pathname === "/login";
+  const isTechnicianPanel = location.pathname.startsWith("/technician");
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const timer = setTimeout(() => setShowBookingModal(true), 1200);
-    return () => clearTimeout(timer);
+    // Only show modal if user hasn't dismissed it in this session
+    const hasDismissed = sessionStorage.getItem('bookingModalDismissed');
+    if (!hasDismissed) {
+      const timer = setTimeout(() => setShowBookingModal(true), 1200);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   return (
     <>
-      {!isAdmin && !isUserPanel && <Navbar />}
-      <main className={isAdmin || isUserPanel ? "" : "min-h-screen"}>
+      {!isAdmin && !isUserPanel && !isTechnicianPanel && <Navbar />}
+      <main className={isAdmin || isUserPanel || isTechnicianPanel ? "" : "min-h-screen"}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<PageTransition><Index /></PageTransition>} />
@@ -109,6 +122,7 @@ const AppContent = () => {
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/services" element={<AdminServices />} />
               <Route path="/admin/bookings" element={<AdminBookings />} />
+              <Route path="/admin/technicians" element={<AdminTechnicians />} />
               <Route path="/admin/team" element={<AdminTeam />} />
               <Route path="/admin/testimonials" element={<AdminTestimonials />} />
               <Route path="/admin/projects" element={<AdminProjects />} />
@@ -117,6 +131,16 @@ const AppContent = () => {
               <Route path="/admin/payments" element={<AdminPayments />} />
               <Route path="/admin/shipping" element={<AdminShippingSettings />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
+            </Route>
+
+            {/* Technician routes - hidden, no public links */}
+            <Route path="/technician/login" element={<TechnicianLogin />} />
+            <Route path="/technician/signup" element={<TechnicianSignUp />} />
+            <Route element={<TechnicianLayout />}>
+              <Route path="/technician/dashboard" element={<TechnicianDashboard />} />
+              <Route path="/technician/bookings" element={<TechnicianBookings />} />
+              <Route path="/technician/profile" element={<TechnicianProfile />} />
+              <Route path="/technician/settings" element={<TechnicianSettings />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

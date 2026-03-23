@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen,
   Mail, Settings, LogOut, Loader2, UserCog, Menu, X, Package,
-  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight
+  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ const navItems = [
   { label: "Services",     to: "/admin/services",     icon: Wrench,          group: "services" },
   { label: "Bookings",     to: "/admin/bookings",     icon: CalendarDays,    group: "services" },
   { label: "Users",        to: "/admin/users",        icon: UserCog,         group: "people" },
+  { label: "Technicians",  to: "/admin/technicians",  icon: UserCheck,       group: "people" },
   { label: "Team",         to: "/admin/team",         icon: Users,           group: "people" },
   { label: "Testimonials", to: "/admin/testimonials", icon: Star,            group: "content" },
   { label: "Projects",     to: "/admin/projects",     icon: FolderOpen,      group: "content" },

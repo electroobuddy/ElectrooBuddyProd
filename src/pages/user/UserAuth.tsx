@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Zap, Loader2, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -38,7 +39,48 @@ const UserAuth = () => {
       const { error } = await signIn(email, password, rememberMe);
       if (error) {
         toast.error(error.message || "Login failed");
+        console.error('❌ Login error:', error);
       } else {
+        console.log('✅ Login successful!');
+        
+        // Fetch and log user roles after successful login
+        const fetchUserRoles = async () => {
+          try {
+            // Get current user from auth state
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (user) {
+              console.log('👤 Current user:', user.email);
+              
+              const { data: rolesData, error: rolesError } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', user.id);
+              
+              if (rolesError) {
+                console.error('❌ Error fetching roles:', rolesError);
+              } else {
+                console.log('🎭 User Roles:', rolesData);
+                console.log('Roles array:', rolesData.map((r: any) => r.role));
+                
+                // Check for specific roles
+                const hasAdminRole = rolesData.some((r: any) => r.role === 'admin');
+                const hasTechnicianRole = rolesData.some((r: any) => r.role === 'technician');
+                const hasUserRole = rolesData.some((r: any) => r.role === 'user');
+                
+                console.log('📋 Role Check:');
+                console.log('  - Is Admin?', hasAdminRole);
+                console.log('  - Is Technician?', hasTechnicianRole);
+                console.log('  - Is User?', hasUserRole);
+              }
+            }
+          } catch (err) {
+            console.error('Unexpected error fetching user:', err);
+          }
+        };
+        
+        fetchUserRoles();
+        
         toast.success("Welcome back!");
         
         // Store email if remember me is checked (for convenience only)
@@ -61,7 +103,36 @@ const UserAuth = () => {
       const { error } = await signUp(email, password);
       if (error) {
         toast.error(error.message || "Sign up failed");
+        console.error('❌ Signup error:', error);
       } else {
+        console.log('✅ Signup successful!');
+        
+        // Log the default role that was created
+        setTimeout(async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (user) {
+              console.log('🆕 New user created with ID:', user.id);
+              console.log('📧 Email:', user.email);
+              
+              // Fetch the role that was automatically assigned
+              const { data: rolesData, error: rolesError } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', user.id);
+              
+              if (rolesError) {
+                console.error('❌ Error fetching roles after signup:', rolesError);
+              } else {
+                console.log('🎭 Default Role Assigned:', rolesData);
+              }
+            }
+          } catch (err) {
+            console.error('Unexpected error fetching user after signup:', err);
+          }
+        }, 1000);
+        
         toast.success("Account created! Please check your email to verify your account.");
       }
     }

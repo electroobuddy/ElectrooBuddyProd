@@ -62,7 +62,7 @@ const BlinkingEye = () => {
         width: "0.72em",
         height: "0.72em",
         verticalAlign: "middle",
-        marginBottom: "0.1em",
+        // marginBottom: "0.1em",
         // Inherit the yellow gradient colour from the parent span
         flexShrink: 0,
       }}
@@ -257,6 +257,8 @@ const Navbar = () => {
           display: inline-flex;
           align-items: center;
           gap: 0;
+          white-space: nowrap;
+
         }
 
         /* Desktop links */

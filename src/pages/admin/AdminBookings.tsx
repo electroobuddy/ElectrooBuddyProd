@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Pencil, Trash2, X, Eye, Calendar, Clock, Phone,
   MapPin, Search, Download, User, Wrench, AlignLeft, Check,
-  CalendarDays, Filter, ChevronRight, Save, CheckCircle
+  CalendarDays, Filter, ChevronRight, Save, CheckCircle, UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,11 +49,13 @@ const AdminBookings = () => {
   const [viewing, setViewing] = useState<any | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
+  const [assigningTechnician, setAssigningTechnician] = useState<string | null>(null);
+  const [availableTechnicians, setAvailableTechnicians] = useState<any[]>([]);
   const [editForm, setEditForm] = useState({
     name: "", phone: "", email: "", address: "", service_type: "",
     preferred_date: "", preferred_time: "", description: "", status: "pending",
     exact_location: "", custom_service_demand: "", is_switch_working: "",
-    has_old_fan: "", is_electricity_supply_on: ""
+    has_old_fan: "", is_electricity_supply_on: "", assigned_technician_id: ""
   });
   const patchEdit = (u: any) => setEditForm(prev => ({ ...prev, ...u }));
 
@@ -66,6 +68,13 @@ const AdminBookings = () => {
   };
 
   useEffect(() => { fetchData(); }, [filter]);
+
+  // Fetch available technicians when viewing a booking
+  useEffect(() => {
+    if (viewing) {
+      fetchAvailableTechnicians();
+    }
+  }, [viewing]);
 
   const updateStatus = async (id: string, newStatus: string) => {
     const booking = bookings.find(b => b.id === id);
@@ -80,7 +89,8 @@ const AdminBookings = () => {
 
   const handleEdit = (b: any) => {
     setEditing(b);
-    setEditForm({ 
+    setEditForm(prev => ({ 
+      ...prev,
       name: b.name, 
       phone: b.phone, 
       email: b.email || "", 
@@ -94,8 +104,9 @@ const AdminBookings = () => {
       custom_service_demand: b.custom_service_demand || "",
       is_switch_working: b.is_switch_working || "",
       has_old_fan: b.has_old_fan || "",
-      is_electricity_supply_on: b.is_electricity_supply_on || ""
-    });
+      is_electricity_supply_on: b.is_electricity_supply_on || "",
+      assigned_technician_id: b.assigned_technician_id || ""
+    }));
   };
 
   const handleSaveEdit = async () => {
@@ -106,6 +117,102 @@ const AdminBookings = () => {
     toast.success("Booking updated");
     setEditing(null); fetchData();
     setSaving(false);
+  };
+
+  const fetchAvailableTechnicians = async () => {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      
+      // Fetch active technicians
+      const { data: technicians } = await supabase
+        .from("technicians" as any)
+        .select("*")
+        .eq("status", "active")
+        .order("priority", { ascending: false });
+
+      if (!technicians) return;
+
+      // Get today's count for each
+      const techsWithCount = await Promise.all(
+        technicians.map(async (tech: any) => {
+          const { count } = await supabase
+            .from("bookings")
+            .select("*", { count: "exact", head: true })
+            .eq("assigned_technician_id", tech.id)
+            .eq("assignment_date", today);
+          
+          return { ...tech, todayCount: count || 0 };
+        })
+      );
+
+      // Filter those with capacity
+      const available = techsWithCount.filter((t: any) => t.todayCount < (t.daily_limit || 5));
+      setAvailableTechnicians(available);
+    } catch (error) {
+      console.error("Failed to fetch available technicians:", error);
+    }
+  };
+
+  const handleAssignTechnician = async (bookingId: string, technicianId: string) => {
+    if (!technicianId) return;
+    
+    setAssigningTechnician(bookingId);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      
+      const { error } = await supabase
+        .from("bookings")
+        .update({
+          assigned_technician_id: technicianId,
+          status: "assigned",
+          assigned_at: new Date().toISOString(),
+          assignment_date: today,
+        })
+        .eq("id", bookingId);
+
+      if (error) throw error;
+
+      toast.success("Technician assigned successfully");
+      fetchData();
+      
+      // Update viewing if needed
+      if (viewing?.id === bookingId) {
+        setViewing({ ...viewing, assigned_technician_id: technicianId, status: "assigned" });
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to assign technician");
+    } finally {
+      setAssigningTechnician(null);
+    }
+  };
+
+  const handleUnassignTechnician = async (bookingId: string) => {
+    if (!confirm("Unassign technician from this booking?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({
+          assigned_technician_id: null,
+          status: "pending",
+          assigned_at: null,
+          assignment_date: null,
+        })
+        .eq("id", bookingId);
+
+      if (error) throw error;
+
+      toast.success("Technician unassigned");
+      fetchData();
+      
+      if (viewing?.id === bookingId) {
+        setViewing({ ...viewing, assigned_technician_id: null, status: "pending" });
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to unassign technician");
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -296,6 +403,54 @@ const AdminBookings = () => {
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />{cfg.label}
                       </button>
                     ))}
+                  </div>
+                </SectionCard>
+
+                {/* Technician Assignment */}
+                <SectionCard title="Technician Assignment" icon={<UserCheck size={13} />}>
+                  <div className="space-y-3">
+                    {viewing.assigned_technician_id ? (
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/50 flex items-center justify-center">
+                              <UserCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-sm text-emerald-900 dark:text-emerald-300">Assigned to Technician</p>
+                              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                                {new Date(viewing.assigned_at).toLocaleString("en-IN")}
+                              </p>
+                            </div>
+                          </div>
+                          <button onClick={() => handleUnassignTechnician(viewing.id)}
+                            className="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 rounded-lg transition-colors">
+                            Unassign
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-zinc-500 block">Assign Technician</label>
+                        <select
+                          value=""
+                          onChange={async (e) => {
+                            const techId = e.target.value;
+                            if (techId) {
+                              await handleAssignTechnician(viewing.id, techId);
+                            }
+                          }}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all">
+                          <option value="">Select a technician…</option>
+                          {availableTechnicians.map((tech) => (
+                            <option key={tech.id} value={tech.id}>
+                              {tech.name} - {tech.todayCount}/{tech.daily_limit} today (Priority: {tech.priority})
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-[10px] text-zinc-400">Only shows active technicians with available capacity</p>
+                      </div>
+                    )}
                   </div>
                 </SectionCard>
 
