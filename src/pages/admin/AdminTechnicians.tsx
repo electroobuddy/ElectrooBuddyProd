@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Plus, Pencil, Trash2, X, Eye, User, Mail, Phone,
   MapPin, Wrench, Briefcase, Search, Filter, CheckCircle,
-  AlertCircle, Save, Shield, TrendingUp, Calendar, Star
+  AlertCircle, Save, Shield, TrendingUp, Calendar, Star, Copy
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -170,22 +170,12 @@ const AdminTechnicians = () => {
       // Generate random password if not provided
       const password = form.password || Math.random().toString(36).slice(-8);
 
-      // Create auth user with admin privileges
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: form.email,
-        password: password,
-        email_confirm: true,
-      });
-
-      if (authError) throw authError;
-
-      // Create technician record with approved status
-      const { error: techError } = await supabase
-        .from("technicians")
-        .insert({
-          user_id: authData.user.id,
-          name: form.name,
+      // Call the Edge Function to create technician
+      const { data, error } = await supabase.functions.invoke('create-technician-by-admin', {
+        body: {
           email: form.email,
+          password: password,
+          name: form.name,
           phone: form.phone,
           address: form.address,
           skills: form.skills,
@@ -194,23 +184,47 @@ const AdminTechnicians = () => {
           priority: form.priority,
           status: form.status,
           profile_url: form.profile_url,
-          approval_status: 'approved', // Auto-approve when created by admin
-        });
+        },
+      });
 
-      if (techError) throw techError;
-
-      // Assign user role as 'user' (technician role)
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({
-          user_id: authData.user.id,
-          role: "user",
-        });
-
-      if (roleError) console.warn("Failed to assign user role:", roleError);
+      if (error) throw error;
+      if (!data?.success) throw new Error("Failed to create technician");
 
       toast.success("Technician created successfully");
-      toast.info(`Password: ${password}`, { duration: 10000 });
+      
+      // Show credentials with copy button
+      toast.custom(
+        (t) => (
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-lg max-w-sm">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <p className="font-semibold text-zinc-900 dark:text-white">Login Credentials</p>
+                <p className="text-xs text-zinc-500 mt-0.5">Save these securely</p>
+              </div>
+              <button
+                onClick={() => copyCredentials(form.email, password)}
+                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+                title="Copy credentials"
+              >
+                <Copy size={16} className="text-blue-600" />
+              </button>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Mail size={12} className="text-zinc-400" />
+                <span className="text-zinc-700 dark:text-zinc-300">{form.email}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-400 text-xs">🔑</span>
+                <code className="bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded text-xs font-mono text-zinc-700 dark:text-zinc-300">
+                  {password}
+                </code>
+              </div>
+            </div>
+          </div>
+        ),
+        { duration: 20000 }
+      );
       
       setAdding(false);
       resetForm();
@@ -342,6 +356,12 @@ const AdminTechnicians = () => {
       status: "active",
       profile_url: "",
     });
+  };
+
+  const copyCredentials = (email: string, password: string) => {
+    const credentials = `Email: ${email}\nPassword: ${password}`;
+    navigator.clipboard.writeText(credentials);
+    toast.success("Credentials copied to clipboard!");
   };
 
   const toggleSkill = (skill: string) => {

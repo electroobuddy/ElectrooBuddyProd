@@ -64,7 +64,24 @@ const TechnicianSignUp = () => {
         throw new Error("Failed to create account");
       }
 
-      // Create technician record (pending approval)
+      // Assign technician role to the user FIRST
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: authData.user.id,
+          role: "technician",
+        });
+
+      if (roleError) {
+        console.error("Error assigning technician role:", roleError);
+        // Check if it's a duplicate key error (role already exists)
+        if (!roleError.message.includes('duplicate key')) {
+          throw new Error("Failed to assign technician role");
+        }
+        // If role already exists, continue with technician creation
+      }
+
+      // Create technician record SECOND
       const { error: techError } = await supabase
         .from("technicians")
         .insert({
@@ -75,27 +92,24 @@ const TechnicianSignUp = () => {
           address: form.address,
           skills: form.skills,
           experience: form.experience,
-          status: "offline", // Start offline until approved by admin
+          status: "offline", // Start offline until admin activates
           daily_limit: 5,
-          approval_status: "pending", // Requires admin approval
+          priority: 1,
         });
 
       if (techError) throw techError;
 
-      // Note: user_roles assignment will be done by admin during approval
-      // This avoids RLS policy violations during self-signup
-
       toast.success(
-        "Account created! Please wait for admin approval. We'll notify you once approved.",
+        "Account created successfully! You can now login and complete your profile.",
         {
-          duration: 8000,
+          duration: 5000,
         }
       );
 
       // Redirect to login after delay
       setTimeout(() => {
         navigate("/technician/login");
-      }, 3000);
+      }, 2000);
 
     } catch (error: any) {
       console.error(error);
@@ -332,10 +346,10 @@ const TechnicianSignUp = () => {
             <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-800 dark:text-blue-300">
-                <p className="font-semibold mb-1">Approval Required</p>
+                <p className="font-semibold mb-1">Instant Access</p>
                 <p>
-                  After signing up, your application will be reviewed by our admin team. 
-                  You'll receive an email notification once your account is approved and activated.
+                  Your account is created immediately. You can login right away and start managing your profile. 
+                  Admin will review and activate your account for booking assignments.
                 </p>
               </div>
             </div>

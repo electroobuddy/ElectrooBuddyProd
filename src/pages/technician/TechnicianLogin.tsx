@@ -29,20 +29,39 @@ const TechnicianLogin = () => {
         throw new Error("Failed to get user information");
       }
 
-      // Verify user is a technician
+      // Check if user has technician role in user_roles
+      const { data: userRole, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "technician")
+        .maybeSingle();
+
+      if (roleError || !userRole) {
+        await supabase.auth.signOut();
+        throw new Error("Access denied. Not a technician account.");
+      }
+
+      // Try to get technician profile (it might not exist yet if they haven't completed signup)
       const { data: technician, error: techError } = await supabase
         .from("technicians")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (techError || !technician) {
-        await supabase.auth.signOut();
-        throw new Error("Access denied. Not a technician account.");
+      if (techError) {
+        console.error("Error fetching technician profile:", techError);
+        // Still allow login if they have the role, they might need to complete profile
       }
 
-      toast.success("Welcome back, " + technician.name + "!");
-      navigate("/technician/dashboard");
+      toast.success("Welcome back!");
+      
+      // If technician profile exists, go to dashboard, otherwise go to profile page to complete setup
+      if (technician) {
+        navigate("/technician/dashboard");
+      } else {
+        navigate("/technician/profile");
+      }
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "Login failed. Please try again.");

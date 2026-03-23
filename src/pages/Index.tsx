@@ -1167,7 +1167,7 @@
 
 
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, ArrowRight, Shield, Clock, BadgeDollarSign, HeartHandshake,
@@ -1215,7 +1215,13 @@ export const BookingModal = ({ onClose }: { onClose: () => void }) => {
   const [gettingLocation, setGettingLocation] = useState(false);
 
   const handleClose = () => {
-    sessionStorage.setItem('bookingModalDismissed', 'true');
+    // Store dismissal time and expiry (30 minutes from now)
+    const now = Date.now();
+    const expiresAt = now + (30 * 60 * 1000); // 30 minutes in milliseconds
+    localStorage.setItem('bookingModalConfig', JSON.stringify({
+      dismissedAt: now,
+      expiresAt: expiresAt
+    }));
     onClose();
   };
 
@@ -1534,10 +1540,11 @@ const Index = () => {
   const { products: allProducts, loading: productsLoading } = useProducts({ sortBy: 'featured' });
 
   // Show is_featured products first; fall back to first 4 active products so the section is never empty
-  const featuredProducts = (() => {
+  // Memoized to prevent recalculation on every render and fix flickering
+  const featuredProducts = useMemo(() => {
     const featured = allProducts.filter(p => p.is_featured);
     return (featured.length > 0 ? featured : allProducts).slice(0, 4);
-  })();
+  }, [allProducts]);
 
   const displayServices = dbServices.length > 0
     ? dbServices

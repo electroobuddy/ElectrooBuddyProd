@@ -18,6 +18,7 @@ const TechnicianLayout = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [technician, setTechnician] = useState<any | null>(null);
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
 
   // Fetch technician profile
   useEffect(() => {
@@ -30,12 +31,21 @@ const TechnicianLayout = () => {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error || !data) {
-        toast.error("Technician profile not found");
-        navigate("/technician/login");
+      if (error) {
+        console.error("Error fetching technician profile:", error);
+        toast.error("Failed to load technician profile");
+        setHasProfile(false);
         return;
       }
 
+      // If no profile exists, mark as incomplete but don't redirect
+      if (!data) {
+        setHasProfile(false);
+        toast.info("Please complete your technician profile when ready");
+        return;
+      }
+
+      setHasProfile(true);
       setTechnician(data);
     };
 
@@ -55,7 +65,7 @@ const TechnicianLayout = () => {
     </div>
   );
 
-  if (!user || !technician) return <Navigate to="/technician/login" replace />;
+  if (!user) return <Navigate to="/technician/login" replace />;
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950">
@@ -68,7 +78,7 @@ const TechnicianLayout = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-white leading-none">Technician Panel</p>
-            <p className="text-xs text-zinc-500 mt-0.5">{technician.name}</p>
+            <p className="text-xs text-zinc-500 mt-0.5">{technician?.name || "Incomplete Profile"}</p>
           </div>
         </div>
 
@@ -96,16 +106,26 @@ const TechnicianLayout = () => {
 
         {/* Status & Sign out */}
         <div className="flex-shrink-0 px-2 py-3 border-t border-zinc-800">
-          <div className="mb-2 px-3">
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`w-2 h-2 rounded-full ${
-                technician.status === 'active' ? 'bg-emerald-500' :
-                technician.status === 'busy' ? 'bg-orange-500' : 'bg-zinc-500'
-              }`} />
-              <span className="text-xs font-medium text-zinc-400 capitalize">{technician.status}</span>
+          {hasProfile && technician && (
+            <>
+              <div className="mb-2 px-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-2 h-2 rounded-full ${
+                    technician.status === 'active' ? 'bg-emerald-500' :
+                    technician.status === 'busy' ? 'bg-orange-500' : 'bg-zinc-500'
+                  }`} />
+                  <span className="text-xs font-medium text-zinc-400 capitalize">{technician.status}</span>
+                </div>
+                <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+              </div>
+            </>
+          )}
+          {!hasProfile && (
+            <div className="mb-2 px-3">
+              <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+              <p className="text-xs text-orange-400 mt-1">Profile Incomplete</p>
             </div>
-            <p className="text-xs text-zinc-500 truncate">{user.email}</p>
-          </div>
+          )}
           <button onClick={async () => { await signOut(); navigate("/technician/login"); }}
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all w-full group">
             <LogOut className="w-4 h-4 flex-shrink-0 text-zinc-500 group-hover:text-zinc-300" />
@@ -150,7 +170,15 @@ const TechnicianLayout = () => {
               })}
             </nav>
             <div className="flex-shrink-0 px-2 py-3 border-t border-zinc-800">
-              <p className="text-xs text-zinc-500 truncate px-3 mb-2">{technician.name}</p>
+              {hasProfile && technician && (
+                <p className="text-xs text-zinc-500 truncate px-3 mb-2">{technician.name}</p>
+              )}
+              {!hasProfile && (
+                <>
+                  <p className="text-xs text-zinc-500 truncate px-3 mb-2">{user.email}</p>
+                  <p className="text-xs text-orange-400 px-3">Profile Incomplete</p>
+                </>
+              )}
               <button onClick={async () => { await signOut(); setMobileOpen(false); navigate("/technician/login"); }}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all w-full">
                 <LogOut className="w-4 h-4 flex-shrink-0 text-zinc-500" /> Sign Out

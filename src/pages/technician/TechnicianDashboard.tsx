@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { CalendarDays, CheckCircle, Clock, MapPin, Phone, Mail, Wrench, TrendingUp, Star } from "lucide-react";
+import { CalendarDays, CheckCircle, Clock, MapPin, Phone, Mail, Wrench, TrendingUp, Star, User } from "lucide-react";
 import { toast } from "sonner";
 
 const TechnicianDashboard = () => {
@@ -12,6 +12,7 @@ const TechnicianDashboard = () => {
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [technician, setTechnician] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -25,7 +26,12 @@ const TechnicianDashboard = () => {
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (!tech) return;
+        if (!tech) {
+          setHasProfile(false);
+          return;
+        }
+        
+        setHasProfile(true);
         setTechnician(tech);
 
         // Get stats
@@ -82,6 +88,80 @@ const TechnicianDashboard = () => {
   }, [user]);
 
   if (loading) return <div className="p-6 text-center">Loading...</div>;
+
+  // Show incomplete profile banner
+  if (!hasProfile) {
+    return (
+      <div className="p-6 space-y-6">
+        {/* Incomplete Profile Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h2 className="text-xl font-bold mb-2">⚠️ Profile Incomplete</h2>
+              <p className="text-orange-100 mb-4">
+                You haven't completed your technician profile yet. Please add your skills, experience, and service details to start receiving bookings.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  to="/technician/profile"
+                  className="inline-flex items-center gap-2 bg-white text-orange-600 px-6 py-2.5 rounded-xl font-semibold hover:bg-orange-50 transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  Complete Profile Now
+                </Link>
+                <Link
+                  to="/technician/signup"
+                  className="inline-flex items-center gap-2 bg-orange-700/50 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-orange-700 transition-colors"
+                >
+                  <Wrench className="w-4 h-4" />
+                  Use Signup Form
+                </Link>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Limited Dashboard Preview */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-800">
+            <h3 className="font-bold text-lg mb-3 text-zinc-900 dark:text-white">Why Complete Your Profile?</h3>
+            <ul className="space-y-2 text-zinc-600 dark:text-zinc-400">
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <span>Receive booking assignments from customers</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <span>Showcase your skills and expertise</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <span>Set your availability and daily limits</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <span>Build trust with potential customers</span>
+              </li>
+            </ul>
+          </div>
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white">
+            <h3 className="font-bold text-lg mb-3">Need Help?</h3>
+            <p className="text-blue-100 mb-4">
+              Our support team is here to help you get started.
+            </p>
+            <a href="mailto:support@electroobuddy.com" className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl font-semibold transition-colors">
+              <Mail className="w-4 h-4" />
+              Contact Support
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

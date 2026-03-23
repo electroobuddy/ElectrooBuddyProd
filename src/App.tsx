@@ -68,19 +68,64 @@ const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin");
   const isUserPanel = location.pathname.startsWith("/dashboard") || location.pathname === "/login";
-  const isTechnicianPanel = location.pathname.startsWith("/technician");
+  const isTechnicianPanel = location.pathname.startsWith("/technician") && !location.pathname.startsWith("/technician/login") && !location.pathname.startsWith("/technician/signup");
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hasShownInSession, setHasShownInSession] = useState(false);
+  const [shouldCheckModal, setShouldCheckModal] = useState(true);
 
   useEffect(() => {
     setMounted(true);
-    // Only show modal if user hasn't dismissed it in this session
-    const hasDismissed = sessionStorage.getItem('bookingModalDismissed');
-    if (!hasDismissed) {
-      const timer = setTimeout(() => setShowBookingModal(true), 1200);
-      return () => clearTimeout(timer);
-    }
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !shouldCheckModal) return;
+    
+    // Check if modal should be shown based on localStorage with 30-minute expiry
+    const showModalConfig = localStorage.getItem('bookingModalConfig');
+    const now = Date.now();
+    
+    // Don't show if already shown in this session
+    if (hasShownInSession) {
+      setShouldCheckModal(false);
+      return;
+    }
+    
+    if (!showModalConfig) {
+      // First time ever - show modal after delay
+      const timer = setTimeout(() => {
+        setShowBookingModal(true);
+        setHasShownInSession(true);
+        setShouldCheckModal(false);
+      }, 1200);
+      return () => clearTimeout(timer);
+    } else {
+      try {
+        const { dismissedAt, expiresAt } = JSON.parse(showModalConfig);
+        // Check if expired (30 minutes = 1800000 ms)
+        if (now > expiresAt) {
+          // Expired - show modal again
+          localStorage.removeItem('bookingModalConfig');
+          const timer = setTimeout(() => {
+            setShowBookingModal(true);
+            setHasShownInSession(true);
+            setShouldCheckModal(false);
+          }, 1200);
+          return () => clearTimeout(timer);
+        }
+        // Not expired - don't show (user dismissed within 30 min)
+        setShouldCheckModal(false);
+      } catch {
+        // Invalid data - show modal
+        const timer = setTimeout(() => {
+          setShowBookingModal(true);
+          setHasShownInSession(true);
+          setShouldCheckModal(false);
+        }, 1200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [mounted, hasShownInSession, shouldCheckModal]);
 
   return (
     <>
@@ -154,7 +199,13 @@ const AppContent = () => {
       {mounted && !isAdmin && !isUserPanel && (
         <AnimatePresence>
           {showBookingModal && (
-            <BookingModal onClose={() => setShowBookingModal(false)} />
+            <BookingModal 
+              onClose={() => {
+                setShowBookingModal(false);
+                setHasShownInSession(true);
+                setShouldCheckModal(false);
+              }} 
+            />
           )}
         </AnimatePresence>
       )}
