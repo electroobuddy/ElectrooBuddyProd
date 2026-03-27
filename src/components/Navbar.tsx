@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Zap, ChevronDown, ArrowRight, User, ShoppingCart } from "lucide-react";
+import { Menu, X, ChevronDown, ArrowRight, User, ShoppingCart, Sun, Moon, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/contexts/CartContext";
+
+// Import favicon
+import favicon from "/favicon.png";
 
 const navLinks = [
   { label: "Home",     to: "/" },
@@ -167,9 +170,17 @@ const Navbar = () => {
   const [open, setOpen]           = useState(false);
   const [pagesOpen, setPagesOpen] = useState(false);
   const [scrolled, setScrolled]   = useState(false);
+  const [darkMode, setDarkMode]   = useState(false);
   const location                  = useLocation();
   const { user }                  = useAuth();
   const { itemCount }             = useCart();
+
+  // Dark mode effect for mobile menu
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode') === 'true' || 
+      (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    setDarkMode(isDark);
+  }, []);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -421,6 +432,21 @@ const Navbar = () => {
         .dark .hamburger-btn { border-color: #374151; background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
         .dark .hamburger-btn:hover { background: rgba(59, 130, 246, 0.2); border-color: #60a5fa; color: #60a5fa; }
 
+        .mobile-theme-toggle {
+          width: 40px; height: 40px;
+          border-radius: 10px;
+          border: 1px solid #e5e7eb;
+          background: rgba(59, 130, 246, 0.05);
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          flex-shrink: 0;
+        }
+        .mobile-theme-toggle:hover { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; }
+
+        .dark .mobile-theme-toggle { border-color: #374151; background: rgba(59, 130, 246, 0.1); }
+        .dark .mobile-theme-toggle:hover { background: rgba(59, 130, 246, 0.2); border-color: #60a5fa; }
+
         /* Mobile menu */
         .mobile-menu {
           background: rgba(255, 255, 255, 0.98);
@@ -436,6 +462,36 @@ const Navbar = () => {
         @media (min-width: 768px) { .mobile-menu { display: none; } }
 
         .mobile-menu-inner { padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 6px; }
+
+        .mobile-theme-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 16px;
+          margin-bottom: 8px;
+          border-radius: 10px;
+          background: rgba(59, 130, 246, 0.05);
+          border: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        .dark .mobile-theme-row {
+          background: rgba(59, 130, 246, 0.1);
+          border-color: rgba(55, 65, 81, 0.5);
+        }
+
+        .mobile-theme-label {
+          font-size: 14px;
+          font-weight: 500;
+          color: #6b7280;
+          font-family: 'Poppins', sans-serif;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .dark .mobile-theme-label {
+          color: #9ca3af;
+        }
 
         .mobile-link {
           display: block;
@@ -508,7 +564,7 @@ const Navbar = () => {
           {/* ── Logo ── */}
           <Link to="/" className="nav-logo">
             <div className="logo-icon">
-              <Zap size={20} fill="#1e3a8a" className="text-white" />
+              <img src={favicon} alt="Electroo Buddy" className="w-full h-full object-contain rounded-lg" />
             </div>
             <LogoText />
           </Link>
@@ -579,8 +635,7 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
-            <ThemeToggle />
-            <button className="hamburger-btn" onClick={() => setOpen(!open)}>
+            <button className="hamburger-btn" onClick={() => setOpen(!open)} aria-label="Toggle menu">
               {open ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
@@ -595,6 +650,30 @@ const Navbar = () => {
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}>
               <div className="mobile-menu-inner">
+                {/* Theme Toggle Row */}
+                <div className="mobile-theme-row">
+                  <span className="mobile-theme-label">
+                    {darkMode ? <Moon size={16} /> : <Sun size={16} />}
+                    {darkMode ? 'Dark Mode' : 'Light Mode'}
+                  </span>
+                  <button
+                    className="mobile-theme-toggle"
+                    onClick={() => {
+                      const newMode = !darkMode;
+                      setDarkMode(newMode);
+                      document.documentElement.classList.toggle('dark', newMode);
+                      localStorage.setItem('darkMode', String(newMode));
+                    }}
+                    aria-label="Toggle theme"
+                  >
+                    {darkMode ? (
+                      <Sun size={18} className="text-yellow-500" />
+                    ) : (
+                      <Moon size={18} className="text-gray-700 dark:text-gray-300" />
+                    )}
+                  </button>
+                </div>
+
                 {navLinks.map((link) =>
                   link.children ? (
                     <div key={link.label}>

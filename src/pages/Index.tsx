@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Sun, 
-  Moon, 
-  Menu, 
+
   Award, 
   Smile, 
   Wrench, 
@@ -24,12 +22,13 @@ import {
   ArrowRight,
   MessageCircle
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
 import { PHONE_NUMBER } from "@/data/services";
 import RequestServiceSection from '@/components/Requestservicesection';
 import VideoSection from '@/components/VideoSection';
+import ServiceCard2 from '@/components/ServiceCard2';
+import WhatsAppFloat from '@/components/WhatsAppFloat';
+import { useServices } from '@/hooks/useOptimizedData';
 
 // Import images
 import heroImage from '../images/hero.png';
@@ -46,7 +45,7 @@ import testimonial3 from '../images/testimonial-3.jpg';
 import testimonial4 from '../images/testimonial-4.jpg';
 import testimonial5 from '../images/testimonial-5.jpg';
 import team1 from '../images/team-1.jpg';
-import team2 from '../images/team-2.jpg';
+import team2 from '../images/dilip.jpeg';
 import team3 from '../images/team-3.jpg';
 
 const Index: React.FC = () => {
@@ -57,7 +56,9 @@ const Index: React.FC = () => {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [counters, setCounters] = useState({ experience: 0, clients: 0, projects: 0 });
   const [counterAnimated, setCounterAnimated] = useState(false);
-  const { user } = useAuth();
+  const [preselectedService, setPreselectedService] = useState<string>("");
+  const { services: dbServices, loading: servicesLoading } = useServices();
+  const [services, setServices] = useState<any[]>([]);
 
   // Dark mode effect
   useEffect(() => {
@@ -142,14 +143,14 @@ const Index: React.FC = () => {
     { question: 'Do you service appliances still under manufacturer warranty?', answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.' }
   ];
 
-  const services = [
-    { icon: SatelliteDish, title: 'DTH Installation & Reset', description: 'Professional installation and troubleshooting for all major DTH providers.' },
-    { icon: Tv, title: 'LCD/LED TV Installation', description: 'Expert mounting and setup for your new television including wall mounting and complete AV setup.' },
-    { icon: Zap, title: 'Short Circuit Repairs', description: '24/7 emergency electrical repairs by certified electricians.' },
-    { icon: Fan, title: 'Fan Installation', description: 'Professional ceiling fan installation and repair with proper wiring and secure mounting.' },
-    { icon: Snowflake, title: 'AC Maintenance', description: 'Seasonal AC servicing including cleaning, gas refill, and performance check.' },
-    { icon: Wrench, title: 'Appliance Repairs', description: 'Comprehensive repair services for all major home appliances including refrigerators, washing machines, and more.' }
-  ];
+  // const services = [
+  //   { icon: SatelliteDish, title: 'DTH Installation & Reset', description: 'Professional installation and troubleshooting for all major DTH providers.' },
+  //   { icon: Tv, title: 'LCD/LED TV Installation', description: 'Expert mounting and setup for your new television including wall mounting and complete AV setup.' },
+  //   { icon: Zap, title: 'Short Circuit Repairs', description: '24/7 emergency electrical repairs by certified electricians.' },
+  //   { icon: Fan, title: 'Fan Installation', description: 'Professional ceiling fan installation and repair with proper wiring and secure mounting.' },
+  //   { icon: Snowflake, title: 'AC Maintenance', description: 'Seasonal AC servicing including cleaning, gas refill, and performance check.' },
+  //   { icon: Wrench, title: 'Appliance Repairs', description: 'Comprehensive repair services for all major home appliances including refrigerators, washing machines, and more.' }
+  // ];
 
   const nextTestimonial = () => {
     setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
@@ -161,6 +162,43 @@ const Index: React.FC = () => {
 
   const toggleFAQ = (index: number) => {
     setOpenFAQ(openFAQ === index ? null : index);
+  };
+
+  const handleBookService = (serviceTitle: string) => {
+    setPreselectedService(serviceTitle);
+    scrollToSection('request-service');
+  };
+
+  // Load services from database or fallback to static
+  useEffect(() => {
+    if (dbServices && dbServices.length > 0) {
+      setServices(dbServices);
+    } else {
+      setServices(services.map(s => ({
+        id: s.title.toLowerCase().replace(/\s+/g, '-'),
+        icon_name: getIconNameForService(s.title),
+        title: s.title,
+        description: s.description,
+        whatsapp_enabled: true,
+        call_enabled: true,
+        book_now_enabled: true
+      })));
+    }
+  }, [dbServices]);
+
+  const getIconNameForService = (title: string): string => {
+    const iconMap: Record<string, string> = {
+      'DTH': 'SatelliteDish',
+      'TV': 'Tv',
+      'Short Circuit': 'Zap',
+      'Fan': 'Fan',
+      'AC': 'Snowflake',
+      'Appliance': 'Wrench'
+    };
+    for (const [key, iconName] of Object.entries(iconMap)) {
+      if (title.includes(key)) return iconName;
+    }
+    return 'Zap';
   };
 
   return (
@@ -280,24 +318,19 @@ const Index: React.FC = () => {
             <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">We offer comprehensive appliance repair and maintenance services to keep your home running smoothly.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((service, index) => (
-              <div key={index} className="service-card bg-white dark:bg-gray-700 rounded-xl shadow-md overflow-hidden transition duration-300">
-                <div className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
-                      <service.icon className="text-blue-600 dark:text-blue-400 h-8 w-8" />
-                    </div>
-                    <h3 className="ml-4 text-xl font-semibold text-gray-900 dark:text-white">{service.title}</h3>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-300">{service.description}</p>
-                  <div className="mt-6">
-                    <a href={`https://wa.me/91${PHONE_NUMBER}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 font-medium inline-flex items-center">
-                      Book Now <ArrowRight className="ml-1 h-4 w-4" />
-                    </a>
-                  </div>
-                </div>
+            {servicesLoading ? (
+              <div className="col-span-full flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
-            ))}
+            ) : (
+              services.map((service, index) => (
+                <ServiceCard2
+                  key={service.id || index}
+                  service={service}
+                  onBookNow={handleBookService}
+                />
+              ))
+            )}
           </div>
           <div className="mt-16 text-center">
             <a href={`tel:${PHONE_NUMBER}`} className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300">
@@ -447,7 +480,7 @@ const Index: React.FC = () => {
       </section>
 
       {/* Request Service Section - Using Component */}
-      <RequestServiceSection />
+      <RequestServiceSection preselectedService={preselectedService} />
          
       {/* Contact Section */}
       <section id="contact" className="py-20 bg-gray-50 dark:bg-gray-900 fade-in">
@@ -464,7 +497,7 @@ const Index: React.FC = () => {
                   <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg"><MapPin className="text-blue-600 dark:text-blue-400 h-5 w-5" /></div>
                   <div className="ml-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Our Office</h4>
-                    <a href="https://maps.app.goo.gl/X16Z1kxCfBUsKE9R9" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300">Pragya Electric Work Shop, Ujjain, Madhya Pradesh 456010</a>
+                    <a href="https://maps.app.goo.gl/X16Z1kxCfBUsKE9R9" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300">05, Nagziri Dewas Road, Ujjain(456010), India</a>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -479,7 +512,7 @@ const Index: React.FC = () => {
                   <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg"><Mail className="text-blue-600 dark:text-blue-400 h-5 w-5" /></div>
                   <div className="ml-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Email</h4>
-                    <a href="mailto:info@electroobuddy.com" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block">info@electroobuddy.com</a>
+                    <a href="mailto:info@electroobuddy.com" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block">electroobuddy@gmail.com</a>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -540,22 +573,6 @@ const Index: React.FC = () => {
           </form>
         </div>
       </section>
-
-
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-8 right-8 z-50 flex flex-col space-y-4">
-        <a href={`tel:${PHONE_NUMBER}`} className="bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition duration-300 flex items-center justify-center" title="Call Us">
-          <Phone className="h-6 w-6" />
-        </a>
-        <a href={`https://wa.me/91${PHONE_NUMBER}`} target="_blank" rel="noopener noreferrer" className="bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition duration-300 flex items-center justify-center" title="WhatsApp">
-          <MessageCircle className="h-6 w-6" />
-        </a>
-        {backToTopVisible && (
-          <button onClick={scrollToTop} className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300">
-            <ChevronUp className="h-6 w-6" />
-          </button>
-        )}
-      </div>
     </div>
   );
 };

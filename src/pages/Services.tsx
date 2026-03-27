@@ -7,6 +7,7 @@ import ServiceCard from "@/components/ServiceCard";
 import { Zap, Loader2, Sun, Moon } from "lucide-react";
 import { services as defaultServices, PHONE_NUMBER } from "@/data/services";
 import { useServices } from "@/hooks/useOptimizedData";
+import ServiceCard2 from "@/components/ServiceCard2";
 
 const Services = () => {
   // Use optimized hook with caching instead of direct Supabase query
@@ -14,6 +15,7 @@ const Services = () => {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [preselectedService, setPreselectedService] = useState<string>("");
 
   // Dark mode effect
   useEffect(() => {
@@ -38,6 +40,12 @@ const Services = () => {
     }
     setLoading(false);
   }, [dbServices]);
+
+  const handleBookService = (serviceTitle: string) => {
+    setPreselectedService(serviceTitle);
+    // Scroll to booking section or navigate to booking page
+    window.location.href = `/booking?service=${encodeURIComponent(serviceTitle)}`;
+  };
 
   return (
     <div className="services-page bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -189,7 +197,7 @@ const Services = () => {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08, duration: 0.5 }}
               >
-                <ServiceCard service={s} />
+                <ServiceCard2 service={s} onBookNow={handleBookService} />
               </motion.div>
             ))}
           </div>
