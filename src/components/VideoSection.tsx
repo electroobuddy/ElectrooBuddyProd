@@ -3,7 +3,16 @@ import { Play, Zap } from "lucide-react";
 import { useState } from "react";
 
 const VideoSection = () => {
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState<number | null>(null);
+
+  const videos = [
+    { id: 1, title: 'AC Installation Process', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg', videoId: 'dQw4w9WgXcQ' },
+    { id: 2, title: 'TV Wall Mounting', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg', videoId: 'dQw4w9WgXcQ' },
+    { id: 3, title: 'Electrical Repair', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg', videoId: 'dQw4w9WgXcQ' },
+    { id: 4, title: 'DTH Setup Guide', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg', videoId: 'dQw4w9WgXcQ' },
+    { id: 5, title: 'Fan Installation', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg', videoId: 'dQw4w9WgXcQ' },
+    { id: 6, title: 'Appliance Maintenance', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg', videoId: 'dQw4w9WgXcQ' },
+  ];
 
   return (
     <section className="relative py-24 overflow-hidden" style={{ background: "hsl(var(--background))" }}>
@@ -69,136 +78,82 @@ const VideoSection = () => {
           </p>
         </motion.div>
 
-        {/* Video Player */}
-        <motion.div
-          className="relative max-w-4xl mx-auto"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-        >
-          <div
-            className="relative rounded-2xl overflow-hidden"
-            style={{
-              aspectRatio: "16/9",
-              background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted)))",
-              border: "1px solid hsl(var(--border) / 0.5)",
-              boxShadow: "0 25px 80px hsl(var(--primary) / 0.15), 0 10px 30px hsl(var(--foreground) / 0.08)",
-            }}
-          >
-            {playing ? (
-              <iframe
-                src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0"
-                title="Electroobuddy Services"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
-                style={{ border: "none" }}
-              />
-            ) : (
+        {/* Video Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {videos.map((video, index) => (
+            <motion.div
+              key={video.id}
+              className="relative"
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
               <div
-                className="absolute inset-0 flex items-center justify-center cursor-pointer group"
-                onClick={() => setPlaying(true)}
+                className="relative rounded-xl overflow-hidden group cursor-pointer"
                 style={{
-                  background: "linear-gradient(135deg, hsl(var(--primary) / 0.05), hsl(var(--secondary) / 0.08))",
+                  aspectRatio: "16/9",
+                  background: "linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted)))",
+                  border: "1px solid hsl(var(--border) / 0.5)",
+                  boxShadow: playing === video.id 
+                    ? "0 25px 80px hsl(var(--primary) / 0.25), 0 10px 30px hsl(var(--foreground) / 0.12)" 
+                    : "0 10px 30px hsl(var(--foreground) / 0.08)",
                 }}
+                onClick={() => setPlaying(playing === video.id ? null : video.id)}
               >
-                {/* Decorative grid */}
-                <div
-                  className="absolute inset-0 opacity-[0.04]"
-                  style={{
-                    backgroundImage: `
-                      linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
-                      linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)
-                    `,
-                    backgroundSize: "40px 40px",
-                  }}
-                />
-
-                {/* Electric bolts decoration */}
-                <motion.div
-                  className="absolute top-8 left-8"
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                >
-                  <Zap size={28} style={{ color: "hsl(var(--secondary))" }} />
-                </motion.div>
-                <motion.div
-                  className="absolute bottom-8 right-8"
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
-                >
-                  <Zap size={28} style={{ color: "hsl(var(--primary))" }} />
-                </motion.div>
-
-                {/* Play button */}
-                <motion.div
-                  className="relative z-10"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {/* Pulse rings */}
-                  <motion.div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      width: "100px",
-                      height: "100px",
-                      top: "-14px",
-                      left: "-14px",
-                      border: "2px solid hsl(var(--primary) / 0.3)",
-                    }}
-                    animate={{ scale: [1, 1.4], opacity: [0.5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                {playing === video.id ? (
+                  <iframe
+                    src={`https://www.youtube.com/embed/${video.videoId}?autoplay=1&rel=0`}
+                    title={video.title}
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                    style={{ border: "none" }}
                   />
-                  <motion.div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      width: "100px",
-                      height: "100px",
-                      top: "-14px",
-                      left: "-14px",
-                      border: "2px solid hsl(var(--primary) / 0.2)",
-                    }}
-                    animate={{ scale: [1, 1.6], opacity: [0.3, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                  />
-
+                ) : (
                   <div
-                    className="flex items-center justify-center rounded-full"
+                    className="absolute inset-0 flex items-center justify-center group-hover:bg-opacity-90 transition-all duration-300"
                     style={{
-                      width: "72px",
-                      height: "72px",
-                      background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)))",
-                      boxShadow: "0 0 40px hsl(var(--primary) / 0.4)",
+                      background: `url(${video.thumbnail}) center/cover`,
                     }}
                   >
-                    <Play size={28} fill="hsl(var(--primary-foreground))" color="hsl(var(--primary-foreground))" style={{ marginLeft: "3px" }} />
+                    {/* Overlay */}
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(59, 130, 246, 0.6))",
+                      }}
+                    />
+
+                    {/* Play button */}
+                    <motion.div
+                      className="relative z-10"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <div
+                        className="flex items-center justify-center rounded-full"
+                        style={{
+                          width: "64px",
+                          height: "64px",
+                          background: "linear-gradient(135deg, hsl(var(--primary)), #1e40af)",
+                          boxShadow: "0 0 30px rgba(59, 130, 246, 0.5)",
+                        }}
+                      >
+                        <Play size={24} fill="white" color="white" style={{ marginLeft: "2px" }} />
+                      </div>
+                    </motion.div>
+
+                    {/* Title */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                      <h3 className="text-white font-semibold text-sm md:text-base line-clamp-2">{video.title}</h3>
+                    </div>
                   </div>
-                </motion.div>
-
-                {/* Caption */}
-                <p
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2"
-                  style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: "hsl(var(--muted-foreground))",
-                    letterSpacing: "0.3px",
-                  }}
-                >
-                  Click to play
-                </p>
+                )}
               </div>
-            )}
-          </div>
-
-          {/* Bottom glow */}
-          <div
-            className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-8 rounded-full blur-2xl"
-            style={{ background: "hsl(var(--primary) / 0.15)" }}
-          />
-        </motion.div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );

@@ -62,8 +62,6 @@ const BlinkingEye = () => {
         width: "0.72em",
         height: "0.72em",
         verticalAlign: "middle",
-        // marginBottom: "0.1em",
-        // Inherit the yellow gradient colour from the parent span
         flexShrink: 0,
       }}
     >
@@ -73,8 +71,8 @@ const BlinkingEye = () => {
           position: "absolute",
           inset: 0,
           borderRadius: "50%",
-          background: "hsl(var(--secondary))",
-          boxShadow: "0 0 6px hsl(var(--secondary) / 0.6)",
+          background: "#3b82f6",
+          boxShadow: "0 0 6px rgba(59, 130, 246, 0.6)",
           overflow: "hidden",
           display: "flex",
           alignItems: "center",
@@ -87,7 +85,7 @@ const BlinkingEye = () => {
             width: "42%",
             height: "42%",
             borderRadius: "50%",
-            background: "hsl(var(--background))",
+            background: "#ffffff",
             boxShadow: "inset 0 0 2px rgba(0,0,0,0.4)",
             flexShrink: 0,
             transition: "transform 0.15s ease",
@@ -104,7 +102,7 @@ const BlinkingEye = () => {
           left: 0,
           right: 0,
           borderRadius: "50% 50% 0 0 / 60% 60% 0 0",
-          background: "hsl(var(--foreground))",
+          background: "#1e3a8a",
           transformOrigin: "top center",
           transform: blink ? "scaleY(1)" : "scaleY(0)",
           height: "100%",
@@ -123,7 +121,7 @@ const BlinkingEye = () => {
           left: 0,
           right: 0,
           borderRadius: "0 0 50% 50% / 0 0 60% 60%",
-          background: "hsl(var(--foreground))",
+          background: "#1e3a8a",
           transformOrigin: "bottom center",
           transform: blink ? "scaleY(0.55)" : "scaleY(0)",
           height: "50%",
@@ -186,28 +184,38 @@ const Navbar = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
         .navbar-root {
           position: sticky;
           top: 0;
           z-index: 50;
           transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
         }
 
         .navbar-root.scrolled {
-          background: hsl(var(--card) / 0.92);
+          background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          border-bottom: 1px solid hsl(var(--border) / 0.5);
-          box-shadow: 0 4px 32px hsl(var(--foreground) / 0.1);
+          border-bottom: 1px solid #e5e7eb;
+          box-shadow: 0 4px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .dark .navbar-root.scrolled {
+          background: rgba(31, 41, 55, 0.95);
+          border-color: #374151;
+          box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
         }
 
         .navbar-root.top {
-          background: hsl(var(--background) / 0.6);
+          background: rgba(255, 255, 255, 0.7);
           backdrop-filter: blur(8px);
           border-bottom: 1px solid transparent;
+        }
+
+        .dark .navbar-root.top {
+          background: rgba(17, 24, 39, 0.7);
         }
 
         .nav-inner {
@@ -232,33 +240,34 @@ const Navbar = () => {
           width: 40px;
           height: 40px;
           border-radius: 12px;
-          background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
+          background: linear-gradient(135deg, #3b82f6, #1e3a8a);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 20px hsl(var(--primary) / 0.35);
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
           transition: all 0.3s ease;
           flex-shrink: 0;
         }
 
         .nav-logo:hover .logo-icon {
-          box-shadow: 0 0 32px hsl(var(--primary) / 0.55);
+          box-shadow: 0 0 32px rgba(59, 130, 246, 0.55);
           transform: scale(1.06);
         }
 
         .logo-text {
-          font-family: 'Barlow Condensed', sans-serif;
+          font-family: 'Poppins', sans-serif;
           font-size: 24px;
           font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          color: hsl(var(--foreground));
+          color: #1e3a8a;
           line-height: 1;
           display: inline-flex;
           align-items: center;
           gap: 0;
           white-space: nowrap;
+        }
 
+        .dark .logo-text {
+          color: #60a5fa;
         }
 
         /* Desktop links */
@@ -273,13 +282,13 @@ const Navbar = () => {
         .nav-link {
           position: relative;
           padding: 8px 14px;
-          font-size: 13.5px;
+          font-size: 14px;
           font-weight: 500;
-          color: hsl(var(--muted-foreground));
+          color: #6b7280;
           border-radius: 10px;
           text-decoration: none;
           transition: all 0.25s ease;
-          letter-spacing: 0.2px;
+          font-family: 'Poppins', sans-serif;
         }
 
         .nav-link::after {
@@ -290,15 +299,20 @@ const Navbar = () => {
           transform: translateX(-50%);
           width: 0;
           height: 2px;
-          background: hsl(var(--primary));
+          background: #3b82f6;
           border-radius: 1px;
           transition: width 0.3s ease;
         }
 
-        .nav-link:hover { color: hsl(var(--foreground)); background: hsl(var(--muted) / 0.5); }
+        .nav-link:hover { color: #1e3a8a; background: rgba(59, 130, 246, 0.05); }
         .nav-link:hover::after { width: 60%; }
-        .nav-link.active { color: hsl(var(--primary)); background: hsl(var(--primary) / 0.1); font-weight: 600; }
+        .nav-link.active { color: #1e3a8a; background: rgba(59, 130, 246, 0.1); font-weight: 600; }
         .nav-link.active::after { width: 60%; }
+
+        .dark .nav-link { color: #9ca3af; }
+        .dark .nav-link:hover { color: #60a5fa; background: rgba(59, 130, 246, 0.1); }
+        .dark .nav-link.active { color: #60a5fa; background: rgba(59, 130, 246, 0.15); }
+        .dark .nav-link::after { background: #60a5fa; }
 
         /* Dropdown trigger */
         .nav-dropdown-trigger {
@@ -306,21 +320,23 @@ const Navbar = () => {
           align-items: center;
           gap: 5px;
           padding: 8px 14px;
-          font-size: 13.5px;
+          font-size: 14px;
           font-weight: 500;
-          color: hsl(var(--muted-foreground));
+          color: #6b7280;
           border-radius: 10px;
           background: transparent;
           border: none;
           cursor: pointer;
           transition: all 0.25s ease;
-          font-family: 'DM Sans', sans-serif;
-          letter-spacing: 0.2px;
+          font-family: 'Poppins', sans-serif;
         }
 
-        .nav-dropdown-trigger:hover { color: hsl(var(--foreground)); background: hsl(var(--muted) / 0.5); }
+        .nav-dropdown-trigger:hover { color: #1e3a8a; background: rgba(59, 130, 246, 0.05); }
         .trigger-chevron { transition: transform 0.3s ease; }
         .trigger-chevron.open { transform: rotate(180deg); }
+
+        .dark .nav-dropdown-trigger { color: #9ca3af; }
+        .dark .nav-dropdown-trigger:hover { color: #60a5fa; background: rgba(59, 130, 246, 0.1); }
 
         /* Dropdown menu */
         .dropdown-menu {
@@ -328,12 +344,18 @@ const Navbar = () => {
           top: calc(100% + 10px);
           left: 0;
           width: 220px;
-          background: hsl(var(--card) / 0.95);
+          background: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(20px);
-          border: 1px solid hsl(var(--border) / 0.5);
+          border: 1px solid #e5e7eb;
           border-radius: 16px;
           overflow: hidden;
-          box-shadow: 0 20px 60px hsl(var(--foreground) / 0.15);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .dropdown-menu {
+          background: rgba(31, 41, 55, 0.98);
+          border-color: #374151;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         .dropdown-item {
@@ -341,18 +363,22 @@ const Navbar = () => {
           align-items: center;
           justify-content: space-between;
           padding: 13px 18px;
-          font-size: 13.5px;
+          font-size: 14px;
           font-weight: 500;
-          color: hsl(var(--muted-foreground));
+          color: #6b7280;
           text-decoration: none;
           transition: all 0.22s ease;
-          border-bottom: 1px solid hsl(var(--border) / 0.3);
-          font-family: 'DM Sans', sans-serif;
+          border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+          font-family: 'Poppins', sans-serif;
         }
         .dropdown-item:last-child { border-bottom: none; }
-        .dropdown-item:hover { background: hsl(var(--primary) / 0.05); color: hsl(var(--primary)); padding-left: 22px; }
-        .dropdown-arrow { opacity: 0; transform: translateX(-4px); transition: all 0.22s ease; color: hsl(var(--primary)); }
+        .dropdown-item:hover { background: rgba(59, 130, 246, 0.05); color: #1e3a8a; padding-left: 22px; }
+        .dropdown-arrow { opacity: 0; transform: translateX(-4px); transition: all 0.22s ease; color: #3b82f6; }
         .dropdown-item:hover .dropdown-arrow { opacity: 1; transform: translateX(0); }
+
+        .dark .dropdown-item { color: #9ca3af; border-color: rgba(55, 65, 81, 0.5); }
+        .dark .dropdown-item:hover { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+        .dark .dropdown-arrow { color: #60a5fa; }
 
         /* Book Now CTA */
         .book-btn {
@@ -361,13 +387,11 @@ const Navbar = () => {
           gap: 8px;
           margin-left: 10px;
           padding: 10px 22px;
-          background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
-          color: hsl(var(--primary-foreground));
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 15px;
-          font-weight: 800;
-          letter-spacing: 0.6px;
-          text-transform: uppercase;
+          background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+          color: #ffffff;
+          font-family: 'Poppins', sans-serif;
+          font-size: 14px;
+          font-weight: 700;
           border-radius: 10px;
           text-decoration: none;
           transition: all 0.3s ease;
@@ -375,7 +399,7 @@ const Navbar = () => {
           overflow: hidden;
         }
         .book-btn::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0); transition: background 0.3s; }
-        .book-btn:hover { box-shadow: 0 0 24px hsl(var(--primary) / 0.45), 0 6px 18px hsl(var(--primary) / 0.3); transform: translateY(-2px); }
+        .book-btn:hover { box-shadow: 0 0 24px rgba(59, 130, 246, 0.45), 0 6px 18px rgba(59, 130, 246, 0.3); transform: translateY(-2px); }
         .book-btn:hover::before { background: rgba(255,255,255,0.08); }
 
         /* Mobile controls */
@@ -385,21 +409,29 @@ const Navbar = () => {
         .hamburger-btn {
           width: 40px; height: 40px;
           border-radius: 10px;
-          border: 1px solid hsl(var(--border) / 0.5);
-          background: hsl(var(--muted) / 0.3);
+          border: 1px solid #e5e7eb;
+          background: rgba(59, 130, 246, 0.05);
           display: flex; align-items: center; justify-content: center;
-          color: hsl(var(--primary));
+          color: #3b82f6;
           cursor: pointer;
           transition: all 0.25s ease;
         }
-        .hamburger-btn:hover { background: hsl(var(--muted) / 0.5); border-color: hsl(var(--border)); color: hsl(var(--primary)); }
+        .hamburger-btn:hover { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; color: #1e3a8a; }
+
+        .dark .hamburger-btn { border-color: #374151; background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+        .dark .hamburger-btn:hover { background: rgba(59, 130, 246, 0.2); border-color: #60a5fa; color: #60a5fa; }
 
         /* Mobile menu */
         .mobile-menu {
-          background: hsl(var(--card) / 0.95);
+          background: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(20px);
-          border-top: 1px solid hsl(var(--border) / 0.5);
+          border-top: 1px solid #e5e7eb;
           overflow: hidden;
+        }
+
+        .dark .mobile-menu {
+          background: rgba(31, 41, 55, 0.98);
+          border-color: #374151;
         }
         @media (min-width: 768px) { .mobile-menu { display: none; } }
 
@@ -409,53 +441,64 @@ const Navbar = () => {
           display: block;
           padding: 12px 16px;
           font-size: 14px; font-weight: 500;
-          color: hsl(var(--muted-foreground));
+          color: #6b7280;
           border-radius: 10px;
           text-decoration: none;
           transition: all 0.22s ease;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           border: 1px solid transparent;
         }
-        .mobile-link:hover, .mobile-link.active { background: hsl(var(--primary) / 0.1); border-color: hsl(var(--primary) / 0.2); color: hsl(var(--primary)); padding-left: 20px; }
+        .mobile-link:hover, .mobile-link.active { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); color: #1e3a8a; padding-left: 20px; }
+        
+        .dark .mobile-link { color: #9ca3af; }
+        .dark .mobile-link:hover, .dark .mobile-link.active { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #60a5fa; }
 
         .mobile-trigger {
           display: flex; align-items: center; justify-content: space-between;
           width: 100%; padding: 12px 16px;
           font-size: 14px; font-weight: 500;
-          color: hsl(var(--muted-foreground));
+          color: #6b7280;
           border-radius: 10px;
           background: transparent;
           border: 1px solid transparent;
           cursor: pointer;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           transition: all 0.22s;
         }
-        .mobile-trigger:hover { background: hsl(var(--muted) / 0.3); border-color: hsl(var(--border) / 0.3); color: hsl(var(--foreground)); }
+        .mobile-trigger:hover { background: rgba(59, 130, 246, 0.05); border-color: rgba(229, 231, 235, 0.5); color: #1e3a8a; }
+
+        .dark .mobile-trigger { color: #9ca3af; }
+        .dark .mobile-trigger:hover { background: rgba(59, 130, 246, 0.1); border-color: rgba(55, 65, 81, 0.5); color: #60a5fa; }
 
         .mobile-sub-link {
           display: block;
           padding: 10px 16px 10px 28px;
           font-size: 13px;
-          color: hsl(var(--muted-foreground) / 0.7);
+          color: #6b7280;
           text-decoration: none;
           border-radius: 8px;
           transition: all 0.22s;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           position: relative;
         }
         .mobile-sub-link::before { content: '⚡'; position: absolute; left: 12px; font-size: 9px; top: 50%; transform: translateY(-50%); opacity: 0.4; }
-        .mobile-sub-link:hover { color: hsl(var(--primary)); background: hsl(var(--primary) / 0.05); }
+        .mobile-sub-link:hover { color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
 
-        .mobile-divider { height: 1px; background: linear-gradient(90deg, hsl(var(--primary) / 0.3), transparent); margin: 4px 0; }
+        .dark .mobile-sub-link { color: #9ca3af; }
+        .dark .mobile-sub-link:hover { color: #60a5fa; background: rgba(59, 130, 246, 0.1); }
+
+        .mobile-divider { height: 1px; background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), transparent); margin: 4px 0; }
+
+        .dark .mobile-divider { background: linear-gradient(90deg, rgba(59, 130, 246, 0.5), transparent); }
 
         .mobile-book-btn {
           display: block; text-align: center; margin-top: 8px; padding: 14px;
-          background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
-          color: hsl(var(--primary-foreground));
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 16px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
+          background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+          color: #ffffff;
+          font-family: 'Poppins', sans-serif;
+          font-size: 15px; font-weight: 700;
           border-radius: 12px; text-decoration: none;
-          box-shadow: 0 0 20px hsl(var(--primary) / 0.25);
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
         }
       `}</style>
 
@@ -465,7 +508,7 @@ const Navbar = () => {
           {/* ── Logo ── */}
           <Link to="/" className="nav-logo">
             <div className="logo-icon">
-              <Zap size={20} color="#0a0f1e" strokeWidth={2.5} />
+              <Zap size={20} fill="#1e3a8a" className="text-white" />
             </div>
             <LogoText />
           </Link>
@@ -507,10 +550,10 @@ const Navbar = () => {
 
             <div style={{ marginLeft: 4 }}><ThemeToggle /></div>
 
-            <Link to="/cart" className="relative p-2 rounded-lg hover:bg-muted/50 transition-colors" style={{ marginRight: 8 }}>
-              <ShoppingCart size={20} className="text-foreground" />
+            <Link to="/cart" className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" style={{ marginRight: 8 }}>
+              <ShoppingCart size={20} className="text-gray-700 dark:text-gray-300" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                   {itemCount}
                 </span>
               )}
@@ -528,10 +571,10 @@ const Navbar = () => {
 
           {/* ── Mobile controls ── */}
           <div className="mobile-controls">
-            <Link to="/cart" className="relative p-2 mr-1" style={{ color: "hsl(var(--foreground))" }}>
-              <ShoppingCart size={20} />
+            <Link to="/cart" className="relative p-2 mr-1" style={{ color: "#6b7280" }}>
+              <ShoppingCart size={20} className="dark:text-gray-300" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                   {itemCount}
                 </span>
               )}

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
 import { projects as staticProjects } from "@/data/projects";
-import { Zap, FolderOpen, Loader2 } from "lucide-react";
+import { Zap, FolderOpen, Loader2, Sun, Moon } from "lucide-react";
 import { useProjects } from "@/hooks/useOptimizedData";
 
 const Projects = () => {
@@ -13,6 +13,21 @@ const Projects = () => {
   const { projects: dbProjects, loading: projectsLoading } = useProjects();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Dark mode effect
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode') === 'true' || 
+      (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    setDarkMode(isDark);
+    if (isDark) document.documentElement.classList.add('dark');
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', String(!darkMode));
+  };
 
   useEffect(() => {
     // Use cached projects from hook, fallback to static data if empty
@@ -28,90 +43,31 @@ const Projects = () => {
   const filtered = active === "All" ? projects : projects.filter((p) => p.category === active);
 
   return (
-    <>
+    <div className="projects-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-        /* ── PAGE HERO ── */
+        .projects-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .projects-page h1,
+        .projects-page h2,
+        .projects-page h3,
+        .projects-page h4,
+        .projects-page h5,
+        .projects-page h6 {
+          font-weight: 700;
+        }
+
         .projects-hero {
           position: relative;
-          padding: 100px 0 80px;
+          padding: 112px 0 96px;
           overflow: hidden;
-          background: hsl(var(--background));
-          font-family: 'DM Sans', sans-serif;
+          text-align: center;
         }
 
-        .hero-grid-lines {
-          position: absolute;
-          inset: 0;
-          background-image:
-            linear-gradient(hsl(var(--secondary) / 0.04) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(var(--secondary) / 0.04) 1px, transparent 1px);
-          background-size: 60px 60px;
-          mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 30%, transparent 100%);
-        }
-
-        .hero-glow-left {
-          position: absolute;
-          top: -80px; left: -80px;
-          width: 400px; height: 400px;
-          border-radius: 50%;
-          background: radial-gradient(circle, hsl(var(--secondary) / 0.07) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .hero-glow-right {
-          position: absolute;
-          bottom: -60px; right: -60px;
-          width: 300px; height: 300px;
-          border-radius: 50%;
-          background: radial-gradient(circle, hsl(var(--primary) / 0.05) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .hero-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 7px 18px;
-          border: 1px solid hsl(var(--secondary) / 0.3);
-          border-radius: 100px;
-          background: hsl(var(--secondary) / 0.06);
-          margin-bottom: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          color: hsl(var(--secondary));
-          letter-spacing: 1px;
-          text-transform: uppercase;
-        }
-
-        .hero-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: clamp(44px, 7vw, 80px);
-          font-weight: 900;
-          line-height: 0.95;
-          color: hsl(var(--foreground));
-          text-transform: uppercase;
-          letter-spacing: -1px;
-        }
-
-        .hero-title span {
-          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .hero-sub {
-          color: hsl(var(--muted-foreground) / 0.5);
-          font-size: 15px;
-          margin-top: 14px;
-          max-width: 440px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        /* ── FILTER PILLS ── */
+        /* Filter Pills */
         .filter-row {
           display: flex;
           flex-wrap: wrap;
@@ -125,38 +81,51 @@ const Projects = () => {
           border-radius: 100px;
           font-size: 13px;
           font-weight: 600;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           letter-spacing: 0.3px;
           cursor: pointer;
-          border: 1px solid hsl(var(--secondary) / 0.15);
-          background: hsl(var(--secondary) / 0.04);
-          color: hsl(var(--muted-foreground) / 0.55);
+          border: 1px solid rgba(59, 130, 246, 0.2);
+          background: rgba(59, 130, 246, 0.05);
+          color: #6b7280;
           transition: all 0.25s ease;
           outline: none;
         }
 
+        .dark .filter-pill {
+          background: rgba(59, 130, 246, 0.1);
+          color: #9ca3af;
+          border-color: rgba(59, 130, 246, 0.3);
+        }
+
         .filter-pill:hover {
-          border-color: hsl(var(--secondary) / 0.4);
-          color: hsl(var(--secondary));
-          background: hsl(var(--secondary) / 0.08);
+          border-color: rgba(59, 130, 246, 0.5);
+          color: #3b82f6;
+          background: rgba(59, 130, 246, 0.1);
         }
 
         .filter-pill.active {
-          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-dark)));
+          background: linear-gradient(135deg, #3b82f6, #1e3a8a);
           border-color: transparent;
-          color: hsl(var(--card));
-          box-shadow: 0 0 20px hsl(var(--secondary) / 0.3), 0 4px 16px hsl(var(--secondary) / 0.2);
+          color: #ffffff;
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 4px 16px rgba(59, 130, 246, 0.2);
         }
 
-        /* ── PROJECT CARDS ── */
+        /* Project Cards */
         .project-card {
           position: relative;
-          background: hsl(var(--card));
-          border: 1px solid hsl(var(--border) / 0.3);
-          border-radius: 20px;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 16px;
           overflow: hidden;
           transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .project-card {
+          background: #1f2937;
+          border-color: #374151;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
         .project-card::after {
@@ -164,15 +133,19 @@ const Projects = () => {
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, hsl(var(--secondary)), transparent);
+          background: linear-gradient(90deg, transparent, #3b82f6, transparent);
           opacity: 0;
           transition: opacity 0.4s;
         }
 
         .project-card:hover {
           transform: translateY(-6px);
-          border-color: hsl(var(--border) / 0.5);
-          box-shadow: 0 24px 60px hsl(var(--foreground) / 0.1), 0 0 40px hsl(var(--secondary) / 0.07);
+          border-color: #3b82f6;
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.1), 0 0 40px rgba(59, 130, 246, 0.1);
+        }
+
+        .dark .project-card:hover {
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 0 40px rgba(59, 130, 246, 0.2);
         }
 
         .project-card:hover::after { opacity: 1; }
@@ -180,19 +153,23 @@ const Projects = () => {
         .card-thumb {
           position: relative;
           height: 200px;
-          background: linear-gradient(135deg, hsl(var(--muted) / 0.5) 0%, hsl(var(--muted)) 100%);
+          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
           display: flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
         }
 
+        .dark .card-thumb {
+          background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+        }
+
         .thumb-grid {
           position: absolute;
           inset: 0;
           background-image:
-            linear-gradient(hsl(var(--secondary) / 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(var(--secondary) / 0.05) 1px, transparent 1px);
+            linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
           background-size: 30px 30px;
         }
 
@@ -202,8 +179,8 @@ const Projects = () => {
           width: 72px;
           height: 72px;
           border-radius: 50%;
-          border: 1px solid hsl(var(--secondary) / 0.2);
-          background: hsl(var(--secondary) / 0.06);
+          border: 1px solid rgba(59, 130, 246, 0.2);
+          background: rgba(59, 130, 246, 0.06);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -211,25 +188,29 @@ const Projects = () => {
         }
 
         .project-card:hover .thumb-icon-wrap {
-          background: hsl(var(--secondary) / 0.15);
-          border-color: hsl(var(--secondary) / 0.5);
-          box-shadow: 0 0 30px hsl(var(--secondary) / 0.2);
+          background: rgba(59, 130, 246, 0.15);
+          border-color: rgba(59, 130, 246, 0.5);
+          box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
           transform: scale(1.1);
         }
 
         .thumb-folder {
           width: 32px;
           height: 32px;
-          color: hsl(var(--secondary) / 0.5);
+          color: #9ca3af;
           transition: color 0.4s;
         }
 
-        .project-card:hover .thumb-folder { color: hsl(var(--secondary)); }
+        .project-card:hover .thumb-folder { color: #3b82f6; }
 
         .thumb-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to bottom, transparent 60%, hsl(var(--background) / 0.8) 100%);
+          background: linear-gradient(to bottom, transparent 60%, rgba(255, 255, 255, 0.8));
+        }
+
+        .dark .thumb-overlay {
+          background: linear-gradient(to bottom, transparent 60%, rgba(31, 41, 55, 0.8));
         }
 
         .card-body {
@@ -246,27 +227,33 @@ const Projects = () => {
           font-weight: 700;
           letter-spacing: 0.8px;
           text-transform: uppercase;
-          background: hsl(var(--secondary) / 0.1);
-          color: hsl(var(--secondary));
-          border: 1px solid hsl(var(--secondary) / 0.2);
+          background: rgba(59, 130, 246, 0.1);
+          color: #3b82f6;
+          border: 1px solid rgba(59, 130, 246, 0.2);
           margin-bottom: 12px;
         }
 
         .card-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 22px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 20px;
           font-weight: 700;
-          text-transform: uppercase;
-          color: hsl(var(--foreground));
-          line-height: 1.15;
+          color: #1e3a8a;
+          line-height: 1.2;
           margin-bottom: 8px;
-          letter-spacing: 0.3px;
+        }
+
+        .dark .card-title {
+          color: #60a5fa;
         }
 
         .card-desc {
-          font-size: 13.5px;
-          color: hsl(var(--muted-foreground) / 0.6);
+          font-size: 14px;
+          color: #6b7280;
           line-height: 1.65;
+        }
+
+        .dark .card-desc {
+          color: #9ca3af;
         }
 
         .card-footer {
@@ -275,15 +262,19 @@ const Projects = () => {
           gap: 8px;
           margin-top: 18px;
           padding-top: 16px;
-          border-top: 1px solid hsl(var(--border) / 0.3);
+          border-top: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .dark .card-footer {
+          border-top-color: rgba(59, 130, 246, 0.3);
         }
 
         .footer-dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: hsl(var(--secondary));
-          box-shadow: 0 0 6px hsl(var(--secondary) / 0.6);
+          background: #3b82f6;
+          box-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
           flex-shrink: 0;
           animation: dotBlink 2s ease-in-out infinite;
         }
@@ -295,29 +286,66 @@ const Projects = () => {
 
         .footer-label {
           font-size: 11px;
-          color: hsl(var(--secondary) / 0.6);
-          font-weight: 500;
+          color: #6b7280;
+          font-weight: 600;
           letter-spacing: 0.5px;
           text-transform: uppercase;
         }
+
+        .dark .footer-label {
+          color: #9ca3af;
+        }
       `}</style>
 
-      {/* Hero */}
-      <section className="projects-hero">
-        <div className="hero-grid-lines" />
-        <div className="hero-glow-left" />
-        <div className="hero-glow-right" />
+      {/* Dark Mode Toggle Button */}
+      <button
+        onClick={toggleDarkMode}
+        className="fixed top-24 right-4 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700"
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? (
+          <Sun className="w-6 h-6 text-yellow-500" />
+        ) : (
+          <Moon className="w-6 h-6 text-gray-700" />
+        )}
+      </button>
 
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="hero-badge">
-              <Zap size={12} />
-              Portfolio
-            </div>
-            <h1 className="hero-title">
-              Our <span>Projects</span>
-            </h1>
-            <p className="hero-sub">Showcasing our finest electrical work across residential, commercial & industrial sectors</p>
+      {/* Hero */}
+      {/* ── Hero ── */}
+      <section className="hero-gradient text-white projects-hero slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.7 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8"
+            >
+              <Zap className="w-5 h-5" />
+              <span className="font-semibold text-sm uppercase tracking-wide">Portfolio</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+            >
+              Our Projects
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-xl max-w-3xl mx-auto opacity-90"
+            >
+              Showcasing our finest electrical work across residential, commercial & industrial sectors
+            </motion.p>
           </motion.div>
         </div>
       </section>
@@ -326,8 +354,8 @@ const Projects = () => {
         {loading ? (
           <div className="flex justify-center py-16">
             <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12 }}>
-              <Loader2 className="animate-spin" size={22} style={{ color: "hsl(var(--secondary))" }} />
-              <span style={{ color: "hsl(var(--muted-foreground) / 0.5)", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading projects...</span>
+              <Loader2 className="animate-spin" size={22} style={{ color: "#3b82f6" }} />
+              <span style={{ color: "#6b7280", fontSize: 14, fontFamily: "'Poppins', sans-serif" }}>Loading projects...</span>
             </div>
           </div>
         ) : (
@@ -391,7 +419,7 @@ const Projects = () => {
           </>
         )}
       </Section>
-    </>
+    </div>
   );
 };
 

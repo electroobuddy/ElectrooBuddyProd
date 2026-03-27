@@ -893,72 +893,44 @@ import { motion } from "framer-motion";
 import { Zap } from "lucide-react";
 
 const Terms = () => (
-  <>
+  <div className="terms-page bg-gray-50 dark:bg-gray-900 min-h-screen">
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+      .terms-page {
+        font-family: 'Poppins', sans-serif;
+      }
+
+      .terms-page h1,
+      .terms-page h2,
+      .terms-page h3,
+      .terms-page h4,
+      .terms-page h5,
+      .terms-page h6 {
+        font-weight: 700;
+      }
 
       .terms-hero {
         position: relative;
-        padding: 96px 0 80px;
+        padding: 112px 0 96px;
         overflow: hidden;
-        background: hsl(var(--background));
         text-align: center;
-        font-family: 'DM Sans', sans-serif;
-      }
-      .th-grid {
-        position: absolute; inset: 0;
-        background-image:
-          linear-gradient(hsl(var(--primary) / 0.035) 1px, transparent 1px),
-          linear-gradient(90deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
-        background-size: 60px 60px;
-        mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
-      }
-      .th-glow {
-        position: absolute; top: -80px; left: 50%;
-        transform: translateX(-50%);
-        width: 500px; height: 350px;
-        background: radial-gradient(ellipse, hsl(var(--primary) / 0.08) 0%, transparent 70%);
-        pointer-events: none;
-      }
-      .th-badge {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 7px 18px;
-        border: 1px solid hsl(var(--border) / 0.3); border-radius: 100px;
-        background: hsl(var(--primary) / 0.06); margin-bottom: 20px;
-        font-size: 12px; font-weight: 600; color: hsl(var(--secondary));
-        letter-spacing: 1px; text-transform: uppercase;
-        font-family: 'Barlow Condensed', sans-serif;
-      }
-      .th-title {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: clamp(44px, 6vw, 76px); font-weight: 900;
-        line-height: 0.93; color: hsl(var(--foreground));
-        text-transform: uppercase; letter-spacing: -1px;
-      }
-      .th-title span {
-        background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)) 100%);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      }
-      .th-sub {
-        color: hsl(var(--muted-foreground) / 0.5); font-size: 14px; margin-top: 14px;
-        max-width: 360px; margin-left: auto; margin-right: auto;
       }
 
       /* Body content */
       .terms-body {
         max-width: 760px;
         margin: 0 auto;
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-size: 15px;
         color: hsl(var(--muted-foreground));
         line-height: 1.8;
       }
       .terms-body h1 {
-        font-family: 'Barlow Condensed', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-size: clamp(22px, 3vw, 30px);
-        font-weight: 800;
-        text-transform: uppercase;
-        color: hsl(var(--foreground));
+        font-weight: 700;
+        color: #1e3a8a;
         letter-spacing: 0.3px;
         margin-top: 40px;
         margin-bottom: 14px;
@@ -966,11 +938,10 @@ const Terms = () => (
         border-bottom: 1px solid hsl(var(--border) / 0.3);
       }
       .terms-body h2 {
-        font-family: 'Barlow Condensed', sans-serif;
+        font-family: 'Poppins', sans-serif;
         font-size: 18px;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: hsl(var(--foreground));
+        font-weight: 600;
+        color: #3b82f6;
         margin-top: 20px;
         margin-bottom: 10px;
       }
@@ -1006,7 +977,7 @@ const Terms = () => (
         font-size: 13px;
         color: hsl(var(--muted-foreground) / 0.6);
         text-align: center;
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Poppins', sans-serif;
         line-height: 1.65;
         max-width: 760px;
         margin-left: auto;
@@ -1015,14 +986,40 @@ const Terms = () => (
     `}</style>
 
     {/* ── HERO ── */}
-    <section className="terms-hero">
-      <div className="th-grid" />
-      <div className="th-glow" />
-      <div className="container mx-auto px-4 relative z-10">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <div className="th-badge"><Zap size={12} /> Legal</div>
-          <h1 className="th-title">Terms & <span>Conditions</span></h1>
-          <p className="th-sub">Please read these terms carefully before using our services</p>
+    <section className="hero-gradient text-white terms-hero slide-up">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.7 }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8"
+          >
+            <Zap className="w-5 h-5" />
+            <span className="font-semibold text-sm uppercase tracking-wide">Legal</span>
+          </motion.div>
+          
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+          >
+            Terms & Conditions
+          </motion.h1>
+          
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="text-xl max-w-3xl mx-auto opacity-90"
+          >
+            Please read these terms carefully before using our services
+          </motion.p>
         </motion.div>
       </div>
     </section>
@@ -1683,7 +1680,7 @@ const Terms = () => (
         By using Electroobuddy's services, you acknowledge that you have read and agree to these Terms &amp; Conditions. We reserve the right to update these terms at any time. Last updated 2025.
       </div>
     </Section>
-  </>
+  </div>
 );
 
 export default Terms;

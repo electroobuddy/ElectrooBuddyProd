@@ -280,7 +280,23 @@ const OrderSuccess = () => {
     <>
       <Confetti />
 
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="order-success-page bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+          .order-success-page {
+            font-family: 'Poppins', sans-serif;
+          }
+
+          .order-success-page h1,
+          .order-success-page h2,
+          .order-success-page h3,
+          .order-success-page h4,
+          .order-success-page h5,
+          .order-success-page h6 {
+            font-weight: 700;
+          }
+        `}</style>
         <div className="container mx-auto px-4 py-16 max-w-2xl">
           {/* ── success icon ── */}
           <div className="text-center mb-10">

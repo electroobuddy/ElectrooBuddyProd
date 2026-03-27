@@ -37,29 +37,36 @@ const ServiceCard = ({ service }: { service: DbService }) => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
         .service-card {
           position: relative;
-          background: hsl(var(--card));
-          border: 1px solid hsl(var(--border) / 0.3);
-          border-radius: 20px;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 16px;
           padding: 32px 28px 28px;
           display: flex;
           flex-direction: column;
           overflow: hidden;
           transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
           cursor: default;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .service-card {
+          background: #1f2937;
+          border-color: #374151;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
         .service-card::before {
           content: '';
           position: absolute;
           inset: 0;
-          border-radius: 20px;
-          background: radial-gradient(ellipse at 20% 0%, hsl(var(--primary) / 0.08) 0%, transparent 60%),
-                      radial-gradient(ellipse at 80% 100%, hsl(var(--secondary) / 0.06) 0%, transparent 60%);
+          border-radius: 16px;
+          background: radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 100%, rgba(30, 58, 138, 0.06) 0%, transparent 60%);
           opacity: 0;
           transition: opacity 0.5s ease;
         }
@@ -71,18 +78,25 @@ const ServiceCard = ({ service }: { service: DbService }) => {
           left: 0;
           right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
+          background: linear-gradient(90deg, transparent, #3b82f6, transparent);
           opacity: 0;
           transition: opacity 0.4s ease;
         }
 
         .service-card:hover {
           transform: translateY(-6px);
-          border-color: hsl(var(--border) / 0.5);
+          border-color: #3b82f6;
           box-shadow:
-            0 0 0 1px hsl(var(--primary) / 0.1),
-            0 20px 60px hsl(var(--foreground) / 0.1),
-            0 0 40px hsl(var(--primary) / 0.08);
+            0 0 0 1px rgba(59, 130, 246, 0.1),
+            0 20px 60px rgba(0, 0, 0, 0.1),
+            0 0 40px rgba(59, 130, 246, 0.08);
+        }
+
+        .dark .service-card:hover {
+          box-shadow:
+            0 0 0 1px rgba(59, 130, 246, 0.2),
+            0 20px 60px rgba(0, 0, 0, 0.3),
+            0 0 40px rgba(59, 130, 246, 0.15);
         }
 
         .service-card:hover::before { opacity: 1; }
@@ -132,13 +146,14 @@ const ServiceCard = ({ service }: { service: DbService }) => {
         .icon-hex {
           position: absolute;
           inset: 0;
-          background: linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--primary) / 0.05));
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(30, 58, 138, 0.05));
           clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
           transition: all 0.5s ease;
+          border-radius: 8px;
         }
 
         .service-card:hover .icon-hex {
-          background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
+          background: linear-gradient(135deg, #3b82f6, #1e3a8a);
         }
 
         .icon-inner {
@@ -157,37 +172,44 @@ const ServiceCard = ({ service }: { service: DbService }) => {
         .icon-svg {
           width: 26px;
           height: 26px;
-          color: hsl(var(--secondary));
+          color: #3b82f6;
           transition: color 0.4s ease;
         }
 
         .service-card:hover .icon-svg {
-          color: hsl(var(--card-foreground));
-          filter: drop-shadow(0 0 4px hsl(var(--foreground) / 0.3));
+          color: #ffffff;
+          filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.3));
         }
 
         .service-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 22px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 20px;
           font-weight: 700;
-          color: hsl(var(--foreground));
+          color: #1e3a8a;
           margin-bottom: 10px;
           letter-spacing: 0.3px;
-          text-transform: uppercase;
-          line-height: 1.1;
+          line-height: 1.2;
+        }
+
+        .dark .service-title {
+          color: #60a5fa;
         }
 
         .service-desc {
-          font-size: 13.5px;
-          color: hsl(var(--muted-foreground) / 0.7);
+          font-size: 14px;
+          color: #6b7280;
           line-height: 1.65;
           margin-bottom: 24px;
           flex: 1;
         }
 
+        .dark .service-desc {
+          color: #9ca3af;
+        }
+
         .divider {
           height: 1px;
-          background: linear-gradient(90deg, hsl(var(--primary) / 0.3), transparent);
+          background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), transparent);
           margin-bottom: 18px;
         }
 
@@ -205,7 +227,7 @@ const ServiceCard = ({ service }: { service: DbService }) => {
           border-radius: 8px;
           font-size: 12px;
           font-weight: 600;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           letter-spacing: 0.3px;
           text-decoration: none;
           transition: all 0.25s ease;
@@ -214,49 +236,37 @@ const ServiceCard = ({ service }: { service: DbService }) => {
           overflow: hidden;
         }
 
-        .cta-btn::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          opacity: 0;
-          transition: opacity 0.25s;
-          background: rgba(255,255,255,0.06);
-        }
-
-        .cta-btn:hover::before { opacity: 1; }
-        .cta-btn:hover { transform: translateY(-1px); }
-
         .cta-wa {
-          background: hsl(var(--success) / 0.1);
-          color: hsl(var(--success));
-          border-color: hsl(var(--success) / 0.25);
+          background: rgba(34, 197, 94, 0.1);
+          color: #22c55e;
+          border-color: rgba(34, 197, 94, 0.25);
         }
         .cta-wa:hover {
-          background: hsl(var(--success) / 0.2);
-          border-color: hsl(var(--success) / 0.5);
-          box-shadow: 0 0 12px hsl(var(--success) / 0.2);
+          background: rgba(34, 197, 94, 0.2);
+          border-color: rgba(34, 197, 94, 0.5);
+          box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
         }
 
         .cta-call {
-          background: hsl(var(--primary) / 0.1);
-          color: hsl(var(--secondary));
-          border-color: hsl(var(--primary) / 0.25);
+          background: rgba(59, 130, 246, 0.1);
+          color: #3b82f6;
+          border-color: rgba(59, 130, 246, 0.25);
         }
         .cta-call:hover {
-          background: hsl(var(--primary) / 0.2);
-          border-color: hsl(var(--primary) / 0.5);
-          box-shadow: 0 0 12px hsl(var(--primary) / 0.2);
+          background: rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 246, 0.5);
+          box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
         }
 
         .cta-book {
-          background: hsl(var(--info) / 0.12);
-          color: hsl(var(--info));
-          border-color: hsl(var(--info) / 0.25);
+          background: rgba(59, 130, 246, 0.12);
+          color: #3b82f6;
+          border-color: rgba(59, 130, 246, 0.25);
         }
         .cta-book:hover {
-          background: hsl(var(--info) / 0.22);
-          border-color: hsl(var(--info) / 0.5);
-          box-shadow: 0 0 12px hsl(var(--info) / 0.2);
+          background: rgba(59, 130, 246, 0.22);
+          border-color: rgba(59, 130, 246, 0.5);
+          box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
         }
       `}</style>
 

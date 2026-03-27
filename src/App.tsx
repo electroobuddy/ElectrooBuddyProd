@@ -13,7 +13,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import { BookingModal } from "./pages/Index"; // Named export
+import BookingModal from "@/components/BookingModal";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Services from "./pages/Services";

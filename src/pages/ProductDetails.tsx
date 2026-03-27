@@ -890,7 +890,23 @@ const ProductDetails = () => {
         )}
       </AnimatePresence>
 
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="product-details-page bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+          .product-details-page {
+            font-family: 'Poppins', sans-serif;
+          }
+
+          .product-details-page h1,
+          .product-details-page h2,
+          .product-details-page h3,
+          .product-details-page h4,
+          .product-details-page h5,
+          .product-details-page h6 {
+            font-weight: 700;
+          }
+        `}</style>
         <div className="container mx-auto px-4 py-8">
           {/* breadcrumb */}
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
@@ -972,7 +988,7 @@ const ProductDetails = () => {
                   </span>
                 )}
                 {product.is_featured && (
-                  <span className="text-xs font-medium bg-yellow-500/10 text-yellow-600 px-3 py-1 rounded-full flex items-center gap-1">
+                  <span className="text-xs font-medium bg-blue-500/10 text-blue-600 px-3 py-1 rounded-full flex items-center gap-1">
                     <Star className="w-3 h-3 fill-current" /> Featured
                   </span>
                 )}
@@ -1047,7 +1063,7 @@ const ProductDetails = () => {
                         : `In Stock (${product.inventory_quantity} available)`}
                     </span>
                   ) : product.allow_backorder ? (
-                    <span className="flex items-center gap-1.5 text-yellow-600 font-medium">
+                    <span className="flex items-center gap-1.5 text-blue-600 font-medium">
                       <Package className="w-4 h-4" />
                       Available for Backorder
                     </span>

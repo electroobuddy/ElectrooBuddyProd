@@ -183,7 +183,23 @@ const BookingTracking = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="booking-tracking-page bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        .booking-tracking-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .booking-tracking-page h1,
+        .booking-tracking-page h2,
+        .booking-tracking-page h3,
+        .booking-tracking-page h4,
+        .booking-tracking-page h5,
+        .booking-tracking-page h6 {
+          font-weight: 700;
+        }
+      `}</style>
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-4">

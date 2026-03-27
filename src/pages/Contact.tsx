@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Section from "@/components/Section";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
-import { Zap, Phone, Mail, MapPin, Send, Loader2, CheckCircle } from "lucide-react";
+import { Zap, Phone, Mail, MapPin, Send, Loader2, CheckCircle, Sun, Moon } from "lucide-react";
 import { PHONE_NUMBER } from "@/data/services";
 import { toast } from "sonner";
 
@@ -11,6 +11,21 @@ const Contact = () => {
   const [form, setForm] = useState({ name: "", phone: "", email: "", service: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Dark mode effect
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode') === 'true' || 
+      (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    setDarkMode(isDark);
+    if (isDark) document.documentElement.classList.add('dark');
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', String(!darkMode));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +61,7 @@ const Contact = () => {
   ];
 
   return (
-    <>
+    <div className="contact-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <SEO
         title="Contact Electroo Buddy - Get in Touch for Electrical Services in Ujjain"
         description="Contact us for all your electrical needs in Ujjain. Call +91-81093-08287 or email electroobuddy@gmail.com. Fast response, expert advice, and free quotes available."
@@ -67,81 +82,29 @@ const Contact = () => {
         }}
       />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-        /* ─── HERO ─── */
+        .contact-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .contact-page h1,
+        .contact-page h2,
+        .contact-page h3,
+        .contact-page h4,
+        .contact-page h5,
+        .contact-page h6 {
+          font-weight: 700;
+        }
+
         .contact-hero {
           position: relative;
-          padding: 96px 0 80px;
+          padding: 112px 0 96px;
           overflow: hidden;
-          background: hsl(var(--background));
           text-align: center;
-          font-family: 'DM Sans', sans-serif;
         }
 
-        .ch-grid {
-          position: absolute;
-          inset: 0;
-          background-image:
-            linear-gradient(hsl(var(--primary) / 0.035) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
-          background-size: 60px 60px;
-          mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
-        }
-
-        .ch-glow {
-          position: absolute;
-          top: -80px; left: 50%;
-          transform: translateX(-50%);
-          width: 500px; height: 350px;
-          background: radial-gradient(ellipse, hsl(var(--primary) / 0.09) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .ch-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 7px 18px;
-          border: 1px solid hsl(var(--primary) / 0.3);
-          border-radius: 100px;
-          background: hsl(var(--primary) / 0.06);
-          margin-bottom: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          color: hsl(var(--secondary));
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          font-family: 'Barlow Condensed', sans-serif;
-        }
-
-        .ch-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: clamp(48px, 7vw, 84px);
-          font-weight: 900;
-          line-height: 0.92;
-          color: hsl(var(--foreground));
-          text-transform: uppercase;
-          letter-spacing: -1px;
-        }
-
-        .ch-title span {
-          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .ch-sub {
-          color: hsl(var(--muted-foreground) / 0.45);
-          font-size: 15px;
-          margin-top: 14px;
-          max-width: 380px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        /* ─── LAYOUT ─── */
+        /* Layout */
         .contact-grid {
           display: grid;
           grid-template-columns: 1fr;
@@ -152,15 +115,22 @@ const Contact = () => {
           .contact-grid { grid-template-columns: 1fr 1fr; gap: 56px; }
         }
 
-        /* ─── FORM PANEL ─── */
+        /* Form Panel */
         .form-panel {
           position: relative;
-          background: hsl(var(--card));
-          border: 1px solid hsl(var(--border) / 0.3);
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
           border-radius: 24px;
           padding: 44px 40px;
           overflow: hidden;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .form-panel {
+          background: #1f2937;
+          border-color: #374151;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
         @media (max-width: 640px) {
@@ -196,16 +166,18 @@ const Contact = () => {
         }
 
         .panel-heading {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 28px;
-          font-weight: 800;
-          text-transform: uppercase;
-          color: hsl(var(--foreground));
-          letter-spacing: 0.5px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 24px;
+          font-weight: 700;
+          color: #1e3a8a;
           margin-bottom: 28px;
           display: flex;
           align-items: center;
           gap: 10px;
+        }
+
+        .dark .panel-heading {
+          color: #60a5fa;
         }
 
         .panel-heading::after {
@@ -220,13 +192,17 @@ const Contact = () => {
 
         .field-label {
           display: block;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.9px;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
           text-transform: uppercase;
-          color: hsl(var(--muted-foreground) / 0.55);
+          color: #6b7280;
           margin-bottom: 8px;
-          font-family: 'Barlow Condensed', sans-serif;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .dark .field-label {
+          color: #9ca3af;
         }
 
         .field-opt {
@@ -240,15 +216,22 @@ const Contact = () => {
         .field-textarea {
           width: 100%;
           padding: 13px 16px;
-          background: hsl(var(--primary) / 0.025);
-          border: 1px solid hsl(var(--border) / 0.3);
+          background: rgba(59, 130, 246, 0.025);
+          border: 1px solid #e5e7eb;
           border-radius: 12px;
-          color: hsl(var(--foreground));
+          color: #1e3a8a;
           font-size: 14px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           outline: none;
           transition: all 0.25s ease;
           box-sizing: border-box;
+        }
+
+        .dark .field-input,
+        .dark .field-textarea {
+          background: rgba(59, 130, 246, 0.05);
+          border-color: #374151;
+          color: #60a5fa;
         }
 
         .field-input::placeholder,
@@ -256,9 +239,14 @@ const Contact = () => {
 
         .field-input:focus,
         .field-textarea:focus {
-          border-color: hsl(var(--primary) / 0.5);
-          background: hsl(var(--primary) / 0.025);
-          box-shadow: 0 0 0 3px hsl(var(--primary) / 0.07), inset 0 0 0 1px hsl(var(--primary) / 0.08);
+          border-color: #3b82f6;
+          background: rgba(59, 130, 246, 0.05);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .dark .field-input:focus,
+        .dark .field-textarea:focus {
+          background: rgba(59, 130, 246, 0.1);
         }
 
         .field-textarea { resize: none; min-height: 110px; }
@@ -269,12 +257,12 @@ const Contact = () => {
           align-items: center;
           gap: 10px;
           padding: 14px 36px;
-          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-blue-dark)));
-          color: hsl(var(--primary-foreground));
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 17px;
-          font-weight: 800;
-          letter-spacing: 0.8px;
+          background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+          color: #ffffff;
+          font-family: 'Poppins', sans-serif;
+          font-size: 16px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
           text-transform: uppercase;
           border: none;
           border-radius: 12px;
@@ -284,7 +272,7 @@ const Contact = () => {
         }
 
         .submit-btn:hover:not(:disabled) {
-          box-shadow: 0 0 28px hsl(var(--primary) / 0.4), 0 6px 20px hsl(var(--secondary) / 0.3);
+          box-shadow: 0 0 28px rgba(59, 130, 246, 0.4), 0 6px 20px rgba(59, 130, 246, 0.3);
           transform: translateY(-2px);
         }
 
@@ -304,13 +292,13 @@ const Contact = () => {
           width: 68px;
           height: 68px;
           border-radius: 50%;
-          border: 2px solid hsl(var(--primary) / 0.3);
-          background: hsl(var(--primary) / 0.08);
+          border: 2px solid rgba(59, 130, 246, 0.3);
+          background: rgba(59, 130, 246, 0.08);
           display: flex;
           align-items: center;
           justify-content: center;
-          color: hsl(var(--secondary));
-          box-shadow: 0 0 28px hsl(var(--primary) / 0.18);
+          color: #3b82f6;
+          box-shadow: 0 0 28px rgba(59, 130, 246, 0.18);
           animation: popIn 0.45s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
@@ -320,19 +308,26 @@ const Contact = () => {
         }
 
         .success-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 28px;
-          font-weight: 800;
-          text-transform: uppercase;
-          color: hsl(var(--foreground));
+          font-family: 'Poppins', sans-serif;
+          font-size: 26px;
+          font-weight: 700;
+          color: #1e3a8a;
+        }
+
+        .dark .success-title {
+          color: #60a5fa;
         }
 
         .success-sub {
-          font-size: 13.5px;
-          color: hsl(var(--muted-foreground) / 0.5);
+          font-size: 14px;
+          color: #6b7280;
           max-width: 280px;
           line-height: 1.6;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .dark .success-sub {
+          color: #9ca3af;
         }
 
         .success-reset {
@@ -362,33 +357,47 @@ const Contact = () => {
           align-items: flex-start;
           gap: 16px;
           padding: 20px 22px;
-          background: hsl(var(--card));
-          border: 1px solid hsl(var(--border) / 0.3);
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
           border-radius: 16px;
           transition: all 0.3s ease;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           text-decoration: none;
         }
 
+        .dark .info-card {
+          background: #1f2937;
+          border-color: #374151;
+        }
+
         .info-card:hover {
-          border-color: hsl(var(--primary) / 0.5);
-          background: hsl(var(--primary) / 0.03);
+          border-color: #3b82f6;
+          background: rgba(59, 130, 246, 0.03);
           transform: translateX(4px);
-          box-shadow: -3px 0 0 hsl(var(--secondary)), 0 8px 28px hsl(var(--foreground) / 0.1);
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .info-card:hover {
+          background: rgba(59, 130, 246, 0.05);
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
         }
 
         .info-icon-box {
           width: 44px;
           height: 44px;
           border-radius: 12px;
-          background: hsl(var(--primary) / 0.08);
-          border: 1px solid hsl(var(--border) / 0.3);
+          background: rgba(59, 130, 246, 0.08);
+          border: 1px solid #e5e7eb;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: hsl(var(--secondary));
+          color: #3b82f6;
           flex-shrink: 0;
           transition: all 0.3s;
+        }
+
+        .dark .info-icon-box {
+          border-color: #374151;
         }
 
         .info-card:hover .info-icon-box {
@@ -397,52 +406,76 @@ const Contact = () => {
         }
 
         .info-label {
-          font-family: 'Barlow Condensed', sans-serif;
+          font-family: 'Poppins', sans-serif;
           font-size: 12px;
-          font-weight: 700;
+          font-weight: 600;
+          letter-spacing: 0.5px;
           text-transform: uppercase;
-          letter-spacing: 0.8px;
-          color: hsl(var(--primary) / 0.6);
+          color: #3b82f6;
           margin-bottom: 4px;
         }
 
         .info-value {
           font-size: 14px;
           font-weight: 500;
-          color: hsl(var(--muted-foreground));
+          color: #6b7280;
           line-height: 1.4;
         }
 
-        /* ─── MAP ─── */
-        .map-wrap {
-          position: relative;
-          border-radius: 18px;
-          overflow: hidden;
-          border: 1px solid hsl(var(--border) / 0.3);
-          height: 240px;
-          margin-top: 8px;
-        }
-
-        .map-wrap::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 18px;
-          box-shadow: inset 0 0 0 2px hsl(var(--primary) / 0.08);
-          z-index: 2;
-          pointer-events: none;
+        .dark .info-value {
+          color: #9ca3af;
         }
       `}</style>
 
+      {/* Dark Mode Toggle Button */}
+      <button
+        onClick={toggleDarkMode}
+        className="fixed top-24 right-4 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700"
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? (
+          <Sun className="w-6 h-6 text-yellow-500" />
+        ) : (
+          <Moon className="w-6 h-6 text-gray-700" />
+        )}
+      </button>
+
       {/* Hero */}
-      <section className="contact-hero">
-        <div className="ch-grid" />
-        <div className="ch-glow" />
-        <div className="container mx-auto px-4 relative z-10">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="ch-badge"><Zap size={12} /> Get In Touch</div>
-            <h1 className="ch-title">Contact <span>Us</span></h1>
-            <p className="ch-sub">We'd love to hear from you — reach out any time</p>
+      {/* HERO */}
+      <section className="hero-gradient text-white contact-hero slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.7 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8"
+            >
+              <Zap className="w-5 h-5" />
+              <span className="font-semibold text-sm uppercase tracking-wide">Get In Touch</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+            >
+              Contact Us
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-xl max-w-3xl mx-auto opacity-90"
+            >
+              We'd love to hear from you — reach out any time
+            </motion.p>
           </motion.div>
         </div>
       </section>
@@ -459,10 +492,6 @@ const Contact = () => {
             <div className="form-panel">
               <div className="fp-corner-tl" />
               <div className="fp-corner-br" />
-              <svg className="fp-bolt" viewBox="0 0 100 100" fill="none">
-                <path d="M60 5L20 55h30L35 95l45-55H50L60 5z" fill="#ffc800" />
-              </svg>
-
               <div className="panel-heading">Send a Message</div>
 
               {done ? (
@@ -518,9 +547,9 @@ const Contact = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <div className="panel-heading" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 28, fontWeight: 800, textTransform: "uppercase", color: "hsl(var(--foreground))", letterSpacing: 0.5, marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="panel-heading" style={{ fontFamily: "'Poppins',sans-serif", fontSize: 24, fontWeight: 700, color: "#1e3a8a", marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
               Contact Details
-              <span style={{ flex: 1, height: 1, background: "linear-gradient(90deg, hsl(var(--primary) / 0.3), transparent)", display: "block" }} />
+              <span style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(59, 130, 246, 0.3), transparent)", display: "block" }} />
             </div>
 
             <div className="info-panel">
@@ -558,7 +587,7 @@ const Contact = () => {
           </motion.div>
         </div>
       </Section>
-    </>
+    </div>
   );
 };
 
