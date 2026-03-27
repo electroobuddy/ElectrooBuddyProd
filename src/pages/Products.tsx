@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -28,7 +28,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 /* ─── skeleton card ─────────────────────────────────────────── */
-const SkeletonCard = () => (
+const SkeletonCard = memo(() => (
   <div className="bg-card border border-border rounded-xl overflow-hidden animate-pulse">
     <div className="aspect-square bg-muted" />
     <div className="p-4 space-y-3">
@@ -41,7 +41,7 @@ const SkeletonCard = () => (
       </div>
     </div>
   </div>
-);
+));
 
 /* ─── component ─────────────────────────────────────────────── */
 const Products = () => {
@@ -105,7 +105,30 @@ const Products = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="products-page bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        .products-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .products-page h1,
+        .products-page h2,
+        .products-page h3,
+        .products-page h4,
+        .products-page h5,
+        .products-page h6 {
+          font-weight: 700;
+        }
+
+        .products-hero {
+          position: relative;
+          padding: 112px 0 96px;
+          overflow: hidden;
+          text-align: center;
+        }
+      `}</style>
       <SEO
         title="Electrical Products Online | Switches, Lighting & Accessories in Ujjain"
         description="Shop quality electrical products online - switches, sockets, lighting, wiring accessories and more. Best prices in Ujjain with fast delivery and warranty."
@@ -128,23 +151,41 @@ const Products = () => {
         }}
       />
       {/* ── Hero ── */}
-      <section className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 py-14 border-b border-border">
-        <div className="container mx-auto px-4 text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-heading font-bold mb-3"
+      <section className="hero-gradient text-white products-hero slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.7 }}
           >
-            Our Products
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08 }}
-            className="text-lg text-muted-foreground max-w-2xl mx-auto"
-          >
-            Discover our wide range of high-quality electrical products and accessories
-          </motion.p>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8"
+            >
+              <Zap className="w-5 h-5" />
+              <span className="font-semibold text-sm uppercase tracking-wide">Quality Electrical Products</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+            >
+              Our Products
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-xl max-w-3xl mx-auto opacity-90"
+            >
+              Discover our wide range of high-quality electrical products and accessories
+            </motion.p>
+          </motion.div>
         </div>
       </section>
 
@@ -350,6 +391,7 @@ const Products = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index * 0.04, 0.3) }}
                     className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col"
+                    style={{ willChange: 'transform, opacity' }}
                   >
                     <Link to={`/products/${product.slug}`} className="flex flex-col flex-1">
                       {/* image */}

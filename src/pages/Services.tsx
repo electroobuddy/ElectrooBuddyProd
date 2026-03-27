@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
 import SEO from "@/components/SEO";
 import ServiceCard from "@/components/ServiceCard";
-import { Zap, Loader2 } from "lucide-react";
-import { services as defaultServices } from "@/data/services";
+import { Zap, Loader2, Sun, Moon } from "lucide-react";
+import { services as defaultServices, PHONE_NUMBER } from "@/data/services";
 import { useServices } from "@/hooks/useOptimizedData";
 
 const Services = () => {
@@ -13,6 +13,21 @@ const Services = () => {
   const { services: dbServices, loading: servicesLoading } = useServices();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Dark mode effect
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode') === 'true' || 
+      (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    setDarkMode(isDark);
+    if (isDark) document.documentElement.classList.add('dark');
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', String(!darkMode));
+  };
 
   useEffect(() => {
     // Use cached services from hook, fallback to static data if empty
@@ -25,7 +40,7 @@ const Services = () => {
   }, [dbServices]);
 
   return (
-    <>
+    <div className="services-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <SEO
         title="Electrical Services in Ujjain | Installation, Repair & Maintenance"
         description="Comprehensive electrical services including installation, repair, maintenance for residential, commercial and industrial properties. Emergency services available 24/7 with certified professionals."
@@ -76,100 +91,54 @@ const Services = () => {
         }}
       />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        .services-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .services-page h1,
+        .services-page h2,
+        .services-page h3,
+        .services-page h4,
+        .services-page h5,
+        .services-page h6 {
+          font-weight: 700;
+        }
 
         .services-hero {
           position: relative;
           padding: 112px 0 96px;
           overflow: hidden;
-          background: hsl(var(--background));
           text-align: center;
-          font-family: 'DM Sans', sans-serif;
         }
 
-        .services-hero-grid {
-          position: absolute;
-          inset: 0;
-          background-image:
-            linear-gradient(hsl(var(--primary) / 0.035) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
-          background-size: 60px 60px;
-          mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+        /* Service Cards Grid */
+        .services-grid-section {
+          padding: 80px 0;
+          background: #f9fafb;
         }
 
-        .services-hero-glow-1,
-        .services-hero-glow-2 {
-          position: absolute;
-          border-radius: 50%;
-          pointer-events: none;
-        }
-
-        .services-hero-glow-1 {
-          bottom: -80px; left: 25%;
-          width: 400px; height: 400px;
-          background: radial-gradient(ellipse, hsl(var(--primary) / 0.08) 0%, transparent 70%);
-        }
-
-        .services-hero-glow-2 {
-          top: -60px; right: 25%;
-          width: 350px; height: 350px;
-          background: radial-gradient(ellipse, hsl(var(--secondary) / 0.06) 0%, transparent 70%);
-        }
-
-        .services-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          padding: 9px 20px;
-          border: 1px solid hsl(var(--border) / 0.3);
-          border-radius: 100px;
-          background: hsl(var(--primary) / 0.07);
-          backdrop-filter: blur(8px);
-          margin-bottom: 28px;
-          font-size: 13px;
-          font-weight: 600;
-          color: hsl(var(--foreground));
-          letter-spacing: 0.3px;
-          text-transform: uppercase;
-        }
-
-        .services-badge span {
-          color: hsl(var(--secondary));
-        }
-
-        .services-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: clamp(48px, 7vw, 88px);
-          font-weight: 900;
-          line-height: 0.92;
-          color: hsl(var(--foreground));
-          text-transform: uppercase;
-          letter-spacing: -1px;
-          margin-bottom: 16px;
-        }
-
-        .services-title span {
-          background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .services-subtitle {
-          color: hsl(var(--muted-foreground) / 0.5);
-          font-size: 16px;
-          max-width: 500px;
-          margin: 0 auto;
-          line-height: 1.6;
+        .dark .services-grid-section {
+          background: #111827;
         }
       `}</style>
 
-      <section className="services-hero">
-        <div className="services-hero-grid" />
-        <div className="services-hero-glow-1" />
-        <div className="services-hero-glow-2" />
-        
-        <div className="container mx-auto px-4 relative z-10">
+      {/* Dark Mode Toggle Button */}
+      <button
+        onClick={toggleDarkMode}
+        className="fixed top-24 right-4 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700"
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? (
+          <Sun className="w-6 h-6 text-yellow-500" />
+        ) : (
+          <Moon className="w-6 h-6 text-gray-700" />
+        )}
+      </button>
+
+      <section className="hero-gradient text-white services-hero slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 30 }} 
             animate={{ opacity: 1, y: 0 }} 
@@ -179,26 +148,26 @@ const Services = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.4 }}
-              className="services-badge"
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8"
             >
-              <Zap className="w-4 h-4" />
-              Professional Electrical Solutions
+              <Zap className="w-5 h-5" />
+              <span className="font-semibold text-sm uppercase tracking-wide">Professional Electrical Solutions</span>
             </motion.div>
             
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="services-title"
+              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
             >
-              Our <span>Services</span>
+              Our Services
             </motion.h1>
             
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
-              className="services-subtitle"
+              className="text-xl max-w-3xl mx-auto opacity-90"
             >
               Professional electrical solutions for residential, commercial, and industrial needs with certified experts
             </motion.p>
@@ -211,7 +180,7 @@ const Services = () => {
         ) : services.length === 0 ? (
           <p className="text-center text-muted-foreground py-12">No services available yet. Check back soon!</p>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 fade-in">
             {services.map((s, i) => (
               <motion.div
                 key={s.id}
@@ -226,7 +195,18 @@ const Services = () => {
           </div>
         )}
       </Section>
-    </>
+
+      {/* Emergency CTA Section */}
+      <section className="py-20 bg-blue-600 text-white slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">Need Emergency Service?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">Our 24/7 emergency service is always ready to help you with any electrical issues.</p>
+          <a href={`tel:${PHONE_NUMBER}`} className="inline-flex items-center px-8 py-4 bg-white text-blue-800 font-semibold rounded-lg hover:bg-gray-100 transition duration-300">
+            <Zap className="mr-2 h-5 w-5" /> Call Now: {PHONE_NUMBER}
+          </a>
+        </div>
+      </section>
+    </div>
   );
 };
 

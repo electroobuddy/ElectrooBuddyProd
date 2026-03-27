@@ -1028,7 +1028,23 @@ const Checkout = () => {
 
   /* ── render ── */
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="checkout-page bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        .checkout-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .checkout-page h1,
+        .checkout-page h2,
+        .checkout-page h3,
+        .checkout-page h4,
+        .checkout-page h5,
+        .checkout-page h6 {
+          font-weight: 700;
+        }
+      `}</style>
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <h1 className="text-3xl font-heading font-bold mb-1">Checkout</h1>

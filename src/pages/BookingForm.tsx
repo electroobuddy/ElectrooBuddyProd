@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Section from "@/components/Section";
-import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, UserCheck } from "lucide-react";
+import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, UserCheck, Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -15,6 +15,21 @@ const BookingForm = () => {
   const [assigningTechnician, setAssigningTechnician] = useState(false);
   const [done, setDone] = useState(false);
   const { user } = useAuth();
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Dark mode effect
+  useEffect(() => {
+    const isDark = localStorage.getItem('darkMode') === 'true' || 
+      (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    setDarkMode(isDark);
+    if (isDark) document.documentElement.classList.add('dark');
+  }, []);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('darkMode', String(!darkMode));
+  };
 
   const [form, setForm] = useState({
     name: "",
@@ -164,92 +179,49 @@ const BookingForm = () => {
   };
 
   return (
-    <>
+    <div className="booking-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-        /* ─── HERO ─── */
+        .booking-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .booking-page h1,
+        .booking-page h2,
+        .booking-page h3,
+        .booking-page h4,
+        .booking-page h5,
+        .booking-page h6 {
+          font-weight: 700;
+        }
+
         .booking-hero {
           position: relative;
-          padding: 8px 0 8px;
+          padding: 112px 0 96px;
           overflow: hidden;
-          background: hsl(var(--background));
           text-align: center;
-          font-family: 'DM Sans', sans-serif;
         }
 
-        .bh-grid {
-          position: absolute;
-          inset: 0;
-          background-image:
-            linear-gradient(hsl(var(--primary) / 0.035) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
-          background-size: 60px 60px;
-          mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
-        }
-
-        .bh-glow {
-          position: absolute;
-          top: -80px; left: 50%;
-          transform: translateX(-50%);
-          width: 500px; height: 350px;
-          background: radial-gradient(ellipse, hsl(var(--primary) / 0.09) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .bh-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 7px 18px;
-          border: 1px solid hsl(var(--border) / 0.3);
-          border-radius: 100px;
-          background: hsl(var(--primary) / 0.06);
-          margin-bottom: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          color: hsl(var(--secondary));
-          letter-spacing: 1px;
-          text-transform: uppercase;
-        }
-
-        .bh-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: clamp(48px, 7vw, 84px);
-          font-weight: 900;
-          line-height: 0.92;
-          color: hsl(var(--foreground));
-          text-transform: uppercase;
-          letter-spacing: -1px;
-        }
-
-        .bh-title span {
-          background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .bh-sub {
-          color: hsl(var(--muted-foreground) / 0.5);
-          font-size: 15px;
-          margin-top: 14px;
-          max-width: 380px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        /* ─── FORM CARD ─── */
+        /* Form Card */
         .booking-card {
           position: relative;
-          background: hsl(var(--card));
-          border: 1px solid hsl(var(--border) / 0.3);
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
           border-radius: 24px;
           padding: 48px 44px;
           overflow: hidden;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           max-width: 680px;
           margin: 0 auto;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+          transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .dark .booking-card {
+          background: #1f2937;
+          border-color: #374151;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
         @media (max-width: 640px) {
@@ -260,8 +232,8 @@ const BookingForm = () => {
           position: absolute;
           top: 0; left: 0;
           width: 80px; height: 80px;
-          border-top: 2px solid hsl(var(--primary) / 0.35);
-          border-left: 2px solid hsl(var(--primary) / 0.35);
+          border-top: 2px solid rgba(59, 130, 246, 0.35);
+          border-left: 2px solid rgba(59, 130, 246, 0.35);
           border-radius: 24px 0 0 0;
           pointer-events: none;
         }
@@ -270,8 +242,8 @@ const BookingForm = () => {
           position: absolute;
           bottom: 0; right: 0;
           width: 80px; height: 80px;
-          border-bottom: 2px solid hsl(var(--primary) / 0.15);
-          border-right: 2px solid hsl(var(--primary) / 0.15);
+          border-bottom: 2px solid rgba(59, 130, 246, 0.15);
+          border-right: 2px solid rgba(59, 130, 246, 0.15);
           border-radius: 0 0 24px 0;
           pointer-events: none;
         }
@@ -292,12 +264,16 @@ const BookingForm = () => {
         .field-label {
           display: block;
           font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 0.8px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
           text-transform: uppercase;
-          color: hsl(var(--muted-foreground) / 0.6);
+          color: #6b7280;
           margin-bottom: 8px;
-          font-family: 'Barlow Condensed', sans-serif;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .dark .field-label {
+          color: #9ca3af;
         }
 
         .field-input,
@@ -305,34 +281,56 @@ const BookingForm = () => {
         .field-textarea {
           width: 100%;
           padding: 13px 16px;
-          background: hsl(var(--primary) / 0.03);
-          border: 1px solid hsl(var(--border) / 0.3);
+          background: #f9fafb;
+          border: 1.5px solid #e5e7eb;
           border-radius: 12px;
-          color: hsl(var(--foreground));
+          color: #111827;
           font-size: 14px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
           outline: none;
           transition: all 0.25s ease;
           appearance: none;
           -webkit-appearance: none;
+          box-sizing: border-box;
+        }
+
+        .dark .field-input,
+        .dark .field-select,
+        .dark .field-textarea {
+          background: #374151;
+          border-color: #4b5563;
+          color: #f9fafb;
         }
 
         .field-input::placeholder,
         .field-textarea::placeholder {
-          color: hsl(var(--muted-foreground) / 0.3);
+          color: #9ca3af;
         }
 
         .field-input:focus,
         .field-select:focus,
         .field-textarea:focus {
-          border-color: hsl(var(--primary) / 0.5);
-          background: hsl(var(--primary) / 0.03);
-          box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08), inset 0 0 0 1px hsl(var(--primary) / 0.1);
+          border-color: #3b82f6;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .dark .field-input:focus,
+        .dark .field-select:focus,
+        .dark .field-textarea:focus {
+          background: #4b5563;
+          border-color: #60a5fa;
+          box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
         }
 
         .field-select option {
-          background: hsl(var(--card));
-          color: hsl(var(--foreground));
+          background: #ffffff;
+          color: #111827;
+        }
+
+        .dark .field-select option {
+          background: #374151;
+          color: #f9fafb;
         }
 
         .field-textarea {
@@ -354,12 +352,12 @@ const BookingForm = () => {
         .submit-btn {
           width: 100%;
           padding: 16px;
-          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-blue-dark)));
-          color: hsl(var(--primary-foreground));
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 18px;
-          font-weight: 800;
-          letter-spacing: 1px;
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          color: #ffffff;
+          font-family: 'Poppins', sans-serif;
+          font-size: 16px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
           text-transform: uppercase;
           border: none;
           border-radius: 14px;
@@ -372,22 +370,14 @@ const BookingForm = () => {
           margin-top: 28px;
           position: relative;
           overflow: hidden;
-        }
-
-        .submit-btn::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: hsl(var(--foreground) / 0);
-          transition: background 0.3s;
+          box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
         }
 
         .submit-btn:hover:not(:disabled) {
-          box-shadow: 0 0 32px hsl(var(--primary) / 0.4), 0 8px 24px hsl(var(--secondary) / 0.3);
+          background: linear-gradient(135deg, #2563eb, #1d4ed8);
+          box-shadow: 0 8px 24px rgba(59, 130, 246, 0.45);
           transform: translateY(-2px);
         }
-
-        .submit-btn:hover::before { background: hsl(var(--foreground) / 0.08); }
 
         .submit-btn:disabled {
           opacity: 0.6;
@@ -396,19 +386,27 @@ const BookingForm = () => {
 
         .form-divider {
           height: 1px;
-          background: linear-gradient(90deg, transparent, hsl(var(--border) / 0.2), transparent);
+          background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
           margin: 24px 0;
+        }
+
+        .dark .form-divider {
+          background: linear-gradient(90deg, transparent, #4b5563, transparent);
         }
 
         .call-link-row {
           text-align: center;
-          font-size: 13px;
-          color: hsl(var(--muted-foreground) / 0.5);
-          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+          color: #6b7280;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .dark .call-link-row {
+          color: #9ca3af;
         }
 
         .call-link {
-          color: hsl(var(--secondary));
+          color: #3b82f6;
           font-weight: 600;
           text-decoration: none;
           transition: opacity 0.2s;
@@ -416,7 +414,7 @@ const BookingForm = () => {
 
         .call-link:hover { opacity: 0.75; }
 
-        /* ─── SUCCESS STATE ─── */
+        /* Success State */
         .success-box {
           display: flex;
           flex-direction: column;
@@ -424,21 +422,27 @@ const BookingForm = () => {
           text-align: center;
           padding: 40px 0;
           gap: 16px;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
         }
 
         .success-icon {
           width: 72px;
           height: 72px;
           border-radius: 50%;
-          background: hsl(var(--primary) / 0.1);
-          border: 2px solid hsl(var(--border) / 0.3);
+          background: #dcfce7;
+          border: 2px solid #86efac;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: hsl(var(--secondary));
-          box-shadow: 0 0 32px hsl(var(--primary) / 0.2);
+          color: #16a34a;
+          box-shadow: 0 0 32px rgba(22, 163, 74, 0.2);
           animation: successPop 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .dark .success-icon {
+          background: #14532d;
+          border-color: #166534;
+          color: #4ade80;
         }
 
         @keyframes successPop {
@@ -447,50 +451,108 @@ const BookingForm = () => {
         }
 
         .success-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 32px;
-          font-weight: 800;
-          text-transform: uppercase;
-          color: hsl(var(--foreground));
-          letter-spacing: 0.5px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 28px;
+          font-weight: 700;
+          color: #111827;
+        }
+
+        .dark .success-title {
+          color: #f9fafb;
         }
 
         .success-sub {
           font-size: 14px;
-          color: hsl(var(--muted-foreground) / 0.6);
+          color: #6b7280;
           max-width: 320px;
           line-height: 1.6;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .dark .success-sub {
+          color: #9ca3af;
         }
 
         .success-reset {
           margin-top: 8px;
           padding: 10px 28px;
-          border: 1px solid hsl(var(--border) / 0.3);
+          border: 1px solid #e5e7eb;
           border-radius: 100px;
-          background: hsl(var(--primary) / 0.06);
-          color: hsl(var(--secondary));
+          background: #f9fafb;
+          color: #3b82f6;
           font-size: 13px;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.25s;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .dark .success-reset {
+          border-color: #4b5563;
+          background: #374151;
+          color: #60a5fa;
         }
 
         .success-reset:hover {
-          background: hsl(var(--primary) / 0.12);
-          border-color: hsl(var(--primary) / 0.5);
+          background: #f3f4f6;
+          border-color: #d1d5db;
+        }
+
+        .dark .success-reset:hover {
+          background: #4b5563;
+          border-color: #6b7280;
         }
       `}</style>
 
+      {/* Dark Mode Toggle Button */}
+      <button
+        onClick={toggleDarkMode}
+        className="fixed top-24 right-4 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700"
+        aria-label="Toggle dark mode"
+      >
+        {darkMode ? (
+          <Sun className="w-6 h-6 text-yellow-500" />
+        ) : (
+          <Moon className="w-6 h-6 text-gray-700" />
+        )}
+      </button>
+
       {/* Hero */}
-      <section className="booking-hero">
-        <div className="bh-grid" />
-        <div className="bh-glow" />
-        <div className="container mx-auto px-4 relative z-10">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="bh-badge"><CalendarDays size={12} /> Appointments</div>
-            <h1 className="bh-title">Book a <span>Service</span></h1>
-            <p className="bh-sub">Fill in the details below and we'll confirm your slot shortly</p>
+      {/* Hero */}
+      <section className="hero-gradient text-white booking-hero slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.7 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8"
+            >
+              <CalendarDays className="w-5 h-5" />
+              <span className="font-semibold text-sm uppercase tracking-wide">Appointments</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+            >
+              Book a Service
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-xl max-w-3xl mx-auto opacity-90"
+            >
+              Fill in the details below and we'll confirm your slot shortly
+            </motion.p>
           </motion.div>
         </div>
       </section>
@@ -504,9 +566,6 @@ const BookingForm = () => {
           <div className="booking-card">
             <div className="card-tl-corner" />
             <div className="card-br-corner" />
-            <svg className="card-bolt" viewBox="0 0 100 100" fill="none">
-              <path d="M60 5L20 55h30L35 95l45-55H50L60 5z" fill="hsl(var(--secondary))" />
-            </svg>
 
             {done ? (
               <div className="success-box">
@@ -709,7 +768,7 @@ const BookingForm = () => {
           </div>
         </motion.div>
       </Section>
-    </>
+    </div>
   );
 };
 
