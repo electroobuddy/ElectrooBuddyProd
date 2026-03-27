@@ -1,22 +1,49 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, Phone, CheckCircle, Loader2, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { PHONE_NUMBER } from "@/data/services";
 
-const PHONE_NUMBER = "+91 98765 43210";
 
-export default function RequestServiceSection() {
+export default function RequestServiceSection({ preselectedService }: { preselectedService?: string }) {
   const [serviceFormDone, setServiceFormDone] = useState(false);
   const [serviceFormSubmitting, setServiceFormSubmitting] = useState(false);
   const { user } = useAuth();
+  const [services, setServices] = useState<any[]>([]);
   const [serviceForm, setServiceForm] = useState({
     name: "", phone: "", email: "", address: "",
-    exact_location: "", service_type: "", preferred_date: "",
+    exact_location: "", service_type: preselectedService || "", preferred_date: "",
     preferred_time: "", description: "",
   });
 
-  const handleServiceFormSubmit = async (e) => {
+  // Fetch services from database
+  useEffect(() => {
+    supabase.from("services").select("title").order("sort_order").then(({ data }) => {
+      if (data) {
+        setServices(data);
+        // If preselected service matches a database service, update form
+        if (preselectedService && data.some(s => s.title === preselectedService)) {
+          setServiceForm(prev => ({ ...prev, service_type: preselectedService }));
+        }
+      }
+    });
+  }, []);
+
+  // Add Custom Service option to services list
+  const servicesWithOptions = [
+    ...services,
+    { title: "Custom Service" }
+  ];
+
+  // Update service_type when preselectedService prop changes
+  useEffect(() => {
+    if (preselectedService) {
+      setServiceForm(prev => ({ ...prev, service_type: preselectedService }));
+    }
+  }, [preselectedService]);
+
+  const handleServiceFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setServiceFormSubmitting(true);
     
@@ -26,10 +53,10 @@ export default function RequestServiceSection() {
         phone: serviceForm.phone,
         email: serviceForm.email,
         address: serviceForm.address,
-        service_type: serviceForm.service_type,
+        service_type: serviceForm.service_type === "Custom Service" ? `Custom: ${serviceForm.description}` : serviceForm.service_type,
         preferred_date: serviceForm.preferred_date || null,
         preferred_time: serviceForm.preferred_time || null,
-        description: serviceForm.description || null,
+        description: serviceForm.service_type === "Custom Service" ? serviceForm.description : (serviceForm.description || null),
         exact_location: serviceForm.exact_location || null,
       };
       
@@ -82,8 +109,7 @@ export default function RequestServiceSection() {
     }
   };
 
-  return (
-    <section
+  return (    <section
       id="request-service"
       style={{
         fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
@@ -553,13 +579,9 @@ export default function RequestServiceSection() {
                       value={serviceForm.service_type}
                       onChange={(e) => setServiceForm({ ...serviceForm, service_type: e.target.value })}>
                       <option value="">Select a service</option>
-                      <option>DTH Installation & Reset</option>
-                      <option>LCD/LED TV Installation</option>
-                      <option>Short Circuit Repairs</option>
-                      <option>Fan Installation</option>
-                      <option>AC Maintenance</option>
-                      <option>Appliance Repairs</option>
-                      <option>Other Service</option>
+                      {servicesWithOptions.map((s) => (
+                        <option key={s.title} value={s.title}>{s.title}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -598,8 +620,9 @@ export default function RequestServiceSection() {
 
                 {/* Description */}
                 <div className="rs-field" style={{ marginTop: 20 }}>
-                  <label className="rs-label">Additional Details</label>
-                  <textarea className="rs-textarea" rows={3} placeholder="Describe the issue briefly..."
+                  <label className="rs-label">{serviceForm.service_type === "Custom Service" ? "Describe Your Custom Service Requirement *" : "Additional Details"}</label>
+                  <textarea className="rs-textarea" rows={3} placeholder={serviceForm.service_type === "Custom Service" ? "Please describe the specific electrical work you need done..." : "Describe the issue briefly..."}
+                    required={serviceForm.service_type === "Custom Service"}
                     value={serviceForm.description}
                     onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })} />
                 </div>

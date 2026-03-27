@@ -215,17 +215,25 @@ const ServiceCard = ({ service }: { service: DbService }) => {
 
         .cta-row {
           display: flex;
-          flex-wrap: wrap;
+          flex-direction: column;
           gap: 8px;
+          width: 100%;
+        }
+
+        .cta-row-top {
+          display: flex;
+          gap: 8px;
+          width: 100%;
         }
 
         .cta-btn {
           display: inline-flex;
           align-items: center;
+          justify-content: center;
           gap: 6px;
-          padding: 8px 14px;
+          padding: 10px 16px;
           border-radius: 8px;
-          font-size: 12px;
+          font-size: 13px;
           font-weight: 600;
           font-family: 'Poppins', sans-serif;
           letter-spacing: 0.3px;
@@ -234,6 +242,8 @@ const ServiceCard = ({ service }: { service: DbService }) => {
           border: 1px solid transparent;
           position: relative;
           overflow: hidden;
+          flex: 1;
+          min-width: 0;
         }
 
         .cta-wa {
@@ -295,21 +305,23 @@ const ServiceCard = ({ service }: { service: DbService }) => {
         <div className="divider" />
 
         <div className="cta-row">
-          {service.whatsapp_enabled && (
-            <a
-              href={`https://wa.me/${settings.whatsapp}?text=${whatsappMsg}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cta-btn cta-wa"
-            >
-              <MessageCircle size={13} /> WhatsApp
-            </a>
-          )}
-          {service.call_enabled && (
-            <a href={`tel:${settings.phone}`} className="cta-btn cta-call">
-              <Phone size={13} /> Call Now
-            </a>
-          )}
+          <div className="cta-row-top">
+            {service.whatsapp_enabled && (
+              <a
+                href={`https://wa.me/${settings.whatsapp}?text=${whatsappMsg}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cta-btn cta-wa"
+              >
+                <MessageCircle size={13} /> WhatsApp
+              </a>
+            )}
+            {service.call_enabled && (
+              <a href={`tel:${settings.phone}`} className="cta-btn cta-call">
+                <Phone size={13} /> Call Now
+              </a>
+            )}
+          </div>
           {service.book_now_enabled && (
             <Link
               to={`/booking?service=${encodeURIComponent(service.title)}`}

@@ -196,7 +196,9 @@ const AppContent = () => {
         </AnimatePresence>
       </main>
       {!isAdmin && !isUserPanel && <Footer />}
-      {!isAdmin && !isUserPanel && <WhatsAppFloat />}
+      {!isAdmin && !isUserPanel && <WhatsAppFloat onBackToTopClick={() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }} backToTopVisible={false} />}
       
       {/* Global Booking Modal - appears on all public pages */}
       {mounted && !isAdmin && !isUserPanel && (
