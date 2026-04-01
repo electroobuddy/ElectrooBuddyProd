@@ -1,42 +1,84 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Zap, ArrowRight, Shield, Clock, BadgeDollarSign, HeartHandshake,
   Users, X, Phone, CheckCircle, Loader2, Calendar, MapPin, Wrench,
-  AlignLeft, ChevronRight, Star, ShoppingCart
+  AlignLeft, ChevronRight, Star, ShoppingCart, Instagram, Linkedin,
+  Mail, ChevronDown, MessageCircle, Award, Smile, ChevronUp,
+  SatelliteDish, Tv, Fan, Snowflake, Check, ShoppingBag
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Section from "@/components/Section";
 import ServiceCard from "@/components/ServiceCard";
+import ServiceCard2 from "@/components/ServiceCard2";
+import ProductCard from "@/components/ProductCard";
 import AnimatedCounter, { COUNTER_DATA } from "@/components/AnimatedCounter";
 import ProcessTimeline from "@/components/ProcessTimeline";
 import VideoSection from "@/components/VideoSection";
 import TestimonialSlider from "@/components/TestimonialSlider";
 import ProductsSection from "@/components/ProductsSection";
 import SEO from "@/components/SEO";
+import RequestServiceSection from "@/components/Requestservicesection";
 import { services as staticServices } from "@/data/services";
 import { teamMembers as staticTeam } from "@/data/team";
 import { testimonials as staticTestimonials } from "@/data/testimonials";
 import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
+import { PHONE_NUMBER } from "@/data/services";
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+// Image imports
+import heroImage from "@/images/heroimg.png";
+import aboutImage from "@/images/about.png";
+import testimonial1 from "@/images/testimonial-1.jpg";
+import testimonial2 from "@/images/testimonial-2.jpg";
+import testimonial3 from "@/images/testimonial-3.jpg";
+import testimonial4 from "@/images/no-profile.png";
+import testimonial5 from "@/images/no-profile.png";
+import portfolio1 from "@/images/portfolio-1.jpg";
+import portfolio2 from "@/images/portfolio-2.jpg";
+import portfolio3 from "@/images/portfolio-3.jpg";
+import portfolio4 from "@/images/portfolio-4.jpg";
+import portfolio5 from "@/images/portfolio-5.jpg";
+import portfolio6 from "@/images/portfolio-6.jpg";
+import team1 from "@/images/team-1.png";
+import team2 from "@/images/dilip.jpeg";
+import team3 from "@/images/no-profile.png";
+
+export default function Index() {
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [preselectedService, setPreselectedService] = useState<string>("");
+  const { services: dbServices, loading: servicesLoading } = useServices();
+  const [services, setServices] = useState<any[]>([]);
+  const { products, loading: productsLoading } = useProducts();
+  const displayProducts = products.slice(0, 4);
+
+  const counters = useMemo(() => ({
+    experience: 30,
+    clients: 5000,
+    projects: 8000
+  }), []);
+
+  const whyChooseUs = [
+    { icon: Clock, title: 'Fast Response', accent: '#3b82f6' },
+    { icon: Shield, title: 'Trusted Service', accent: '#10b981' },
+    { icon: BadgeDollarSign, title: 'Affordable Pricing', accent: '#f59e0b' },
+    { icon: HeartHandshake, title: 'Customer First', accent: '#ef4444' }
+  ];
+
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
-      setMobileMenuOpen(false);
     }
   };
 
   const testimonials = [
-    { name: 'Rahul Sharma', location: 'Ujjain', image: testimonial1, rating: 5, text: 'ElectrooBuddy fixed my AC within an hour of calling them. The technician was professional and explained everything clearly.' },
-    { name: 'Priya Patel', location: 'Ujjain', image: testimonial2, rating: 5, text: 'I called ElectrooBuddy for an emergency electrical issue at midnight. They arrived in 30 minutes and fixed the problem safely.' },
-    { name: 'Vikram Singh', location: 'Ujjain', image: testimonial3, rating: 5, text: 'Their team installed my new 65-inch TV perfectly on the wall. They handled everything from unpacking to cable management.' },
+    { name: 'Kunal Yadav', location: 'Ujjain', image: testimonial1, rating: 5, text: 'ElectrooBuddy fixed my AC within an hour of calling them. The technician was professional and explained everything clearly.' },
+    { name: 'Naman Singh', location: 'Ujjain', image: testimonial2, rating: 5, text: 'I called ElectrooBuddy for an emergency electrical issue at midnight. They arrived in 30 minutes and fixed the problem safely.' },
+    { name: 'Udit Joshi', location: 'Ujjain', image: testimonial3, rating: 5, text: 'Their team installed my new 65-inch TV perfectly on the wall. They handled everything from unpacking to cable management.' },
     { name: 'Anjali Verma', location: 'Ujjain', image: testimonial4, rating: 5, text: 'The technician arrived exactly on time and fixed our refrigerator quickly. Very reasonable pricing compared to other services.' },
     { name: 'Rajesh Gupta', location: 'Ujjain', image: testimonial5, rating: 5, text: 'I\'ve used ElectrooBuddy multiple times for different appliances. Always professional, and their work comes with a warranty.' }
   ];
@@ -49,14 +91,32 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
     { question: 'Do you service appliances still under manufacturer warranty?', answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.' }
   ];
 
-  // const services = [
-  //   { icon: SatelliteDish, title: 'DTH Installation & Reset', description: 'Professional installation and troubleshooting for all major DTH providers.' },
-  //   { icon: Tv, title: 'LCD/LED TV Installation', description: 'Expert mounting and setup for your new television including wall mounting and complete AV setup.' },
-  //   { icon: Zap, title: 'Short Circuit Repairs', description: '24/7 emergency electrical repairs by certified electricians.' },
-  //   { icon: Fan, title: 'Fan Installation', description: 'Professional ceiling fan installation and repair with proper wiring and secure mounting.' },
-  //   { icon: Snowflake, title: 'AC Maintenance', description: 'Seasonal AC servicing including cleaning, gas refill, and performance check.' },
-  //   { icon: Wrench, title: 'Appliance Repairs', description: 'Comprehensive repair services for all major home appliances including refrigerators, washing machines, and more.' }
-  // ];
+  const applianceTips = [
+    {
+      icon: 'fa-wind',
+      bgIcon: 'fa-snowflake',
+      label: 'Air conditioner maintenance tips',
+      title: '5 Essential AC Maintenance Tips',
+      description: 'Keep your air conditioner running efficiently and extend its lifespan with these simple maintenance tips.',
+      color: 'text-blue-600 dark:text-blue-400'
+    },
+    {
+      icon: 'fa-thermometer-half',
+      bgIcon: 'fa-tint',
+      label: 'Refrigerator energy saving tips',
+      title: 'How to Reduce Your Refrigerator\'s Energy Consumption',
+      description: 'Simple adjustments can significantly lower your electricity bill while keeping your food fresh.',
+      color: 'text-blue-600 dark:text-blue-400'
+    },
+    {
+      icon: 'fa-shield-alt',
+      bgIcon: 'fa-home',
+      label: 'Home electrical safety tips',
+      title: 'Electrical Safety Tips Every Homeowner Should Know',
+      description: 'Protect your home and family from electrical hazards with these important safety measures.',
+      color: 'text-blue-600 dark:text-blue-400'
+    }
+  ];
 
   const nextTestimonial = () => {
     setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
@@ -80,7 +140,7 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
     if (dbServices && dbServices.length > 0) {
       setServices(dbServices);
     } else {
-      setServices(services.map(s => ({
+      setServices(staticServices.map(s => ({
         id: s.title.toLowerCase().replace(/\s+/g, '-'),
         icon_name: getIconNameForService(s.title),
         title: s.title,
@@ -124,90 +184,162 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
         .index-page h6 {
           font-weight: 700;
         }
-      `}</style>
-    
 
-  {/* Hero Section */}
-      <section id="home" className="hero-gradient text-white py-20 md:py-32 slide-up">
+        /* Hide scrollbar for testimonials */
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
+      {/* ── HERO SECTION ── */}
+      <section id="home" className="hero-gradient text-white py-16 md:py-28 lg:py-32 slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-10 md:mb-0">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">India's Trusted Appliance Care & Repair Service</h1>
-              <p className="text-xl mb-8 opacity-90">With over 30 years of experience, we provide quick, reliable, and professional appliance repair services at your doorstep.</p>
-              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <button onClick={() => scrollToSection('request-service')} className="bg-white text-blue-800 hover:bg-gray-100 px-8 py-4 rounded-lg font-semibold text-lg text-center transition duration-300">Request Service Now</button>
-                <button onClick={() => scrollToSection('contact')} className="border-2 border-white hover:bg-white hover:text-blue-800 px-8 py-4 rounded-lg font-semibold text-lg text-center transition duration-300">Contact Us</button>
+          <div className="flex flex-col md:flex-row items-center gap-10 md:gap-8">
+
+            {/* Left: Text + Buttons */}
+            <div className="md:w-1/2 text-center md:text-left">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                India's Trusted Appliance Care &amp; Repair Service
+              </h1>
+              <p className="text-lg sm:text-xl mb-8 opacity-90">
+                With over 30 years of experience, we provide quick, reliable, and professional appliance repair services at your doorstep.
+              </p>
+
+              {/* FIX: flex-wrap so buttons never overflow on narrow screens */}
+              <div className="flex flex-wrap gap-3 items-center justify-center md:justify-start">
+                <button
+                  onClick={() => scrollToSection('request-service')}
+                  className="w-full xs:w-auto bg-white text-blue-800 hover:bg-gray-100 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 text-center"
+                >
+                  Request Service Now
+                </button>
+                <Link
+                  to="/products"
+                  className="w-full xs:w-auto bg-blue-700 dark:bg-blue-600 text-white hover:bg-blue-800 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 inline-flex items-center justify-center gap-2"
+                >
+                  <ShoppingBag size={20} /> Buy Products
+                </Link>
+                <button
+                  onClick={() => scrollToSection('contact')}
+                  className="w-full xs:w-auto border-2 border-white hover:bg-white hover:text-blue-800 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 text-center"
+                >
+                  Contact Us
+                </button>
               </div>
             </div>
-            <div className="md:w-1/2 relative">
-              <img src={heroImage} alt="Professional appliance repair technician at work" className="rounded-lg shadow-2xl floating-button" loading="eager" />
-              <div className="absolute -bottom-5 -left-5 bg-blue-700 dark:bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg">
-                <div className="flex items-center">
-                  <Zap className="text-2xl mr-2" />
-                  <span className="font-bold">24/7 Emergency Service Available</span>
+
+            {/* Right: Image */}
+            {/* FIX: added mt-8 md:mt-0 so image has top gap on mobile, max-w-sm centers it on small screens */}
+            <div className="md:w-1/2 relative mt-2 md:mt-0">
+              <img
+                src={heroImage}
+                alt="Professional appliance repair technician at work"
+                className="rounded-lg shadow-2xl floating-button w-full max-w-sm mx-auto md:max-w-none"
+                loading="eager"
+              />
+              {/* FIX: use bottom-2 left-2 on mobile to avoid overflow; revert to -bottom-5 -left-5 on md+ */}
+              <div className="absolute bottom-2 left-2 md:-bottom-5 md:-left-5 bg-blue-700 dark:bg-blue-600 text-white px-3 py-2 md:px-6 md:py-3 rounded-lg shadow-lg max-w-[90%] md:max-w-none">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 flex-shrink-0" />
+                  <span className="font-bold text-xs sm:text-sm md:text-base leading-tight">
+                    24/7 Emergency Service Available
+                  </span>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="bg-white dark:bg-gray-800 py-16 fade-in">
+      {/* ── STATS SECTION ── */}
+      <section className="bg-white dark:bg-gray-800 py-12 md:py-16 fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="stats-counter bg-blue-50 dark:bg-gray-700 p-8 rounded-xl text-center transition duration-300">
-              <div className="text-blue-800 dark:text-blue-400 text-5xl font-bold mb-2">{counters.experience}</div>
-              <div className="text-gray-700 dark:text-gray-300 text-xl font-medium">Years of Experience</div>
-              <Award className="mt-4 h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto" />
+          {/* FIX: sm:grid-cols-3 so it goes 3-column at 640px instead of waiting for md (768px) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-8">
+
+            <div className="stats-counter bg-blue-50 dark:bg-gray-700 p-6 md:p-8 rounded-xl text-center transition duration-300">
+              <div className="text-blue-800 dark:text-blue-400 text-4xl md:text-5xl font-bold mb-2">
+                {counters.experience}+
+              </div>
+              <div className="text-gray-700 dark:text-gray-300 text-lg md:text-xl font-medium">
+                Years of Experience
+              </div>
+              <Award className="mt-4 h-7 w-7 md:h-8 md:w-8 text-blue-600 dark:text-blue-400 mx-auto" />
             </div>
-            <div className="stats-counter bg-blue-50 dark:bg-gray-700 p-8 rounded-xl text-center transition duration-300">
-              <div className="text-blue-800 dark:text-blue-400 text-5xl font-bold mb-2">{counters.clients.toLocaleString()}</div>
-              <div className="text-gray-700 dark:text-gray-300 text-xl font-medium">Satisfied Clients</div>
-              <Smile className="mt-4 h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto" />
+
+            <div className="stats-counter bg-blue-50 dark:bg-gray-700 p-6 md:p-8 rounded-xl text-center transition duration-300">
+              <div className="text-blue-800 dark:text-blue-400 text-4xl md:text-5xl font-bold mb-2">
+                {counters.clients.toLocaleString()}+
+              </div>
+              <div className="text-gray-700 dark:text-gray-300 text-lg md:text-xl font-medium">
+                Satisfied Clients
+              </div>
+              <Smile className="mt-4 h-7 w-7 md:h-8 md:w-8 text-blue-600 dark:text-blue-400 mx-auto" />
             </div>
-            <div className="stats-counter bg-blue-50 dark:bg-gray-700 p-8 rounded-xl text-center transition duration-300">
-              <div className="text-blue-800 dark:text-blue-400 text-5xl font-bold mb-2">{counters.projects.toLocaleString()}+</div>
-              <div className="text-gray-700 dark:text-gray-300 text-xl font-medium">Completed Projects</div>
-              <Wrench className="mt-4 h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto" />
+
+            <div className="stats-counter bg-blue-50 dark:bg-gray-700 p-6 md:p-8 rounded-xl text-center transition duration-300">
+              <div className="text-blue-800 dark:text-blue-400 text-4xl md:text-5xl font-bold mb-2">
+                {counters.projects.toLocaleString()}+
+              </div>
+              <div className="text-gray-700 dark:text-gray-300 text-lg md:text-xl font-medium">
+                Completed Projects
+              </div>
+              <Wrench className="mt-4 h-7 w-7 md:h-8 md:w-8 text-blue-600 dark:text-blue-400 mx-auto" />
             </div>
+
           </div>
         </div>
       </section>
 
-      {/* About Section */}
-      <section id="about" className="py-20 bg-gray-50 dark:bg-gray-900 slide-up">
+      {/* ── ABOUT SECTION ── */}
+      <section id="about" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">About ElectrooBuddy</h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10">
-              <img src={aboutImage} alt="ElectrooBuddy team working on appliance repair" className="rounded-lg shadow-lg" loading="lazy" />
+          <div className="flex flex-col md:flex-row items-center gap-10 md:gap-0">
+            <div className="md:w-1/2 md:pr-10">
+              <img
+                src={aboutImage}
+                alt="ElectrooBuddy team working on appliance repair"
+                className="rounded-lg shadow-lg w-full"
+                loading="lazy"
+              />
             </div>
             <div className="md:w-1/2">
               <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Serving Ujjain Since 1992</h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">Founded in 1992, ElectrooBuddy has grown from a small local repair shop to Ujjain's most trusted appliance care and repair service.</p>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                Founded in 1992, ElectrooBuddy has grown from a small local repair shop to Ujjain's most trusted appliance care and repair service.
+              </p>
               <div className="mb-6 space-y-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-1"><div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300"><Check className="h-4 w-4" /></div></div>
-                  <div className="ml-3"><p className="text-gray-700 dark:text-gray-300 font-medium">30+ years of trusted service</p></div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-1"><div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300"><Check className="h-4 w-4" /></div></div>
-                  <div className="ml-3"><p className="text-gray-700 dark:text-gray-300 font-medium">Certified and experienced technicians</p></div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-1"><div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300"><Check className="h-4 w-4" /></div></div>
-                  <div className="ml-3"><p className="text-gray-700 dark:text-gray-300 font-medium">Quick response time (average 45 minutes)</p></div>
-                </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 mt-1"><div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300"><Check className="h-4 w-4" /></div></div>
-                  <div className="ml-3"><p className="text-gray-700 dark:text-gray-300 font-medium">Expanding nationwide with the same quality service</p></div>
-                </div>
+                {[
+                  '30+ years of trusted service',
+                  'Certified and experienced technicians',
+                  'Quick response time (average 45 minutes)',
+                  'Expanding nationwide with the same quality service'
+                ].map((point, i) => (
+                  <div key={i} className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300">
+                        <Check className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">{point}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <button onClick={() => scrollToSection('services')} className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300">
+              <button
+                onClick={() => scrollToSection('services')}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
+              >
                 Explore Our Services <ArrowRight className="ml-2 h-4 w-4" />
               </button>
             </div>
@@ -215,17 +347,21 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
         </div>
       </section>
 
-      {/* Services Section */}
-      <section id="services" className="py-20 bg-white dark:bg-gray-800 fade-in">
+      {/* ── SERVICES SECTION ── */}
+      <section id="services" className="py-16 md:py-20 bg-white dark:bg-gray-800 fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Services</h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
-            <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">We offer comprehensive appliance repair and maintenance services to keep your home running smoothly.</p>
+            <p className="mt-6 text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              We offer comprehensive appliance repair and maintenance services to keep your home running smoothly.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {servicesLoading ? (
-              <div className="col-span-full flex justify-center py-12">
+              // FIX: explicit colspan values instead of col-span-full (which needs known column count)
+              <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             ) : (
@@ -238,18 +374,24 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
               ))
             )}
           </div>
-          <div className="mt-16 text-center">
-            <a href={`tel:${PHONE_NUMBER}`} className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300">
-              <Phone className="mr-2 h-5 w-5" /> Emergency Service: Call {PHONE_NUMBER}
+
+          <div className="mt-12 md:mt-16 text-center px-4">
+            {/* FIX: flex-wrap + text-center so phone number wraps cleanly on narrow screens */}
+            <a
+              href={`tel:${PHONE_NUMBER}`}
+              className="inline-flex flex-wrap items-center justify-center gap-2 px-6 py-3 md:px-8 md:py-4 border border-transparent text-base md:text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
+            >
+              <Phone className="h-5 w-5 flex-shrink-0" />
+              <span>Emergency Service: Call {PHONE_NUMBER}</span>
             </a>
           </div>
         </div>
       </section>
 
-      {/* Gallery Section */}
-      <section id="gallery" className="py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+      {/* ── GALLERY SECTION ── */}
+      <section id="gallery" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Work Gallery</h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
@@ -263,9 +405,14 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
               { img: portfolio6, title: 'Ceiling Fan Installation' }
             ].map((item, index) => (
               <div key={index} className="overflow-hidden rounded-lg shadow-lg">
-                <img src={item.img} alt={item.title} className="w-full h-64 object-cover transition duration-500 hover:scale-105" loading="lazy" />
-                <div className="px-6 py-4 bg-white dark:bg-gray-700">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{item.title}</h3>
+                <img
+                  src={item.img}
+                  alt={item.title}
+                  className="w-full h-56 sm:h-64 object-cover transition duration-500 hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="px-4 py-3 sm:px-6 sm:py-4 bg-white dark:bg-gray-700">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{item.title}</h3>
                 </div>
               </div>
             ))}
@@ -273,10 +420,45 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
         </div>
       </section>
 
-      {/* Video Section - Using Component */}
-      <VideoSection />
+      {/* ── VIDEO SECTION ── */}
+        {/* <VideoSection /> */}
 
-      {/* Testimonials Section */}
+      {/* ── APPLIANCE CARE TIPS SECTION ── */}
+      <section id="tips" className="py-20 bg-gray-50 dark:bg-gray-900 slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Appliance Care Tips</h2>
+            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
+            <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Learn how to maintain your appliances and prevent common issues.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {applianceTips.map((tip, index) => (
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden transition duration-300 hover:shadow-xl hover:-translate-y-1 transform">
+                <div className="bg-blue-50 dark:bg-gray-700 h-48 flex items-center justify-center relative overflow-hidden">
+                  <i className={`fas ${tip.bgIcon} text-6xl ${tip.color} opacity-30 absolute`}></i>
+                  <i className={`fas ${tip.icon} text-5xl ${tip.color} relative z-10`}></i>
+                  <span className="absolute top-3 left-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{tip.label}</span>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{tip.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">{tip.description}</p>
+                  <a href="/tips" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium inline-flex items-center transition duration-200">
+                    Read More <i className="fas fa-chevron-right ml-1 text-sm"></i>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-12 text-center">
+            <a href="/tips" className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition duration-300">
+              View All Tips
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS SECTION ── */}
+          {/* Testimonials Section */}
       <section id="testimonials" className="py-20 bg-white dark:bg-gray-800 slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -325,32 +507,51 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
                     <p className="text-sm text-gray-600 dark:text-gray-300">Based on 3 reviews</p>
                   </div>
                 </div>
-                <a href="https://g.page/r/CfQ3QZ4XJj5EEB0/review" target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-300">
-                  <MessageCircle className="mr-2 h-4 w-4" /> Leave a Review
-                </a>
+                   {/* FIX: flex-wrap so buttons stack on very small screens */}
+                <div className="flex flex-wrap justify-center gap-2">
+                  <a
+                    href="https://g.page/r/CfQ3QZ4XJj5EEB0/review"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
+                  >
+                    <MessageCircle className="mr-1.5 h-4 w-4" /> Leave a Review
+                  </a>
+                  <Link
+                    to="/review"
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 border border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition duration-300"
+                  >
+                    <Star className="mr-1.5 h-4 w-4" /> Share Experience
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+      {/* ── FAQ SECTION ── */}
+      <section className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Frequently Asked Questions</h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="max-w-3xl mx-auto space-y-4">
             {faqs.map((faq, index) => (
               <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                <button onClick={() => toggleFAQ(index)} className="w-full flex justify-between items-center p-6 text-left focus:outline-none">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">{faq.question}</h3>
-                  <ChevronDown className={`h-5 w-5 text-blue-600 dark:text-blue-400 transition-transform duration-300 ${openFAQ === index ? 'rotate-180' : ''}`} />
+                <button
+                  onClick={() => toggleFAQ(index)}
+                  className="w-full flex justify-between items-center p-5 md:p-6 text-left focus:outline-none gap-4"
+                >
+                  <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white">{faq.question}</h3>
+                  <ChevronDown
+                    className={`h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${openFAQ === index ? 'rotate-180' : ''}`}
+                  />
                 </button>
                 {openFAQ === index && (
-                  <div className="px-6 pb-6">
-                    <p className="text-gray-600 dark:text-gray-300">{faq.answer}</p>
+                  <div className="px-5 pb-5 md:px-6 md:pb-6">
+                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">{faq.answer}</p>
                   </div>
                 )}
               </div>
@@ -359,115 +560,254 @@ import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hoo
         </div>
       </section>
 
-      {/* ── PRODUCTS ── */}
-      <ProductsSection />
+      {/* ── PRODUCTS SECTION ── */}
+      <section id="products" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Products</h2>
+            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
+            <p className="mt-6 text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Quality electrical products and accessories at competitive prices.
+            </p>
+          </div>
+
+          {productsLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-card border border-border/40 rounded-xl overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-muted" />
+                  <div className="p-3 sm:p-4 space-y-2">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : displayProducts.length === 0 ? null : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {displayProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} index={idx} />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-10 md:mt-12 text-center">
+            <Link
+              to="/products"
+              className="inline-flex items-center px-6 py-3 md:px-8 md:py-4 border border-transparent text-base md:text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
+            >
+              View All Products <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* ── WHY CHOOSE US ── */}
       <Section>
         <div className="text-center mb-10 sm:mb-14">
-          <div className="sec-badge">Why Choose Us</div>
-          <h2 className="sec-title">Reliable Solutions <span>You Can Trust</span></h2>
+          <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">
+            <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
+            Why Choose Us
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Reliable Solutions <span className="text-blue-600">You Can Trust</span>
+          </h2>
+          <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            We deliver excellence in every service with cutting-edge technology and expert technicians.
+          </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
           {whyChooseUs.map((item, i) => (
             <motion.div
               key={item.title}
-              className="why-card"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               style={{ "--card-accent": item.accent } as React.CSSProperties}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.45 }}
             >
-              <div className="why-num">0{i + 1}</div>
-              <div className="why-icon-hex">
-                <div className="why-hex-bg" />
-                <div className="why-hex-icon"><item.icon size={20} /></div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-3xl md:text-4xl font-bold text-gray-200 dark:text-gray-700">0{i + 1}</div>
+                <div
+                  className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center"
+                  style={{ background: `linear-gradient(135deg, ${item.accent}, ${item.accent}dd)` }}
+                >
+                  <item.icon size={22} className="text-white" />
+                </div>
+              </div>
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">{item.title}</h3>
+            </motion.div>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── TEAM SECTION ── */}
+      <section id="team" className="py-20 bg-gray-50 dark:bg-gray-900 slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Meet Our Team</h2>
+            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[
+              { name: 'Dilip Parihar', role: 'Founder & Chairman', image: team2, description: 'With over 30 years in the industry, Dilip built ElectrooBuddy from the ground up with a vision for quality service.' },
+              { name: 'Viraj Parihar', role: 'Co-founder & CEO', image: team1, description: 'Viraj leads the company\'s expansion and digital transformation, bringing modern solutions to traditional services.' },
+              { name: 'Karan Parihar', role: 'Co-founder & COO', image: team3, description: 'Karan oversees daily operations and technician training, ensuring consistent service quality.' }
+            ].map((member, index) => (
+              <div key={index} className="team-member text-center">
+                <div className="overflow-hidden rounded-full h-48 w-48 mx-auto mb-6">
+                  <img src={member.image} alt={member.name} className="h-full w-full object-cover bg-white rounded-full transition duration-300 hover:scale-105" loading="lazy" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{member.name}</h3>
+                <p className="text-blue-600 dark:text-blue-400 font-medium mb-2">{member.role}</p>
+                <p className="text-gray-600 dark:text-gray-300">{member.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Request Service Section - Using Component */}
+      {/* ── REQUEST SERVICE ── */}
       <RequestServiceSection preselectedService={preselectedService} />
-         
-      {/* Contact Section */}
-      <section id="contact" className="py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+
+      {/* ── CONTACT SECTION ── */}
+      <section id="contact" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Contact Us</h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12">
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Contact Information</h3>
-              <div className="space-y-6">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg"><MapPin className="text-blue-600 dark:text-blue-400 h-5 w-5" /></div>
-                  <div className="ml-4">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Our Office</h4>
-                    <a href="https://maps.app.goo.gl/X16Z1kxCfBUsKE9R9" target="_blank" rel="noopener noreferrer" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300">05, Nagziri Dewas Road, Ujjain(456010), India</a>
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-6">Contact Information</h3>
+              <div className="space-y-5 md:space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                    <MapPin className="text-blue-600 dark:text-blue-400 h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Our Office</h4>
+                    <a
+                      href="https://maps.app.goo.gl/X16Z1kxCfBUsKE9R9"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300"
+                    >
+                      05, Nagziri Dewas Road, Ujjain (456010), India
+                    </a>
                   </div>
                 </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg"><Phone className="text-blue-600 dark:text-blue-400 h-5 w-5" /></div>
-                  <div className="ml-4">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Phone</h4>
-                    {/* <a href={`tel:${PHONE_NUMBER}`} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block"></a> */}
-                    <a href={`tel:${PHONE_NUMBER}`} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block">{PHONE_NUMBER}</a>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                    <Phone className="text-blue-600 dark:text-blue-400 h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Phone</h4>
+                    <a
+                      href={`tel:${PHONE_NUMBER}`}
+                      className="text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block"
+                    >
+                      {PHONE_NUMBER}
+                    </a>
                   </div>
                 </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg"><Mail className="text-blue-600 dark:text-blue-400 h-5 w-5" /></div>
-                  <div className="ml-4">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Email</h4>
-                    <a href="mailto:info@electroobuddy.com" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block">electroobuddy@gmail.com</a>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                    <Mail className="text-blue-600 dark:text-blue-400 h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Email</h4>
+                    <a
+                      href="mailto:electroobuddy@gmail.com"
+                      className="text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block"
+                    >
+                      electroobuddy@gmail.com
+                    </a>
                   </div>
                 </div>
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg"><Clock className="text-blue-600 dark:text-blue-400 h-5 w-5" /></div>
-                  <div className="ml-4">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Working Hours</h4>
-                    <p className="text-gray-600 dark:text-gray-300">Mon - Sat: 8:00 AM - 9:00 PM</p>
-                    <p className="text-gray-600 dark:text-gray-300">Sunday: 24/7 Emergency Support Only</p>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                    <Clock className="text-blue-600 dark:text-blue-400 h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Working Hours</h4>
+                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Mon - Sat: 8:00 AM - 9:00 PM</p>
+                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Sunday: 24/7 Emergency Support Only</p>
                   </div>
                 </div>
               </div>
-              <div className="mt-8 flex space-x-4">
-                <a href="#" className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 transition duration-300"><Instagram className="h-5 w-5" /></a>
-                <a href="#" className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 transition duration-300"><Linkedin className="h-5 w-5" /></a>
+              <div className="mt-8 flex gap-4">
+                <a
+                  href="#"
+                  className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+                <a
+                  href="#"
+                  className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin className="h-5 w-5" />
+                </a>
               </div>
             </div>
-
-      {/* ── TESTIMONIALS ── */}
-      <Section>
-        <div className="text-center mb-10 sm:mb-14">
-          <div className="sec-badge">Testimonials</div>
-          <h2 className="sec-title">What Our <span>Clients Say</span></h2>
-          <div className="mt-4">
-            <Link to="/review" className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 px-4 py-2 text-sm font-medium hover:bg-blue-100 transition">
-              Add Your Review
-            </Link>
+             <div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Send Us a Message</h3>
+              <form className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name <span className="text-red-500">*</span></label>
+                  <input type="text" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="Rahul Sharma" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address <span className="text-red-500">*</span></label>
+                  <input type="email" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="rahul@example.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject <span className="text-red-500">*</span></label>
+                  <input type="text" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="AC not cooling" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message <span className="text-red-500">*</span></label>
+                  <textarea rows={4} className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="Tell us more about your issue..."></textarea>
+                </div>
+                <div>
+                  <button type="submit" className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
+                    Send Message
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Newsletter Section */}
-      <section className="py-16 bg-blue-600 text-white">
+      {/* ── NEWSLETTER ── */}
+      <section className="py-12 md:py-16 bg-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Subscribe to Our Newsletter</h2>
-          <p className="mb-8 max-w-2xl mx-auto">Get maintenance tips, special offers, and updates about our services directly to your inbox.</p>
-          <form className="max-w-md mx-auto flex flex-col sm:flex-row gap-4">
-            <input type="email" placeholder="Your email address" className="flex-grow px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-900" />
-            <button type="submit" className="px-6 py-3 bg-white text-blue-800 font-medium rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white transition duration-300">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4">Subscribe to Our Newsletter</h2>
+          <p className="mb-8 max-w-2xl mx-auto text-sm md:text-base opacity-90">
+            Get maintenance tips, special offers, and updates about our services directly to your inbox.
+          </p>
+          {/* FIX: flex-col on mobile, flex-row on sm+ for the newsletter form */}
+          <form className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
+            <input
+              type="email"
+              placeholder="Your email address"
+              className="flex-grow px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-900 text-sm md:text-base"
+            />
+            <button
+              type="submit"
+              className="px-6 py-3 bg-white text-blue-800 font-medium rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white transition duration-300 flex-shrink-0"
+            >
               Subscribe
             </button>
           </form>
         </div>
       </section>
+
     </div>
   );
-};
-
-export default Index;
+}

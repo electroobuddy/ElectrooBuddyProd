@@ -1,6 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Star, Plus } from "lucide-react";
 
 interface Product {
   id: string;
@@ -21,12 +21,26 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
+  const navigate = useNavigate();
   const discount =
     product.compare_at_price && product.compare_at_price > product.price
       ? Math.round((1 - product.price / product.compare_at_price) * 100)
       : null;
 
   const outOfStock = product.track_inventory && product.inventory_quantity === 0;
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/products/${product.slug}`);
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // TODO: Implement cart functionality
+    console.log('Added to cart:', product);
+  };
 
   return (
     <motion.div
@@ -81,7 +95,7 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
             </h3>
 
             <div className="flex items-center justify-between mt-auto gap-2">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <span className="text-base sm:text-lg font-bold text-primary block">
                   ₹{product.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                 </span>
@@ -91,6 +105,23 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
                   </span>
                 )}
               </div>
+              {!outOfStock && (
+                <>
+                  <button
+                    onClick={handleAddToCart}
+                    className="flex-shrink-0 px-2.5 py-2 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors flex items-center gap-1"
+                    title="Add to Cart"
+                  >
+                    <Plus size={14} />
+                  </button>
+                  <button
+                    onClick={handleBuyNow}
+                    className="flex-shrink-0 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
+                  >
+                    <ShoppingCart size={14} /> Buy Now
+                  </button>
+                </>
+              )}
             </div>
 
             {product.category && (
