@@ -21,6 +21,7 @@ import Projects from "./pages/Projects";
 import Contact from "./pages/Contact";
 import BookingForm from "./pages/BookingForm";
 import BookingTracking from "./pages/BookingTracking";
+import Review from "./pages/Review";
 import FAQ from "./pages/FAQ";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -142,6 +143,7 @@ const AppContent = () => {
             <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
             <Route path="/booking" element={<PageTransition><BookingForm /></PageTransition>} />
             <Route path="/track-booking" element={<PageTransition><BookingTracking /></PageTransition>} />
+            <Route path="/review" element={<PageTransition><Review /></PageTransition>} />
             <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
             <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />

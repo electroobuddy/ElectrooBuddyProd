@@ -1,119 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { 
-
-  Award, 
-  Smile, 
-  Wrench, 
-  SatelliteDish, 
-  Tv, 
-  Zap, 
-  Fan, 
-  Snowflake, 
-  Phone,
-  MapPin,
-  Mail,
-  Clock,
-  Instagram,
-  Linkedin,
-  Star,
-  ChevronDown,
-  ChevronUp,
-  Check,
-  ArrowRight,
-  MessageCircle
-} from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { PHONE_NUMBER } from "@/data/services";
-import RequestServiceSection from '@/components/Requestservicesection';
-import VideoSection from '@/components/VideoSection';
-import ServiceCard2 from '@/components/ServiceCard2';
-import WhatsAppFloat from '@/components/WhatsAppFloat';
-import { useServices } from '@/hooks/useOptimizedData';
-
-// Import images
-import heroImage from '../images/hero.png';
-import aboutImage from '../images/about.png';
-import portfolio1 from '../images/portfolio-1.jpg';
-import portfolio2 from '../images/portfolio-2.jpg';
-import portfolio3 from '../images/portfolio-3.jpg';
-import portfolio4 from '../images/portfolio-4.jpg';
-import portfolio5 from '../images/portfolio-5.jpg';
-import portfolio6 from '../images/portfolio-6.jpg';
-import testimonial1 from '../images/testimonial-1.jpg';
-import testimonial2 from '../images/testimonial-2.jpg';
-import testimonial3 from '../images/testimonial-3.jpg';
-import testimonial4 from '../images/testimonial-4.jpg';
-import testimonial5 from '../images/testimonial-5.jpg';
-import team1 from '../images/team-1.jpg';
-import team2 from '../images/dilip.jpeg';
-import team3 from '../images/team-3.jpg';
-
-const Index: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [backToTopVisible, setBackToTopVisible] = useState(false);
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
-  const [counters, setCounters] = useState({ experience: 0, clients: 0, projects: 0 });
-  const [counterAnimated, setCounterAnimated] = useState(false);
-  const [preselectedService, setPreselectedService] = useState<string>("");
-  const { services: dbServices, loading: servicesLoading } = useServices();
-  const [services, setServices] = useState<any[]>([]);
-
-  // Dark mode effect
-  useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true' || 
-      (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setDarkMode(isDark);
-    if (isDark) document.documentElement.classList.add('dark');
-  }, []);
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-    localStorage.setItem('darkMode', String(!darkMode));
-  };
-
-  // Scroll effects
-  useEffect(() => {
-    const handleScroll = () => {
-      setBackToTopVisible(window.pageYOffset > 300);
-      
-      // Counter animation trigger
-      const statsSection = document.querySelector('.stats-counter');
-      if (statsSection && !counterAnimated) {
-        const rect = statsSection.getBoundingClientRect();
-        if (rect.top < window.innerHeight) {
-          setCounterAnimated(true);
-          animateCounters();
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [counterAnimated]);
-
-  const animateCounters = () => {
-    const duration = 2000;
-    const start = performance.now();
-    
-    const tick = () => {
-      const now = performance.now();
-      const progress = Math.min((now - start) / duration, 1);
-      const ease = progress < 0.5 ? 4 * Math.pow(progress, 3) : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-      
-      setCounters({
-        experience: Math.floor(33 * ease),
-        clients: Math.floor(36127 * ease),
-        projects: Math.floor(36500 * ease)
-      });
-      
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-    
-    tick();
-  };
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Zap, ArrowRight, Shield, Clock, BadgeDollarSign, HeartHandshake,
+  Users, X, Phone, CheckCircle, Loader2, Calendar, MapPin, Wrench,
+  AlignLeft, ChevronRight, Star, ShoppingCart
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import Section from "@/components/Section";
+import ServiceCard from "@/components/ServiceCard";
+import AnimatedCounter, { COUNTER_DATA } from "@/components/AnimatedCounter";
+import ProcessTimeline from "@/components/ProcessTimeline";
+import VideoSection from "@/components/VideoSection";
+import TestimonialSlider from "@/components/TestimonialSlider";
+import ProductsSection from "@/components/ProductsSection";
+import SEO from "@/components/SEO";
+import { services as staticServices } from "@/data/services";
+import { teamMembers as staticTeam } from "@/data/team";
+import { testimonials as staticTestimonials } from "@/data/testimonials";
+import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -453,26 +359,30 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* Team Section */}
-      <section id="team" className="py-20 bg-gray-50 dark:bg-gray-900 slide-up">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Meet Our Team</h2>
-            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {[
-              { name: 'Dilip Parihar', role: 'Founder & Chairman', image: team2, description: 'With over 30 years in the industry, Dilip built ElectrooBuddy from the ground up with a vision for quality service.' },
-              { name: 'Viraj Parihar', role: 'Co-founder & CEO', image: team1, description: 'Viraj leads the company\'s expansion and digital transformation, bringing modern solutions to traditional services.' },
-              { name: 'Karan Parihar', role: 'Co-founder & COO', image: team3, description: 'Karan oversees daily operations and technician training, ensuring consistent service quality.' }
-            ].map((member, index) => (
-              <div key={index} className="team-member text-center">
-                <div className="overflow-hidden rounded-full h-48 w-48 mx-auto mb-6">
-                  <img src={member.image} alt={member.name} className="h-full w-full object-cover transition duration-300 hover:scale-105" loading="lazy" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{member.name}</h3>
-                <p className="text-blue-600 dark:text-blue-400 font-medium mb-2">{member.role}</p>
-                <p className="text-gray-600 dark:text-gray-300">{member.description}</p>
+      {/* ── PRODUCTS ── */}
+      <ProductsSection />
+
+      {/* ── WHY CHOOSE US ── */}
+      <Section>
+        <div className="text-center mb-10 sm:mb-14">
+          <div className="sec-badge">Why Choose Us</div>
+          <h2 className="sec-title">Reliable Solutions <span>You Can Trust</span></h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+          {whyChooseUs.map((item, i) => (
+            <motion.div
+              key={item.title}
+              className="why-card"
+              style={{ "--card-accent": item.accent } as React.CSSProperties}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08, duration: 0.45 }}
+            >
+              <div className="why-num">0{i + 1}</div>
+              <div className="why-icon-hex">
+                <div className="why-hex-bg" />
+                <div className="why-hex-icon"><item.icon size={20} /></div>
               </div>
             ))}
           </div>
@@ -530,32 +440,15 @@ const Index: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Send Us a Message</h3>
-              <form className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name <span className="text-red-500">*</span></label>
-                  <input type="text" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="Rahul Sharma" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address <span className="text-red-500">*</span></label>
-                  <input type="email" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="rahul@example.com" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject <span className="text-red-500">*</span></label>
-                  <input type="text" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="AC not cooling" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message <span className="text-red-500">*</span></label>
-                  <textarea rows={4} className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="Tell us more about your issue..."></textarea>
-                </div>
-                <div>
-                  <button type="submit" className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
-                    Send Message
-                  </button>
-                </div>
-              </form>
-            </div>
+      {/* ── TESTIMONIALS ── */}
+      <Section>
+        <div className="text-center mb-10 sm:mb-14">
+          <div className="sec-badge">Testimonials</div>
+          <h2 className="sec-title">What Our <span>Clients Say</span></h2>
+          <div className="mt-4">
+            <Link to="/review" className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 px-4 py-2 text-sm font-medium hover:bg-blue-100 transition">
+              Add Your Review
+            </Link>
           </div>
         </div>
       </section>
