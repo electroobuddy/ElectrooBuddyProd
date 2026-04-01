@@ -32,6 +32,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import OrderTracking from "./pages/OrderTracking";
+import Tips from "./pages/Tips";
 import UserAuth from "./pages/user/UserAuth";
 import UserLayout from "./pages/user/UserLayout";
 import UserDashboard from "./pages/user/UserDashboard";
@@ -145,6 +146,7 @@ const AppContent = () => {
             <Route path="/track-booking" element={<PageTransition><BookingTracking /></PageTransition>} />
             <Route path="/review" element={<PageTransition><Review /></PageTransition>} />
             <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
+            <Route path="/tips" element={<PageTransition><Tips /></PageTransition>} />
             <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
             <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
