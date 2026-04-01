@@ -287,7 +287,14 @@ const Cart = () => {
   /* empty */
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      <div className="cart-page bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+          .cart-page {
+            font-family: 'Poppins', sans-serif;
+          }
+        `}</style>
         <div className="container mx-auto px-4 py-20">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -303,7 +310,7 @@ const Cart = () => {
             </p>
             <Link
               to="/products"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-7 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-7 py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
             >
               <Zap className="w-4 h-4" />
               Start Shopping
@@ -315,7 +322,23 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="cart-page bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        .cart-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .cart-page h1,
+        .cart-page h2,
+        .cart-page h3,
+        .cart-page h4,
+        .cart-page h5,
+        .cart-page h6 {
+          font-weight: 700;
+        }
+      `}</style>
       <div className="container mx-auto px-4 py-8">
         {/* header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">

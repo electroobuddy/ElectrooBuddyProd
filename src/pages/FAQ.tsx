@@ -17,79 +17,28 @@ const FAQ = () => {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   return (
-    <>
+    <div className="faq-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        .faq-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .faq-page h1,
+        .faq-page h2,
+        .faq-page h3,
+        .faq-page h4,
+        .faq-page h5,
+        .faq-page h6 {
+          font-weight: 700;
+        }
 
         .faq-hero {
           position: relative;
-          padding: 96px 0 80px;
+          padding: 112px 0 96px;
           overflow: hidden;
-          background: hsl(var(--background));
           text-align: center;
-          font-family: 'DM Sans', sans-serif;
-        }
-
-        .fh-grid {
-          position: absolute;
-          inset: 0;
-          background-image:
-            linear-gradient(hsl(var(--primary) / 0.035) 1px, transparent 1px),
-            linear-gradient(90deg, hsl(var(--primary) / 0.035) 1px, transparent 1px);
-          background-size: 60px 60px;
-          mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
-        }
-
-        .fh-glow {
-          position: absolute;
-          top: -80px; left: 50%;
-          transform: translateX(-50%);
-          width: 500px; height: 360px;
-          background: radial-gradient(ellipse, hsl(var(--primary) / 0.09) 0%, transparent 70%);
-          pointer-events: none;
-        }
-
-        .fh-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 7px 18px;
-          border: 1px solid hsl(var(--border) / 0.3);
-          border-radius: 100px;
-          background: hsl(var(--primary) / 0.06);
-          margin-bottom: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          color: hsl(var(--secondary));
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          font-family: 'Barlow Condensed', sans-serif;
-        }
-
-        .fh-title {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: clamp(40px, 6vw, 72px);
-          font-weight: 900;
-          line-height: 0.93;
-          color: hsl(var(--foreground));
-          text-transform: uppercase;
-          letter-spacing: -1px;
-        }
-
-        .fh-title span {
-          background: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--electric-yellow-light)) 50%, hsl(var(--electric-blue-dark)) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .fh-sub {
-          color: hsl(var(--muted-foreground) / 0.5);
-          font-size: 14px;
-          margin-top: 14px;
-          max-width: 360px;
-          margin-left: auto;
-          margin-right: auto;
         }
 
         /* FAQ accordion */
@@ -208,14 +157,41 @@ const FAQ = () => {
       `}</style>
 
       {/* Hero */}
-      <section className="faq-hero">
-        <div className="fh-grid" />
-        <div className="fh-glow" />
-        <div className="container mx-auto px-4 relative z-10">
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="fh-badge"><Zap size={12} /> FAQ</div>
-            <h1 className="fh-title">Frequently Asked <span>Questions</span></h1>
-            <p className="fh-sub">Answers to the things people ask us most</p>
+      {/* Hero */}
+      <section className="hero-gradient text-white faq-hero slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.7 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8"
+            >
+              <Zap className="w-5 h-5" />
+              <span className="font-semibold text-sm uppercase tracking-wide">FAQ</span>
+            </motion.div>
+            
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+            >
+              Frequently Asked Questions
+            </motion.h1>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="text-xl max-w-3xl mx-auto opacity-90"
+            >
+              Answers to the things people ask us most
+            </motion.p>
           </motion.div>
         </div>
       </section>
@@ -267,7 +243,7 @@ const FAQ = () => {
           ))}
         </div>
       </Section>
-    </>
+    </div>
   );
 };
 

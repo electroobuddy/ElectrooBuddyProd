@@ -619,7 +619,14 @@ const OrderTracking = () => {
 
   if (notFound) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="order-tracking-page bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center px-4">
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    
+          .order-tracking-page {
+            font-family: 'Poppins', sans-serif;
+          }
+        `}</style>
         <div className="text-center max-w-sm">
           <AlertCircle className="w-14 h-14 text-muted-foreground opacity-40 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">Order Not Found</h1>
@@ -643,7 +650,23 @@ const OrderTracking = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 py-10">
+    <div className="order-tracking-page bg-gray-50 dark:bg-gray-900 min-h-screen py-10">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        .order-tracking-page {
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .order-tracking-page h1,
+        .order-tracking-page h2,
+        .order-tracking-page h3,
+        .order-tracking-page h4,
+        .order-tracking-page h5,
+        .order-tracking-page h6 {
+          font-weight: 700;
+        }
+      `}</style>
       <div className="container mx-auto px-4 max-w-3xl">
         {/* header */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="mb-7">

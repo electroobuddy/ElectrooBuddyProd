@@ -13,7 +13,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
-import { BookingModal } from "./pages/Index"; // Named export
+import BookingModal from "@/components/BookingModal";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Services from "./pages/Services";
@@ -198,7 +198,9 @@ const AppContent = () => {
         </AnimatePresence>
       </main>
       {!isAdmin && !isUserPanel && <Footer />}
-      {!isAdmin && !isUserPanel && <WhatsAppFloat />}
+      {!isAdmin && !isUserPanel && <WhatsAppFloat onBackToTopClick={() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }} backToTopVisible={false} />}
       
       {/* Global Booking Modal - appears on all public pages */}
       {mounted && !isAdmin && !isUserPanel && (
