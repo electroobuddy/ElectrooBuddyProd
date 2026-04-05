@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Check, Phone, CheckCircle, Loader2, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,7 +16,11 @@ export default function RequestServiceSection({ preselectedService }: { preselec
     exact_location: "", service_type: preselectedService || "", preferred_date: "",
     preferred_time: "", description: "",
   });
-
+  const counters = useMemo(() => ({
+    experience: new Date().getFullYear() - 1992,
+    clients: 5000,
+    projects: 8000
+  }), []);
   // Fetch services from database
   useEffect(() => {
     supabase.from("services").select("title").order("sort_order").then(({ data }) => {
@@ -517,10 +521,10 @@ export default function RequestServiceSection({ preselectedService }: { preselec
             <h3>Why Choose ElectrooBuddy?</h3>
             <ul className="rs-features">
               {[
-                "30+ years of trusted service",
-                "Certified and experienced technicians",
-                "Quick response (avg. 45 minutes)",
-                "Affordable pricing, no hidden charges",
+                `${counters.experience}+ years of trusted service`,
+                `Certified and experienced technicians`,
+                `Quick response (avg. 45 minutes)`,
+                `Affordable pricing, no hidden charges`,
               ].map((text, i) => (
                 <li key={i} className="rs-feature-item">
                   <div className="rs-check-icon">

@@ -148,35 +148,144 @@ const BookingForm = () => {
     { name: "email", label: "Email Address", type: "email", placeholder: "your@email.com" },
   ];
   
-  const handleGetCurrentLocation = () => {
-    setGettingLocation(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          try {
-            // Reverse geocoding using OpenStreetMap Nominatim (free)
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-            const data = await response.json();
-            const address = data.display_name || `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-            setForm({ ...form, address, exact_location: address });
-            toast.success("Location fetched successfully!");
-          } catch (error) {
-            setForm({ ...form, address: `${latitude}, ${longitude}`, exact_location: `${latitude}, ${longitude}` });
-            toast.success("Coordinates fetched! Please provide more details.");
-          }
-          setGettingLocation(false);
-        },
-        (error) => {
-          setGettingLocation(false);
-          toast.error("Unable to get your location. Please enter manually.");
+const handleGetCurrentLocation = () => {
+  setGettingLocation(true);
+  if (!navigator.geolocation) {
+    setGettingLocation(false);
+    toast.error("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords;
+
+      const buildAddress = (a: any): string => {
+        // Most granular → least granular
+        const level1 = [
+          a.house_number,
+          a.house_name,
+          a.building,
+          a.amenity,
+          a.shop,
+          a.office,
+          a.tourism,
+          a.leisure,
+        ].filter(Boolean).join(", ");
+
+        const level2 = [
+          a.road,
+          a.pedestrian,
+          a.footway,
+          a.street,
+          a.path,
+          a.residential,
+        ].filter(Boolean)[0] || "";
+
+        const level3 = [
+          a.neighbourhood,
+          a.quarter,
+          a.suburb,
+          a.hamlet,
+          a.village,
+        ].filter(Boolean)[0] || "";
+
+        const level4 = [
+          a.city_district,
+          a.district,
+          a.town,
+          a.city,
+          a.county,
+          a.state_district,
+        ].filter(Boolean)[0] || "";
+
+        const level5 = a.state || "";
+        const level6 = a.postcode || "";
+
+        const parts = [level1, level2, level3, level4, level5, level6].filter(Boolean);
+        return parts.join(", ");
+      };
+
+      // Try Nominatim first with zoom=18 (street level)
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18&accept-language=en`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        const data = await res.json();
+        const a = data.address || {};
+        let address = buildAddress(a);
+
+        // If result is still vague (no road/street found), use display_name first 4 parts
+        if (!a.road && !a.pedestrian && !a.footway && !a.street && !a.residential) {
+          const displayParts = (data.display_name || "").split(",").map((s: string) => s.trim());
+          // Take up to first 5 meaningful parts (skip country)
+          address = displayParts.slice(0, 5).join(", ");
         }
-      );
-    } else {
+
+        if (address) {
+          setForm((prev) => ({ ...prev, address, exact_location: address }));
+          toast.success("Address fetched successfully!");
+          setGettingLocation(false);
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback: try OpenCage (no key needed for low usage)
+      try {
+        const res = await fetch(
+          `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_OPENCAGE_KEY&language=en&pretty=1&no_annotations=1`
+        );
+        const data = await res.json();
+        const formatted = data.results?.[0]?.formatted;
+        if (formatted) {
+          setForm((prev) => ({ ...prev, address: formatted, exact_location: formatted }));
+          toast.success("Address fetched!");
+          setGettingLocation(false);
+          return;
+        }
+      } catch (_) {}
+
+      // Last fallback: BigDataCloud (free, no key)
+      try {
+        const res = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+        const data = await res.json();
+        const parts = [
+          data.locality,
+          data.localityInfo?.administrative?.find((x: any) => x.adminLevel === 6)?.name,
+          data.localityInfo?.administrative?.find((x: any) => x.adminLevel === 4)?.name,
+          data.city || data.principalSubdivision,
+          data.postcode,
+        ].filter(Boolean);
+
+        const address = parts.join(", ");
+        if (address) {
+          setForm((prev) => ({ ...prev, address, exact_location: address }));
+          toast.success("Address fetched!");
+          setGettingLocation(false);
+          return;
+        }
+      } catch (_) {}
+
+      // All APIs failed
+      toast.error("Couldn't resolve address. Please type it manually.");
       setGettingLocation(false);
-      toast.error("Geolocation is not supported by your browser.");
-    }
-  };
+    },
+    (error) => {
+      setGettingLocation(false);
+      if (error.code === error.PERMISSION_DENIED) {
+        toast.error("Location permission denied. Please allow access or enter address manually.");
+      } else if (error.code === error.TIMEOUT) {
+        toast.error("Location request timed out. Please try again.");
+      } else {
+        toast.error("Unable to get location. Please enter manually.");
+      }
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+};
 
   return (
     <div className="booking-page bg-gray-50 dark:bg-gray-900 min-h-screen">
