@@ -4,13 +4,64 @@ import Section from "@/components/Section";
 import { Zap, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
-const faqs = [
-  { q: "What areas do you serve?", a: "We currently serve all major cities and surrounding areas. Contact us to check if we cover your location." },
-  { q: "Are your electricians licensed?", a: "Yes, all our electricians are fully licensed, insured, and certified with years of professional experience." },
-  { q: "Do you offer emergency services?", a: "Absolutely! We provide 24/7 emergency electrical services. Call us anytime and we'll be there as soon as possible." },
-  { q: "How much do your services cost?", a: "Our pricing varies based on the service type and complexity. We provide transparent quotes before starting any work with no hidden fees." },
-  { q: "Do you provide warranties?", a: "Yes, we offer warranties on all our work. The duration depends on the type of service performed." },
-  { q: "How do I book a service?", a: "You can book through our website using the Book Now button, call us directly, or send us a WhatsApp message." },
+// const faqs = [
+//   { q: "What areas do you serve?", a: "We currently serve all major cities and surrounding areas. Contact us to check if we cover your location." },
+//   { q: "Are your electricians licensed?", a: "Yes, all our electricians are fully licensed, insured, and certified with years of professional experience." },
+//   { q: "Do you offer emergency services?", a: "Absolutely! We provide 24/7 emergency electrical services. Call us anytime and we'll be there as soon as possible." },
+//   { q: "How much do your services cost?", a: "Our pricing varies based on the service type and complexity. We provide transparent quotes before starting any work with no hidden fees." },
+//   { q: "Do you provide warranties?", a: "Yes, we offer warranties on all our work. The duration depends on the type of service performed." },
+//   { q: "How do I book a service?", a: "You can book through our website using the Book Now button, call us directly, or send us a WhatsApp message." },
+// ];
+
+  const faqs = [
+  {
+    question: 'How quickly can you respond to service requests?',
+    answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.'
+  },
+  {
+    question: 'Do you provide late night or emergency services?',
+    answer: 'Yes, we offer both emergency and late night services to handle urgent electrical issues anytime you need.'
+  },
+  {
+    question: 'Are there extra charges for emergency or night services?',
+    answer: 'Yes, emergency service charges are ₹350 and late night service charges are ₹500. These are fixed additional fees and will be clearly shown before booking.'
+  },
+  {
+    question: 'What are your service charges?',
+    answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.'
+  },
+  {
+    question: 'Do you offer warranties on repairs?',
+    answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.'
+  },
+  {
+    question: 'What payment methods do you accept?',
+    answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.'
+  },
+  {
+    question: 'Can I schedule a service for a specific time?',
+    answer: 'Yes, you can book services in advance and choose a preferred time slot based on availability.'
+  },
+  {
+    question: 'Do you provide same-day service?',
+    answer: 'Yes, we offer same-day service for most requests depending on technician availability in your area.'
+  },
+  {
+    question: 'What areas do you currently serve?',
+    answer: 'We currently serve Ujjain city and nearby areas. Expansion to more cities is coming soon.'
+  },
+  {
+    question: 'Do you service appliances still under manufacturer warranty?',
+    answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.'
+  },
+  {
+    question: 'Is it safe to book services online?',
+    answer: 'Yes, our platform is secure and all technicians are verified professionals with proper background checks.'
+  },
+  {
+    question: 'What if I am not satisfied with the service?',
+    answer: 'Customer satisfaction is our priority. You can contact our support team and we will resolve your issue or arrange a revisit if needed.'
+  }
 ];
 
 const FAQ = () => {
@@ -213,7 +264,7 @@ const FAQ = () => {
                 aria-expanded={openIdx === i}
               >
                 <span className="faq-num">0{i + 1}</span>
-                <span className="faq-q">{f.q}</span>
+                <span className="faq-q">{f.question}</span>
                 <span className="faq-chevron">
                   <ChevronDown size={15} />
                 </span>
@@ -233,7 +284,7 @@ const FAQ = () => {
                     <div className="faq-answer">
                       <div className="faq-answer-inner">
                         <Zap size={14} className="faq-answer-bolt" />
-                        <span>{f.a}</span>
+                        <span>{f.answer}</span>
                       </div>
                     </div>
                   </motion.div>

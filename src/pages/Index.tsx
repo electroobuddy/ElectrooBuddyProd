@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+﻿import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
@@ -6,7 +6,7 @@ import {
   Users, X, Phone, CheckCircle, Loader2, Calendar, MapPin, Wrench,
   AlignLeft, ChevronRight, Star, ShoppingCart, Instagram, Linkedin,
   Mail, ChevronDown, MessageCircle, Award, Smile, ChevronUp,
-  SatelliteDish, Tv, Fan, Snowflake, Check, ShoppingBag
+  SatelliteDish, Tv, Fan, Snowflake, Check, ShoppingBag, Send
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,8 +27,8 @@ import { testimonials as staticTestimonials } from "@/data/testimonials";
 import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
 import { PHONE_NUMBER } from "@/data/services";
 
-// Image imports
-import heroImage from "@/images/heroimg.png";
+// Image importss
+import heroImage from "@/images/hero.jpg";
 import aboutImage from "@/images/about.png";
 import testimonial1 from "@/images/testimonial-1.jpg";
 import testimonial2 from "@/images/testimonial-2.jpg";
@@ -49,13 +49,16 @@ export default function Index() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [preselectedService, setPreselectedService] = useState<string>("");
+  const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", subject: "", message: "" });
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [contactDone, setContactDone] = useState(false);
   const { services: dbServices, loading: servicesLoading } = useServices();
   const [services, setServices] = useState<any[]>([]);
   const { products, loading: productsLoading } = useProducts();
   const displayProducts = products.slice(0, 4);
 
   const counters = useMemo(() => ({
-    experience: 30,
+    experience: new Date().getFullYear() - 1992,
     clients: 5000,
     projects: 8000
   }), []);
@@ -66,7 +69,11 @@ export default function Index() {
     { icon: BadgeDollarSign, title: 'Affordable Pricing', accent: '#f59e0b' },
     { icon: HeartHandshake, title: 'Customer First', accent: '#ef4444' }
   ];
-
+  const team = [
+    { name: 'Dilip Parihar', role: 'Founder & Chairman', image: team2, description: 'With over 30 years in the industry, Mr. Dilip Parihar built ElectrooBuddy from the ground up with a vision for quality service.' },
+    { name: 'Viraj Parihar', role: 'Co-founder & CEO', image: team1, description: 'Mr. Viraj leads the company\'s expansion and digital transformation, bringing modern solutions to traditional services.' },
+    { name: 'Karan Parihar', role: 'Co-founder & COO', image: team3, description: 'Mr. Karan oversees daily operations and technician training, ensuring consistent service quality.' }
+  ];
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -83,12 +90,112 @@ export default function Index() {
     { name: 'Rajesh Gupta', location: 'Ujjain', image: testimonial5, rating: 5, text: 'I\'ve used ElectrooBuddy multiple times for different appliances. Always professional, and their work comes with a warranty.' }
   ];
 
+  // const faqs = [
+  //   { question: 'How quickly can you respond to service requests?', answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.' },
+  //   { question: 'What are your service charges?', answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.' },
+  //   { question: 'Do you offer warranties on repairs?', answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.' },
+  //   { question: 'What payment methods do you accept?', answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.' },
+  //   { question: 'Do you service appliances still under manufacturer warranty?', answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.' }
+  // ];
+  //   const faqs = [
+  //   {
+  //     question: 'How quickly can you respond to service requests?',
+  //     answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.'
+  //   },
+  //   {
+  //     question: 'Do you provide late night or emergency services?',
+  //     answer: 'Yes, we offer emergency services including late night support. Our technicians are available beyond regular hours for urgent electrical issues.'
+  //   },
+  //   {
+  //     question: 'What are your service charges?',
+  //     answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.'
+  //   },
+  //   {
+  //     question: 'Are there extra charges for emergency or night services?',
+  //     answer: 'Yes, a small additional fee may apply for late night or emergency visits depending on the time and urgency. All charges are communicated clearly before booking confirmation.'
+  //   },
+  //   {
+  //     question: 'Do you offer warranties on repairs?',
+  //     answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.'
+  //   },
+  //   {
+  //     question: 'What payment methods do you accept?',
+  //     answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.'
+  //   },
+  //   {
+  //     question: 'Can I schedule a service for a specific time?',
+  //     answer: 'Yes, you can book services in advance and choose a preferred time slot based on availability.'
+  //   },
+  //   {
+  //     question: 'Do you provide same-day service?',
+  //     answer: 'Yes, we offer same-day service for most requests depending on technician availability in your area.'
+  //   },
+  //   {
+  //     question: 'What areas do you currently serve?',
+  //     answer: 'We currently serve Ujjain city and nearby areas. Expansion to more cities is coming soon.'
+  //   },
+  //   {
+  //     question: 'Do you service appliances still under manufacturer warranty?',
+  //     answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.'
+  //   },
+  //   {
+  //     question: 'Is it safe to book services online?',
+  //     answer: 'Yes, our platform is secure and all technicians are verified professionals with proper background checks.'
+  //   },
+  //   {
+  //     question: 'What if I am not satisfied with the service?',
+  //     answer: 'Customer satisfaction is our priority. You can contact our support team and we will resolve your issue or arrange a revisit if needed.'
+  //   }
+  // ];
   const faqs = [
-    { question: 'How quickly can you respond to service requests?', answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.' },
-    { question: 'What are your service charges?', answer: 'We charge a standard diagnostic fee of ₹200 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.' },
-    { question: 'Do you offer warranties on repairs?', answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.' },
-    { question: 'What payment methods do you accept?', answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.' },
-    { question: 'Do you service appliances still under manufacturer warranty?', answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.' }
+    {
+      question: 'How quickly can you respond to service requests?',
+      answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.'
+    },
+    {
+      question: 'Do you provide late night or emergency services?',
+      answer: 'Yes, we offer both emergency and late night services to handle urgent electrical issues anytime you need.'
+    },
+    {
+      question: 'Are there extra charges for emergency or night services?',
+      answer: 'Yes, emergency service charges are ₹350 and late night service charges are ₹500. These are fixed additional fees and will be clearly shown before booking.'
+    },
+    {
+      question: 'What are your service charges?',
+      answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.'
+    },
+    {
+      question: 'Do you offer warranties on repairs?',
+      answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.'
+    },
+    {
+      question: 'What payment methods do you accept?',
+      answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.'
+    },
+    {
+      question: 'Can I schedule a service for a specific time?',
+      answer: 'Yes, you can book services in advance and choose a preferred time slot based on availability.'
+    },
+    {
+      question: 'Do you provide same-day service?',
+      answer: 'Yes, we offer same-day service for most requests depending on technician availability in your area.'
+    },
+    {
+      question: 'What areas do you currently serve?',
+      answer: 'We currently serve Ujjain city and nearby areas. Expansion to more cities is coming soon.'
+    },
+    {
+      question: 'Do you service appliances still under manufacturer warranty?',
+      answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.'
+    },
+    {
+      question: 'Is it safe to book services online?',
+      answer: 'Yes, our platform is secure and all technicians are verified professionals with proper background checks.'
+    },
+    {
+      question: 'What if I am not satisfied with the service?',
+      answer: 'Customer satisfaction is our priority. You can contact our support team and we will resolve your issue or arrange a revisit if needed.'
+    }
   ];
 
   const applianceTips = [
@@ -135,6 +242,28 @@ export default function Index() {
     scrollToSection('request-service');
   };
 
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setContactSubmitting(true);
+
+    const { error } = await supabase.from("contact_messages").insert({
+      name: contactForm.name,
+      phone: contactForm.phone,
+      email: contactForm.email,
+      service: contactForm.subject || null,
+      message: contactForm.message,
+    });
+
+    if (error) {
+      toast.error("Failed to send message. Please try again.");
+    } else {
+      setContactDone(true);
+      toast.success("Message sent! We'll get back to you shortly.");
+      setContactForm({ name: "", phone: "", email: "", subject: "", message: "" });
+    }
+    setContactSubmitting(false);
+  };
+
   // Load services from database or fallback to static
   useEffect(() => {
     if (dbServices && dbServices.length > 0) {
@@ -170,30 +299,77 @@ export default function Index() {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen index-page">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        
-        .index-page {
-          font-family: 'Poppins', sans-serif;
-        }
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600&display=swap');
 
-        .index-page h1,
-        .index-page h2,
-        .index-page h3,
-        .index-page h4,
-        .index-page h5,
-        .index-page h6 {
-          font-weight: 700;
-        }
+  .index-page {
+    font-family: 'Poppins', sans-serif;
+  }
 
-        /* Hide scrollbar for testimonials */
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
+  /* Keep all headings as Poppins except hero */
+  .index-page h1,
+  .index-page h2,
+  .index-page h3,
+  .index-page h4,
+  .index-page h5,
+  .index-page h6 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+  }
+
+  /* Hero-only overrides */
+  .hero-headline {
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+  }
+
+  .hero-subtext {
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    line-height: 1.75;
+    letter-spacing: 0.1px;
+    opacity: 0.88;
+  }
+
+  .hero-badge {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-bottom: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 28px;
+    height: 2px;
+    background: rgba(255,255,255,0.7);
+    display: inline-block;
+  }
+
+  .hero-badge::after {
+    content: '';
+    width: 28px;
+    height: 2px;
+    background: rgba(255,255,255,0.7);
+    display: inline-block;
+  }
+
+  /* Hide scrollbar for testimonials */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+`}</style>
 
       {/* ── HERO SECTION ── */}
       <section id="home" className="hero-gradient text-white py-16 md:py-28 lg:py-32 slide-up">
@@ -202,30 +378,63 @@ export default function Index() {
 
             {/* Left: Text + Buttons */}
             <div className="md:w-1/2 text-center md:text-left">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-                India's Trusted Appliance Care &amp; Repair Service
+
+              {/* Badge */}
+              <div className="hero-badge justify-center md:justify-start">
+                Ujjain's Most Trusted Since 1992
+              </div>
+
+              {/* Headline */}
+              <h1 className="hero-headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6">
+                Expert Appliance{" "}
+                <span style={{
+                  background: "linear-gradient(135deg, #93c5fd, #bfdbfe)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text"
+                }}>
+                  Care & Repair
+                </span>
+                {" "}at Your Doorstep
               </h1>
-              <p className="text-lg sm:text-xl mb-8 opacity-90">
-                With over 30 years of experience, we provide quick, reliable, and professional appliance repair services at your doorstep.
+
+              {/* Subtext */}
+              <p className="hero-subtext text-base sm:text-lg mb-8 max-w-xl mx-auto md:mx-0">
+                Over {new Date().getFullYear() - 1992} years of certified expertise — from ACs and fans to TVs and wiring.
+                Fast response, transparent pricing, and guaranteed workmanship, right at your home.
               </p>
 
-              {/* FIX: flex-wrap so buttons never overflow on narrow screens */}
+              {/* Trust indicators */}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-8 text-sm opacity-80">
+                <span className="flex items-center gap-1.5">
+                  <span style={{ color: "#fbbf24" }}>★★★★★</span> 4.9 Rated
+                </span>
+                <span className="w-px h-4 bg-white/30" />
+                <span>5,000+ Happy Customers</span>
+                <span className="w-px h-4 bg-white/30" />
+                <span>45-min Response</span>
+              </div>
+
+              {/* Buttons */}
               <div className="flex flex-wrap gap-3 items-center justify-center md:justify-start">
                 <button
                   onClick={() => scrollToSection('request-service')}
                   className="w-full xs:w-auto bg-white text-blue-800 hover:bg-gray-100 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 text-center"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   Request Service Now
                 </button>
                 <Link
                   to="/products"
                   className="w-full xs:w-auto bg-blue-700 dark:bg-blue-600 text-white hover:bg-blue-800 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 inline-flex items-center justify-center gap-2"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   <ShoppingBag size={20} /> Buy Products
                 </Link>
                 <button
                   onClick={() => scrollToSection('contact')}
                   className="w-full xs:w-auto border-2 border-white hover:bg-white hover:text-blue-800 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 text-center"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   Contact Us
                 </button>
@@ -319,10 +528,10 @@ export default function Index() {
               </p>
               <div className="mb-6 space-y-4">
                 {[
-                  '30+ years of trusted service',
-                  'Certified and experienced technicians',
-                  'Quick response time (average 45 minutes)',
-                  'Expanding nationwide with the same quality service'
+                  `${counters.experience}+ years of trusted service`,
+                  `Certified and experienced technicians`,
+                  `Quick response time (average 45 minutes)`,
+                  `Expanding nationwide with the same quality service`
                 ].map((point, i) => (
                   <div key={i} className="flex items-start">
                     <div className="flex-shrink-0 mt-1">
@@ -387,6 +596,47 @@ export default function Index() {
           </div>
         </div>
       </section>
+      {/* ── PRODUCTS SECTION ── */}
+      <section id="products" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Products</h2>
+            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
+            <p className="mt-6 text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Quality electrical products and accessories at competitive prices.
+            </p>
+          </div>
+
+          {productsLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-card border border-border/40 rounded-xl overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-muted" />
+                  <div className="p-3 sm:p-4 space-y-2">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : displayProducts.length === 0 ? null : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {displayProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} index={idx} />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-10 md:mt-12 text-center">
+            <Link
+              to="/products"
+              className="inline-flex items-center px-6 py-3 md:px-8 md:py-4 border border-transparent text-base md:text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
+            >
+              View All Products <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* ── GALLERY SECTION ── */}
       <section id="gallery" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
@@ -397,8 +647,8 @@ export default function Index() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { img: portfolio1, title: 'Professional TV Mounting' },
-              { img: portfolio2, title: 'AC Maintenance Service' },
+              { img: portfolio2, title: 'Professional TV Mounting' },
+              { img: portfolio1, title: 'AC Maintenance Service' },
               { img: portfolio3, title: 'Electrical Circuit Repair' },
               { img: portfolio4, title: 'DTH Satellite Setup' },
               { img: portfolio5, title: 'Refrigerator Maintenance' },
@@ -421,7 +671,7 @@ export default function Index() {
       </section>
 
       {/* ── VIDEO SECTION ── */}
-        {/* <VideoSection /> */}
+      {/* <VideoSection /> */}
 
       {/* ── APPLIANCE CARE TIPS SECTION ── */}
       <section id="tips" className="py-20 bg-gray-50 dark:bg-gray-900 slide-up">
@@ -458,17 +708,28 @@ export default function Index() {
       </section>
 
       {/* ── TESTIMONIALS SECTION ── */}
-          {/* Testimonials Section */}
+      {/* Testimonials Section */}
       <section id="testimonials" className="py-20 bg-white dark:bg-gray-800 slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">What Our Clients Say</h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
-          <div className="relative">
-            <div className="flex overflow-x-auto pb-6 scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
+          <div className="relative max-w-5xl mx-auto">
+            <div 
+              ref={(el) => {
+                if (el) {
+                  el.scrollTo({
+                    left: currentTestimonial * 352,
+                    behavior: 'smooth'
+                  });
+                }
+              }}
+              className="flex overflow-x-auto pb-6 scrollbar-hide gap-4" 
+              style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}
+            >
               {testimonials.map((testimonial, index) => (
-                <div key={index} className="testimonial-slide bg-gray-50 dark:bg-gray-700 p-8 rounded-lg shadow-md mx-4 flex-shrink-0" style={{ width: '320px', scrollSnapAlign: 'start' }}>
+                <div key={index} className="testimonial-slide bg-gray-50 dark:bg-gray-700 p-8 rounded-lg shadow-md flex-shrink-0" style={{ width: '320px', scrollSnapAlign: 'start' }}>
                   <div className="flex items-center mb-6">
                     <img src={testimonial.image} alt={testimonial.name} className="h-12 w-12 rounded-full" loading="lazy" />
                     <div className="ml-4">
@@ -485,11 +746,19 @@ export default function Index() {
                 </div>
               ))}
             </div>
-            <button onClick={prevTestimonial} className="absolute left-0 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-700 p-2 rounded-full shadow-md hover:bg-gray-100 transition duration-300">
-              <ChevronUp className="h-6 w-6 text-gray-700 dark:text-gray-300 rotate-[-90deg]" />
+            <button 
+              onClick={prevTestimonial} 
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white dark:bg-gray-700 p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-300 z-10"
+              aria-label="Previous testimonial"
+            >
+              <ChevronRight className="h-6 w-6 text-gray-700 dark:text-gray-300 rotate-180" />
             </button>
-            <button onClick={nextTestimonial} className="absolute right-0 top-1/2 -translate-y-1/2 bg-white dark:bg-gray-700 p-2 rounded-full shadow-md hover:bg-gray-100 transition duration-300">
-              <ChevronUp className="h-6 w-6 text-gray-700 dark:text-gray-300 rotate-[90deg]" />
+            <button 
+              onClick={nextTestimonial} 
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white dark:bg-gray-700 p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-300 z-10"
+              aria-label="Next testimonial"
+            >
+              <ChevronRight className="h-6 w-6 text-gray-700 dark:text-gray-300" />
             </button>
           </div>
           <div className="mt-16 text-center">
@@ -507,16 +776,16 @@ export default function Index() {
                     <p className="text-sm text-gray-600 dark:text-gray-300">Based on 3 reviews</p>
                   </div>
                 </div>
-                   {/* FIX: flex-wrap so buttons stack on very small screens */}
+                {/* FIX: flex-wrap so buttons stack on very small screens */}
                 <div className="flex flex-wrap justify-center gap-2">
-                  <a
+                  {/* <a
                     href="https://g.page/r/CfQ3QZ4XJj5EEB0/review"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
                   >
                     <MessageCircle className="mr-1.5 h-4 w-4" /> Leave a Review
-                  </a>
+                  </a> */}
                   <Link
                     to="/review"
                     className="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-blue-600 border border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition duration-300"
@@ -560,47 +829,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ── PRODUCTS SECTION ── */}
-      <section id="products" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Products</h2>
-            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
-            <p className="mt-6 text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Quality electrical products and accessories at competitive prices.
-            </p>
-          </div>
-
-          {productsLoading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-card border border-border/40 rounded-xl overflow-hidden animate-pulse">
-                  <div className="aspect-square bg-muted" />
-                  <div className="p-3 sm:p-4 space-y-2">
-                    <div className="h-3 bg-muted rounded w-3/4" />
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : displayProducts.length === 0 ? null : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {displayProducts.map((product, idx) => (
-                <ProductCard key={product.id} product={product} index={idx} />
-              ))}
-            </div>
-          )}
-
-          <div className="mt-10 md:mt-12 text-center">
-            <Link
-              to="/products"
-              className="inline-flex items-center px-6 py-3 md:px-8 md:py-4 border border-transparent text-base md:text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
-            >
-              View All Products <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* ── WHY CHOOSE US ── */}
       <Section>
@@ -650,11 +878,7 @@ export default function Index() {
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {[
-              { name: 'Dilip Parihar', role: 'Founder & Chairman', image: team2, description: 'With over 30 years in the industry, Dilip built ElectrooBuddy from the ground up with a vision for quality service.' },
-              { name: 'Viraj Parihar', role: 'Co-founder & CEO', image: team1, description: 'Viraj leads the company\'s expansion and digital transformation, bringing modern solutions to traditional services.' },
-              { name: 'Karan Parihar', role: 'Co-founder & COO', image: team3, description: 'Karan oversees daily operations and technician training, ensuring consistent service quality.' }
-            ].map((member, index) => (
+            {team.map((member, index) => (
               <div key={index} className="team-member text-center">
                 <div className="overflow-hidden rounded-full h-48 w-48 mx-auto mb-6">
                   <img src={member.image} alt={member.name} className="h-full w-full object-cover bg-white rounded-full transition duration-300 hover:scale-105" loading="lazy" />
@@ -754,28 +978,89 @@ export default function Index() {
                 </a>
               </div>
             </div>
-             <div>
+            <div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Send Us a Message</h3>
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleContactSubmit}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name <span className="text-red-500">*</span></label>
-                  <input type="text" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="Rahul Sharma" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
+                    placeholder="Rahul Sharma"
+                  />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address <span className="text-red-500">*</span></label>
-                  <input type="email" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="rahul@example.com" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={contactForm.phone}
+                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
+                    placeholder="+91 98765 43210"
+                  />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject <span className="text-red-500">*</span></label>
-                  <input type="text" className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="AC not cooling" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
+                    placeholder="rahul@example.com"
+                  />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message <span className="text-red-500">*</span></label>
-                  <textarea rows={4} className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white" placeholder="Tell us more about your issue..."></textarea>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Subject <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={contactForm.subject}
+                    onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
+                    placeholder="AC not cooling"
+                  />
                 </div>
+
                 <div>
-                  <button type="submit" className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
-                    Send Message
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Message <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
+                    placeholder="Tell us more about your issue..."
+                  ></textarea>
+                </div>
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={contactSubmitting}
+                    className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {contactSubmitting
+                      ? <><Loader2 size={16} className="animate-spin" /> Sending...</>
+                      : <><Send size={15} /> Send Message</>
+                    }
                   </button>
                 </div>
               </form>

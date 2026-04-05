@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Zap, Loader2, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
 
 const UserAuth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -390,7 +393,7 @@ const UserAuth = () => {
           margin: 20px 0;
         }
       `}</style>
-
+      <Navbar />
       <div className="auth-page">
         <div className="auth-grid-bg" />
         <div className="auth-glow" />
@@ -481,6 +484,7 @@ const UserAuth = () => {
           </div>
         </motion.div>
       </div>
+      <Footer />
     </>
   );
 };
