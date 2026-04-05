@@ -27,8 +27,8 @@ import { testimonials as staticTestimonials } from "@/data/testimonials";
 import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
 import { PHONE_NUMBER } from "@/data/services";
 
-// Image imports
-import heroImage from "@/images/heroimg.png";
+// Image importss
+import heroImage from "@/images/hero.jpg";
 import aboutImage from "@/images/about.png";
 import testimonial1 from "@/images/testimonial-1.jpg";
 import testimonial2 from "@/images/testimonial-2.jpg";
@@ -83,13 +83,113 @@ export default function Index() {
     { name: 'Rajesh Gupta', location: 'Ujjain', image: testimonial5, rating: 5, text: 'I\'ve used ElectrooBuddy multiple times for different appliances. Always professional, and their work comes with a warranty.' }
   ];
 
+  // const faqs = [
+  //   { question: 'How quickly can you respond to service requests?', answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.' },
+  //   { question: 'What are your service charges?', answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.' },
+  //   { question: 'Do you offer warranties on repairs?', answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.' },
+  //   { question: 'What payment methods do you accept?', answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.' },
+  //   { question: 'Do you service appliances still under manufacturer warranty?', answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.' }
+  // ];
+//   const faqs = [
+//   {
+//     question: 'How quickly can you respond to service requests?',
+//     answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.'
+//   },
+//   {
+//     question: 'Do you provide late night or emergency services?',
+//     answer: 'Yes, we offer emergency services including late night support. Our technicians are available beyond regular hours for urgent electrical issues.'
+//   },
+//   {
+//     question: 'What are your service charges?',
+//     answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.'
+//   },
+//   {
+//     question: 'Are there extra charges for emergency or night services?',
+//     answer: 'Yes, a small additional fee may apply for late night or emergency visits depending on the time and urgency. All charges are communicated clearly before booking confirmation.'
+//   },
+//   {
+//     question: 'Do you offer warranties on repairs?',
+//     answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.'
+//   },
+//   {
+//     question: 'What payment methods do you accept?',
+//     answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.'
+//   },
+//   {
+//     question: 'Can I schedule a service for a specific time?',
+//     answer: 'Yes, you can book services in advance and choose a preferred time slot based on availability.'
+//   },
+//   {
+//     question: 'Do you provide same-day service?',
+//     answer: 'Yes, we offer same-day service for most requests depending on technician availability in your area.'
+//   },
+//   {
+//     question: 'What areas do you currently serve?',
+//     answer: 'We currently serve Ujjain city and nearby areas. Expansion to more cities is coming soon.'
+//   },
+//   {
+//     question: 'Do you service appliances still under manufacturer warranty?',
+//     answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.'
+//   },
+//   {
+//     question: 'Is it safe to book services online?',
+//     answer: 'Yes, our platform is secure and all technicians are verified professionals with proper background checks.'
+//   },
+//   {
+//     question: 'What if I am not satisfied with the service?',
+//     answer: 'Customer satisfaction is our priority. You can contact our support team and we will resolve your issue or arrange a revisit if needed.'
+//   }
+// ];
   const faqs = [
-    { question: 'How quickly can you respond to service requests?', answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.' },
-    { question: 'What are your service charges?', answer: 'We charge a standard diagnostic fee of ₹200 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.' },
-    { question: 'Do you offer warranties on repairs?', answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.' },
-    { question: 'What payment methods do you accept?', answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.' },
-    { question: 'Do you service appliances still under manufacturer warranty?', answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.' }
-  ];
+  {
+    question: 'How quickly can you respond to service requests?',
+    answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.'
+  },
+  {
+    question: 'Do you provide late night or emergency services?',
+    answer: 'Yes, we offer both emergency and late night services to handle urgent electrical issues anytime you need.'
+  },
+  {
+    question: 'Are there extra charges for emergency or night services?',
+    answer: 'Yes, emergency service charges are ₹350 and late night service charges are ₹500. These are fixed additional fees and will be clearly shown before booking.'
+  },
+  {
+    question: 'What are your service charges?',
+    answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.'
+  },
+  {
+    question: 'Do you offer warranties on repairs?',
+    answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.'
+  },
+  {
+    question: 'What payment methods do you accept?',
+    answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.'
+  },
+  {
+    question: 'Can I schedule a service for a specific time?',
+    answer: 'Yes, you can book services in advance and choose a preferred time slot based on availability.'
+  },
+  {
+    question: 'Do you provide same-day service?',
+    answer: 'Yes, we offer same-day service for most requests depending on technician availability in your area.'
+  },
+  {
+    question: 'What areas do you currently serve?',
+    answer: 'We currently serve Ujjain city and nearby areas. Expansion to more cities is coming soon.'
+  },
+  {
+    question: 'Do you service appliances still under manufacturer warranty?',
+    answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.'
+  },
+  {
+    question: 'Is it safe to book services online?',
+    answer: 'Yes, our platform is secure and all technicians are verified professionals with proper background checks.'
+  },
+  {
+    question: 'What if I am not satisfied with the service?',
+    answer: 'Customer satisfaction is our priority. You can contact our support team and we will resolve your issue or arrange a revisit if needed.'
+  }
+];
 
   const applianceTips = [
     {
@@ -387,6 +487,47 @@ export default function Index() {
           </div>
         </div>
       </section>
+  {/* ── PRODUCTS SECTION ── */}
+      <section id="products" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Products</h2>
+            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
+            <p className="mt-6 text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Quality electrical products and accessories at competitive prices.
+            </p>
+          </div>
+
+          {productsLoading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-card border border-border/40 rounded-xl overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-muted" />
+                  <div className="p-3 sm:p-4 space-y-2">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : displayProducts.length === 0 ? null : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {displayProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} index={idx} />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-10 md:mt-12 text-center">
+            <Link
+              to="/products"
+              className="inline-flex items-center px-6 py-3 md:px-8 md:py-4 border border-transparent text-base md:text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
+            >
+              View All Products <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* ── GALLERY SECTION ── */}
       <section id="gallery" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
@@ -397,8 +538,8 @@ export default function Index() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { img: portfolio1, title: 'Professional TV Mounting' },
-              { img: portfolio2, title: 'AC Maintenance Service' },
+              { img: portfolio2, title: 'Professional TV Mounting' },
+              { img: portfolio1, title: 'AC Maintenance Service' },
               { img: portfolio3, title: 'Electrical Circuit Repair' },
               { img: portfolio4, title: 'DTH Satellite Setup' },
               { img: portfolio5, title: 'Refrigerator Maintenance' },
@@ -560,48 +701,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ── PRODUCTS SECTION ── */}
-      <section id="products" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Products</h2>
-            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
-            <p className="mt-6 text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Quality electrical products and accessories at competitive prices.
-            </p>
-          </div>
-
-          {productsLoading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-card border border-border/40 rounded-xl overflow-hidden animate-pulse">
-                  <div className="aspect-square bg-muted" />
-                  <div className="p-3 sm:p-4 space-y-2">
-                    <div className="h-3 bg-muted rounded w-3/4" />
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : displayProducts.length === 0 ? null : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {displayProducts.map((product, idx) => (
-                <ProductCard key={product.id} product={product} index={idx} />
-              ))}
-            </div>
-          )}
-
-          <div className="mt-10 md:mt-12 text-center">
-            <Link
-              to="/products"
-              className="inline-flex items-center px-6 py-3 md:px-8 md:py-4 border border-transparent text-base md:text-lg font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
-            >
-              View All Products <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
+    
       {/* ── WHY CHOOSE US ── */}
       <Section>
         <div className="text-center mb-10 sm:mb-14">
