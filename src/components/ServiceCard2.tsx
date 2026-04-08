@@ -1,4 +1,4 @@
-import { Phone, MessageCircle, ArrowRight } from "lucide-react";
+import { Phone, MessageCircle, ArrowRight, ChevronRight } from "lucide-react";
 import { PHONE_NUMBER } from "@/data/services";
 import * as LucideIcons from "lucide-react";
 import clsx from "clsx";
@@ -12,6 +12,9 @@ interface DbService {
   whatsapp_enabled?: boolean;
   call_enabled?: boolean;
   book_now_enabled?: boolean;
+  service_charge?: number | string | null;
+  show_visit_charge?: boolean;
+  visit_charge_label?: string;
 }
 
 interface StaticService {
@@ -60,47 +63,55 @@ const ServiceCard2 = ({
 
   if (!title || !description) return null;
 
+  // Format charge display
+  const showCharge = isDbService && service?.show_visit_charge && service?.service_charge;
+  const chargeAmount = showCharge ? Number(service.service_charge) : null;
+  const chargeLabel = showCharge ? (service.visit_charge_label || "Visit Charge") : null;
+
   return (
     <div
       className={clsx(
-        "group flex flex-col justify-between",
-        "bg-white dark:bg-gray-800",
-        "rounded-2xl shadow-sm hover:shadow-xl",
+        "bg-white dark:bg-gray-700",
+        "rounded-xl shadow-md overflow-hidden",
         "transition-all duration-300",
-        "border border-gray-100 dark:border-gray-700",
-        "p-4 sm:p-5 lg:p-6",
         "h-full"
       )}
     >
-      {/* Top Content */}
-      <div>
-        <div className="flex items-start gap-3 mb-4">
-          <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-xl">
-            <Icon className="text-blue-600 dark:text-blue-400 w-6 h-6 sm:w-7 sm:h-7" />
+      <div className="p-6">
+        {/* Top Content */}
+        <div className="flex items-center mb-4">
+          <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+            <Icon className="text-blue-600 dark:text-blue-400 text-2xl" />
           </div>
-
-          <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2">
+          <h3 className="ml-4 text-xl font-semibold text-gray-900 dark:text-white">
             {title}
           </h3>
         </div>
 
-        <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base leading-relaxed line-clamp-3">
+        <p className="text-gray-600 dark:text-gray-300">
           {description}
         </p>
-      </div>
 
-      {/* Actions */}
-      <div className="mt-5 space-y-2">
-        <div className="grid grid-cols-2 gap-2">
-          {/* Call */}
-          {(isDbService ? service.call_enabled !== false : true) && (
-            <a
-              href={`tel:${PHONE_NUMBER}`}
-              className="flex items-center justify-center gap-2 px-3 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-green-400"
+        {/* Charge Display */}
+        {showCharge && chargeAmount && chargeLabel && (
+          <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">{chargeLabel}</span>
+              <span className="text-lg font-bold text-yellow-900 dark:text-yellow-200">₹{chargeAmount}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+          {/* Book Now */}
+          {(isDbService ? service.book_now_enabled !== false : true) && (
+            <button
+              onClick={handleBookClick}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 font-medium inline-flex items-center transition"
             >
-              <Phone size={16} />
-              <span className=" sm:inline">Call</span>
-            </a>
+              Book Now <ChevronRight size={16} className="ml-1" />
+            </button>
           )}
 
           {/* WhatsApp */}
@@ -109,24 +120,22 @@ const ServiceCard2 = ({
               href={`https://wa.me/91${PHONE_NUMBER}?text=Hi, I'm interested in ${title}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-3 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 font-medium inline-flex items-center transition"
             >
-              <MessageCircle size={16} />
-              <span className=" sm:inline">WhatsApp</span>
+              WhatsApp <ChevronRight size={16} className="ml-1" />
+            </a>
+          )}
+
+          {/* Call */}
+          {(isDbService ? service.call_enabled !== false : true) && (
+            <a
+              href={`tel:${PHONE_NUMBER}`}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 font-medium inline-flex items-center transition"
+            >
+              Call <ChevronRight size={16} className="ml-1" />
             </a>
           )}
         </div>
-
-        {/* Book */}
-        {(isDbService ? service.book_now_enabled !== false : true) && (
-          <button
-            onClick={handleBookClick}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            <span>Book Now</span>
-            <ArrowRight size={16} />
-          </button>
-        )}
       </div>
     </div>
   );

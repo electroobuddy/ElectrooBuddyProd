@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const emptyService = {
   title: "", description: "", icon_name: "Zap",
   whatsapp_enabled: true, call_enabled: true, book_now_enabled: true,
-  sort_order: 0, image_url: ""
+  sort_order: 0, image_url: "", service_charge: "", show_visit_charge: false, visit_charge_label: "Visit Charge"
 };
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -119,7 +119,9 @@ const AdminServices = () => {
     setEditing(s);
     setForm({ title: s.title, description: s.description, icon_name: s.icon_name,
       whatsapp_enabled: s.whatsapp_enabled, call_enabled: s.call_enabled,
-      book_now_enabled: s.book_now_enabled, sort_order: s.sort_order, image_url: s.image_url || "" });
+      book_now_enabled: s.book_now_enabled, sort_order: s.sort_order, image_url: s.image_url || "",
+      service_charge: s.service_charge || "", show_visit_charge: s.show_visit_charge || false,
+      visit_charge_label: s.visit_charge_label || "Visit Charge" });
   };
 
   if (loading) return (
@@ -192,6 +194,10 @@ const AdminServices = () => {
                       onChange={e => patch({ sort_order: parseInt(e.target.value) || 0 })} className={inputCls} />
                   </FormField>
                 </div>
+                <FormField label="Service/Visit Charge (₹)" hint="Leave empty if no charge. This is the visit/service fee.">
+                  <input type="number" placeholder="e.g. 400" value={form.service_charge}
+                    onChange={e => patch({ service_charge: e.target.value })} className={inputCls} />
+                </FormField>
               </div>
             </SectionCard>
           </div>
@@ -205,6 +211,19 @@ const AdminServices = () => {
                   label="Call" sub="Allow phone call enquiries" icon={<Phone size={16} />} />
                 <Toggle id="book_now_enabled" checked={form.book_now_enabled} onChange={v => patch({ book_now_enabled: v })}
                   label="Book Now" sub="Show booking button" icon={<Calendar size={16} />} />
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Charge Display" icon={<Settings size={14} />} accent="violet">
+              <div className="space-y-3">
+                <Toggle id="show_visit_charge" checked={form.show_visit_charge} onChange={v => patch({ show_visit_charge: v })}
+                  label="Show Visit Charge" sub="Display charge on service card" icon={<Eye size={16} />} />
+                {form.show_visit_charge && (
+                  <FormField label="Charge Label" hint="e.g., Visit Charge, Service Charge, Diagnostic Fee">
+                    <input placeholder="Visit Charge" value={form.visit_charge_label}
+                      onChange={e => patch({ visit_charge_label: e.target.value })} className={inputCls} />
+                  </FormField>
+                )}
               </div>
             </SectionCard>
           </div>
