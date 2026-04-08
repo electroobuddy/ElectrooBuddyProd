@@ -70,7 +70,7 @@ const FAQ = () => {
   return (
     <div className="faq-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600&display=swap');
 
         .faq-page {
           font-family: 'Poppins', sans-serif;
@@ -82,6 +82,7 @@ const FAQ = () => {
         .faq-page h4,
         .faq-page h5,
         .faq-page h6 {
+          font-family: 'Poppins', sans-serif;
           font-weight: 700;
         }
 
@@ -134,9 +135,9 @@ const FAQ = () => {
         }
 
         .faq-num {
-          font-family: 'Barlow Condensed', sans-serif;
+          font-family: 'Poppins', sans-serif;
           font-size: 13px;
-          font-weight: 800;
+          font-weight: 600;
           color: hsl(var(--primary) / 0.4);
           letter-spacing: 0.5px;
           flex-shrink: 0;
@@ -146,15 +147,14 @@ const FAQ = () => {
         .faq-item.open .faq-num { color: hsl(var(--secondary)); }
 
         .faq-q {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: 18px;
-          font-weight: 700;
-          text-transform: uppercase;
+          font-family: 'Poppins', sans-serif;
+          font-size: 16px;
+          font-weight: 600;
           color: hsl(var(--foreground));
-          letter-spacing: 0.3px;
+          letter-spacing: 0.2px;
           flex: 1;
           transition: color 0.25s;
-          line-height: 1.2;
+          line-height: 1.4;
         }
 
         .faq-item.open .faq-q { color: hsl(var(--secondary)); }
@@ -189,7 +189,9 @@ const FAQ = () => {
 
         .faq-answer {
           padding: 18px 24px 22px;
+          font-family: 'Inter', sans-serif;
           font-size: 14px;
+          font-weight: 400;
           color: hsl(var(--muted-foreground) / 0.6);
           line-height: 1.75;
         }

@@ -11,6 +11,7 @@ export default function RequestServiceSection({ preselectedService }: { preselec
   const [serviceFormSubmitting, setServiceFormSubmitting] = useState(false);
   const { user } = useAuth();
   const [services, setServices] = useState<any[]>([]);
+  const [selectedServiceCharge, setSelectedServiceCharge] = useState<{ amount: string; label: string; show: boolean } | null>(null);
   const [serviceForm, setServiceForm] = useState({
     name: "", phone: "", email: "", address: "",
     exact_location: "", service_type: preselectedService || "", preferred_date: "",
@@ -23,11 +24,11 @@ export default function RequestServiceSection({ preselectedService }: { preselec
   }), []);
   // Fetch services from database
   useEffect(() => {
-    supabase.from("services").select("title").order("sort_order").then(({ data }) => {
+    supabase.from("services").select("title, service_charge, show_visit_charge, visit_charge_label").order("sort_order").then(({ data }) => {
       if (data) {
         setServices(data);
         // If preselected service matches a database service, update form
-        if (preselectedService && data.some(s => s.title === preselectedService)) {
+        if (preselectedService && data.some((s: any) => s.title === preselectedService)) {
           setServiceForm(prev => ({ ...prev, service_type: preselectedService }));
         }
       }
@@ -46,6 +47,24 @@ export default function RequestServiceSection({ preselectedService }: { preselec
       setServiceForm(prev => ({ ...prev, service_type: preselectedService }));
     }
   }, [preselectedService]);
+
+  // Update service charge when service_type changes
+  useEffect(() => {
+    if (serviceForm.service_type) {
+      const selectedService = services.find(s => s.title === serviceForm.service_type);
+      if (selectedService && selectedService.show_visit_charge && selectedService.service_charge) {
+        setSelectedServiceCharge({
+          amount: selectedService.service_charge,
+          label: selectedService.visit_charge_label || 'Visit Charge',
+          show: selectedService.show_visit_charge
+        });
+      } else {
+        setSelectedServiceCharge(null);
+      }
+    } else {
+      setSelectedServiceCharge(null);
+    }
+  }, [serviceForm.service_type, services]);
 
   const handleServiceFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -475,6 +494,50 @@ export default function RequestServiceSection({ preselectedService }: { preselec
           cursor: not-allowed;
         }
 
+        .rs-service-charge-box {
+          margin-top: 16px;
+          padding: 14px 18px;
+          background: linear-gradient(135deg, #fef3c7, #fde68a);
+          border: 2px solid #fbbf24;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          animation: rsSlideDown 0.3s ease;
+        }
+
+        .dark .rs-service-charge-box {
+          background: linear-gradient(135deg, #78350f, #92400e);
+          border-color: #b45309;
+        }
+
+        @keyframes rsSlideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .rs-service-charge-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: #92400e;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .dark .rs-service-charge-label {
+          color: #fde68a;
+        }
+
+        .rs-service-charge-amount {
+          font-size: 18px;
+          font-weight: 700;
+          color: #78350f;
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .dark .rs-service-charge-amount {
+          color: #fef3c7;
+        }
+
         @media (max-width: 1024px) {
           .rs-card {
             grid-template-columns: 5fr 7fr;
@@ -587,6 +650,14 @@ export default function RequestServiceSection({ preselectedService }: { preselec
                         <option key={s.title} value={s.title}>{s.title}</option>
                       ))}
                     </select>
+
+                    {/* Service Charge Display */}
+                    {selectedServiceCharge && (
+                      <div className="rs-service-charge-box">
+                        <span className="rs-service-charge-label">{selectedServiceCharge.label}</span>
+                        <span className="rs-service-charge-amount">₹{selectedServiceCharge.amount}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -16,6 +16,7 @@ const BookingForm = () => {
   const [done, setDone] = useState(false);
   const { user } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedServiceCharge, setSelectedServiceCharge] = useState<{ amount: string; label: string; show: boolean } | null>(null);
 
   // Dark mode effect
   useEffect(() => {
@@ -50,7 +51,7 @@ const BookingForm = () => {
   const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
-    supabase.from("services").select("title").order("sort_order").then(({ data }) => {
+    supabase.from("services").select("title, service_charge, show_visit_charge, visit_charge_label").order("sort_order").then(({ data }) => {
       setServices(data || []);
     });
   }, []);
@@ -64,6 +65,24 @@ const BookingForm = () => {
   useEffect(() => {
     if (preselected) setForm((f) => ({ ...f, service_type: preselected }));
   }, [preselected]);
+
+  // Update service charge when service_type changes
+  useEffect(() => {
+    if (form.service_type) {
+      const selectedService = services.find(s => s.title === form.service_type);
+      if (selectedService && selectedService.show_visit_charge && selectedService.service_charge) {
+        setSelectedServiceCharge({
+          amount: selectedService.service_charge,
+          label: selectedService.visit_charge_label || 'Visit Charge',
+          show: selectedService.show_visit_charge
+        });
+      } else {
+        setSelectedServiceCharge(null);
+      }
+    } else {
+      setSelectedServiceCharge(null);
+    }
+  }, [form.service_type, services]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -442,6 +461,50 @@ const handleGetCurrentLocation = () => {
           color: #f9fafb;
         }
 
+        .service-charge-box {
+          margin-top: 12px;
+          padding: 16px;
+          background: linear-gradient(135deg, #fef3c7, #fde68a);
+          border: 2px solid #fbbf24;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          animation: slideDown 0.3s ease;
+        }
+
+        .dark .service-charge-box {
+          background: linear-gradient(135deg, #78350f, #92400e);
+          border-color: #b45309;
+        }
+
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .service-charge-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #92400e;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .dark .service-charge-label {
+          color: #fde68a;
+        }
+
+        .service-charge-amount {
+          font-size: 20px;
+          font-weight: 700;
+          color: #78350f;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        .dark .service-charge-amount {
+          color: #fef3c7;
+        }
+
         .field-textarea {
           resize: none;
           min-height: 110px;
@@ -744,6 +807,14 @@ const handleGetCurrentLocation = () => {
                       <option key={s.title} value={s.title}>{s.title}</option>
                     ))}
                   </select>
+
+                  {/* Service Charge Display */}
+                  {selectedServiceCharge && (
+                    <div className="service-charge-box">
+                      <span className="service-charge-label">{selectedServiceCharge.label}</span>
+                      <span className="service-charge-amount">₹{selectedServiceCharge.amount}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Custom Service Demand Input - Show only when Custom Service is selected */}

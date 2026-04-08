@@ -384,6 +384,11 @@ export default function Index() {
                 Ujjain's Most Trusted Since 1992
               </div>
 
+              {/* Tagline */}
+              <p className="text-blue-300 dark:text-blue-400 font-semibold text-base sm:text-lg mb-4">
+                ElectrooBuddy - Home Appliance Services
+              </p>
+
               {/* Headline */}
               <h1 className="hero-headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6">
                 Expert Appliance{" "}
@@ -426,7 +431,7 @@ export default function Index() {
                 </button>
                 <Link
                   to="/products"
-                  className="w-full xs:w-auto bg-blue-700 dark:bg-blue-600 text-white hover:bg-blue-800 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 inline-flex items-center justify-center gap-2"
+                  className="w-full xs:w-auto bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 inline-flex items-center justify-center gap-2"
                   style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   <ShoppingBag size={20} /> Buy Products
@@ -670,6 +675,77 @@ export default function Index() {
         </div>
       </section>
 
+      {/* ── SERVICE AREA MAP SECTION ── */}
+      <section className="py-16 bg-gray-50 dark:bg-gray-900 slide-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Service Area</h2>
+            <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
+            <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">Currently serving Ujjain and surrounding areas, with plans to expand nationwide.</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div className="md:flex">
+              <div className="md:w-1/2 p-8">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Coverage Areas</h3>
+                <div className="space-y-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300">
+                        <Check className="text-sm" size={14} />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">Ujjain City (Full Coverage)</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300">
+                        <Check className="text-sm" size={14} />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">Dewas Road Area</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300">
+                        <Check className="text-sm" size={14} />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">Nagziri Region</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 mt-1">
+                      <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300">
+                        <Zap className="text-sm" size={14} />
+                      </div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">Expanding to Indore by 2026</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="md:w-1/2">
+                <iframe 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3668.612100355346!2d75.8147001!3d23.147849700000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396373645886aa75%3A0x8770f5f8e13dc716!2sPragya%20Electric%20Work%20Shop!5e0!3m2!1sen!2sin!4v1773309507219!5m2!1sen!2sin" 
+                  className="w-full h-full min-h-[400px]" 
+                  style={{ border: 0 }} 
+                  allowFullScreen 
+                  loading="lazy" 
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="ElectrooBuddy Service Location"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── VIDEO SECTION ── */}
       {/* <VideoSection /> */}
 
@@ -807,7 +883,7 @@ export default function Index() {
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="max-w-3xl mx-auto space-y-4">
-            {faqs.map((faq, index) => (
+            {faqs.slice(0, 5).map((faq, index) => (
               <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
                 <button
                   onClick={() => toggleFAQ(index)}
@@ -825,6 +901,14 @@ export default function Index() {
                 )}
               </div>
             ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link
+              to="/faq"
+              className="inline-flex items-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition duration-300"
+            >
+              See All Questions <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </div>
         </div>
       </section>
