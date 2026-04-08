@@ -1,7 +1,11 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Zap, Phone, Mail, MapPin, ArrowRight } from "lucide-react";
+import { Phone, Mail, MapPin, ArrowRight } from "lucide-react";
 import { PHONE_NUMBER } from "@/data/services";
 import { motion } from "framer-motion";
+
+// Import favicon
+import favicon from "/favicon.png";
 
 const quickLinks = [
   { label: "Home", to: "/" },
@@ -19,16 +23,134 @@ const serviceLinks = [
   "Home Troubleshooting",
 ];
 
+// ─── Blinking Eye Component ───────────────────────────────────────────────────
+const BlinkingEye = () => {
+  const [blink, setBlink] = useState(false);
+
+  useEffect(() => {
+    const schedule = () => {
+      setBlink(true);
+      setTimeout(() => setBlink(false), 120);
+      setTimeout(() => setBlink(true),  420);
+      setTimeout(() => setBlink(false), 540);
+      const next = 3000 + Math.random() * 2000;
+      setTimeout(schedule, next + 540);
+    };
+    const initial = setTimeout(schedule, 1500);
+    return () => clearTimeout(initial);
+  }, []);
+
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        width: "0.72em",
+        height: "0.72em",
+        verticalAlign: "middle",
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          background: "#3b82f6",
+          boxShadow: "0 0 6px rgba(59, 130, 246, 0.6)",
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <span
+          style={{
+            width: "42%",
+            height: "42%",
+            borderRadius: "50%",
+            background: "#ffffff",
+            boxShadow: "inset 0 0 2px rgba(0,0,0,0.4)",
+            flexShrink: 0,
+            transition: "transform 0.15s ease",
+            transform: blink ? "scaleY(0.05)" : "scaleY(1)",
+          }}
+        />
+      </span>
+      <span
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          borderRadius: "50% 50% 0 0 / 60% 60% 0 0",
+          background: "#1e3a8a",
+          transformOrigin: "top center",
+          transform: blink ? "scaleY(1)" : "scaleY(0)",
+          height: "100%",
+          transition: blink
+            ? "transform 0.07s cubic-bezier(0.4, 0, 1, 1)"
+            : "transform 0.14s cubic-bezier(0, 0, 0.2, 1)",
+          zIndex: 2,
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          borderRadius: "0 0 50% 50% / 0 0 60% 60%",
+          background: "#1e3a8a",
+          transformOrigin: "bottom center",
+          transform: blink ? "scaleY(0.55)" : "scaleY(0)",
+          height: "50%",
+          transition: blink
+            ? "transform 0.07s cubic-bezier(0.4, 0, 1, 1)"
+            : "transform 0.14s cubic-bezier(0, 0, 0.2, 1)",
+          zIndex: 2,
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          top: "18%",
+          left: "22%",
+          width: "20%",
+          height: "20%",
+          borderRadius: "50%",
+          background: "rgba(255,255,255,0.7)",
+          zIndex: 3,
+          pointerEvents: "none",
+        }}
+      />
+    </span>
+  );
+};
+
+// ─── Logo Text ────────────────────────────────────────────────────────────────
+const LogoText = () => (
+  <span className="footer-logo-text">
+    Electr
+    <BlinkingEye />
+    <BlinkingEye />
+    buddy
+  </span>
+);
+
 const Footer = () => (
   <>
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
       .footer-root {
         position: relative;
         background: hsl(var(--card));
         overflow: hidden;
-        font-family: 'DM Sans', sans-serif;
+        font-family: 'Inter', sans-serif;
         border-top: 1px solid hsl(var(--border));
       }
 
@@ -102,11 +224,10 @@ const Footer = () => (
       }
 
       .footer-logo-text {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 24px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
         color: hsl(var(--foreground));
         line-height: 1;
       }
@@ -119,7 +240,9 @@ const Footer = () => (
       }
 
       .footer-brand-desc {
-        font-size: 13.5px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
         color: hsl(var(--muted-foreground));
         line-height: 1.75;
         margin-bottom: 24px;
@@ -130,11 +253,12 @@ const Footer = () => (
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        font-size: 13px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 14px;
         font-weight: 600;
         color: hsl(var(--primary));
         text-decoration: none;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.2px;
         transition: all 0.25s;
       }
 
@@ -142,11 +266,10 @@ const Footer = () => (
 
       /* Section headings */
       .footer-col-title {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 14px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1.2px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
         color: hsl(var(--primary));
         margin-bottom: 20px;
         display: flex;
@@ -175,11 +298,12 @@ const Footer = () => (
         display: inline-flex;
         align-items: center;
         gap: 9px;
-        font-size: 13.5px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
         color: hsl(var(--muted-foreground));
         text-decoration: none;
         transition: all 0.25s ease;
-        font-family: 'DM Sans', sans-serif;
       }
 
       .footer-link-dot {
@@ -231,11 +355,12 @@ const Footer = () => (
       }
 
       .contact-value {
-        font-size: 13.5px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
         color: hsl(var(--muted-foreground));
         line-height: 1.5;
         padding-top: 8px;
-        font-family: 'DM Sans', sans-serif;
         transition: color 0.25s;
       }
 
@@ -264,9 +389,10 @@ const Footer = () => (
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 12.5px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 400;
         color: hsl(var(--muted-foreground));
-        font-family: 'DM Sans', sans-serif;
       }
 
       .footer-legal-links {
@@ -276,14 +402,15 @@ const Footer = () => (
       }
 
       .footer-legal-link {
-        font-size: 12.5px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 400;
         color: hsl(var(--muted-foreground));
         text-decoration: none;
         display: flex;
         align-items: center;
         gap: 6px;
         transition: color 0.25s;
-        font-family: 'DM Sans', sans-serif;
       }
 
       .footer-legal-link:hover { color: hsl(var(--primary)); }
@@ -322,9 +449,9 @@ const Footer = () => (
           <div>
             <Link to="/" className="footer-logo">
               <div className="footer-logo-icon">
-                <Zap size={20} color="#0a0f1e" strokeWidth={2.5} />
+                <img src={favicon} alt="Electroo Buddy" className="w-full h-full object-contain rounded-lg" />
               </div>
-              <span className="footer-logo-text">Electro<span>o</span>buddy</span>
+              <LogoText />
             </Link>
             <p className="footer-brand-desc">
               Your trusted electrical service partner. Professional electricians for all residential and commercial needs with 24/7 support.
@@ -401,8 +528,7 @@ const Footer = () => (
       {/* Bottom bar */}
       <div className="footer-bottom">
         <div className="footer-copy">
-          <Zap size={13} color="#ffc800" />
-          &copy; {new Date().getFullYear()} Electroobuddy. All rights reserved.
+          ⚡ &copy; {new Date().getFullYear()} Electroobuddy. All rights reserved.
         </div>
         <div className="footer-legal-links">
           <Link to="/privacy" className="footer-legal-link">

@@ -170,16 +170,19 @@ const Navbar = () => {
   const [open, setOpen]           = useState(false);
   const [pagesOpen, setPagesOpen] = useState(false);
   const [scrolled, setScrolled]   = useState(false);
-  const [darkMode, setDarkMode]   = useState(false);
+  const [darkMode, setDarkMode]   = useState(true); // Default to dark mode
   const location                  = useLocation();
   const { user }                  = useAuth();
   const { itemCount }             = useCart();
 
   // Dark mode effect for mobile menu
   useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true' || 
-      (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    // Check localStorage first, if not set, default to dark mode (true)
+    const storedMode = localStorage.getItem('darkMode');
+    const isDark = storedMode !== null ? storedMode === 'true' : true;
     setDarkMode(isDark);
+    // Ensure dark class is applied
+    document.documentElement.classList.toggle('dark', isDark);
   }, []);
 
   useEffect(() => {
@@ -351,6 +354,32 @@ const Navbar = () => {
 
         .dark .logo-text {
           color: #60a5fa;
+        }
+
+        .logo-tagline {
+          font-family: 'Poppins', sans-serif;
+          font-size: 9px;
+          font-weight: 500;
+          color: #6b7280;
+          letter-spacing: 0.3px;
+          white-space: nowrap;
+          margin-top: 2px;
+        }
+
+        @media (min-width: 640px) {
+          .logo-tagline {
+            font-size: 10px;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .logo-tagline {
+            font-size: 11px;
+          }
+        }
+
+        .dark .logo-tagline {
+          color: #9ca3af;
         }
 
         /* Desktop links */
@@ -799,7 +828,10 @@ const Navbar = () => {
             <div className="logo-icon">
               <img src={favicon} alt="Electroo Buddy" className="w-full h-full object-contain rounded-lg" />
             </div>
-            <LogoText />
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              <LogoText />
+              <span className="logo-tagline">Home Appliance Services</span>
+            </div>
           </Link>
 
           {/* ── Desktop nav ── */}

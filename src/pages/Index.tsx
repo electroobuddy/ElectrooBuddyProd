@@ -384,6 +384,11 @@ export default function Index() {
                 Ujjain's Most Trusted Since 1992
               </div>
 
+              {/* Tagline */}
+              <p className="text-blue-300 dark:text-blue-400 font-semibold text-base sm:text-lg mb-4">
+                ElectrooBuddy - Home Appliance Services
+              </p>
+
               {/* Headline */}
               <h1 className="hero-headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6">
                 Expert Appliance{" "}
@@ -878,7 +883,7 @@ export default function Index() {
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="max-w-3xl mx-auto space-y-4">
-            {faqs.map((faq, index) => (
+            {faqs.slice(0, 5).map((faq, index) => (
               <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
                 <button
                   onClick={() => toggleFAQ(index)}
@@ -896,6 +901,14 @@ export default function Index() {
                 )}
               </div>
             ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link
+              to="/faq"
+              className="inline-flex items-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition duration-300"
+            >
+              See All Questions <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </div>
         </div>
       </section>
