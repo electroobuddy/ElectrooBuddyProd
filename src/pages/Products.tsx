@@ -161,10 +161,87 @@ const Products = () => {
       </section>
 
       {/* ── Content: full-width max-w container ── */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
 
-        {/* ── Filter card — full width ── */}
-        <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm w-full">
+        {/* ── Mobile: Search bar only ── */}
+        <div className="sm:hidden mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search products…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-20 py-3 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition text-sm"
+              aria-label="Search products"
+            />
+            {searchInput && (
+              <button
+                onClick={() => setSearchInput("")}
+                className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg text-xs font-medium transition whitespace-nowrap ${
+                showFilters
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Active filters indicator - mobile */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
+              {searchInput && (
+                <button
+                  onClick={() => setSearchInput("")}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs whitespace-nowrap"
+                >
+                  "{searchInput}" <X className="w-3 h-3" />
+                </button>
+              )}
+              {selectedCategory !== "all" && (
+                <button
+                  onClick={() => setSelectedCategory("all")}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs whitespace-nowrap"
+                >
+                  {selectedCategory} <X className="w-3 h-3" />
+                </button>
+              )}
+              {selectedBrand !== "all" && (
+                <button
+                  onClick={() => setSelectedBrand("all")}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs whitespace-nowrap"
+                >
+                  {selectedBrand} <X className="w-3 h-3" />
+                </button>
+              )}
+              {(priceMin > 0 || priceMax < 100000) && (
+                <button
+                  onClick={() => { setPriceMin(0); setPriceMax(100000); }}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs whitespace-nowrap"
+                >
+                  ₹{priceMin}-₹{priceMax >= 100000 ? "Any" : priceMax} <X className="w-3 h-3" />
+                </button>
+              )}
+              <button
+                onClick={clearFilters}
+                className="px-2.5 py-1 text-xs text-red-500 font-medium whitespace-nowrap"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── Desktop: Filter card ── */}
+        <div className="hidden sm:block bg-card border border-border rounded-2xl p-6 mb-6 sm:mb-8 shadow-sm w-full">
 
           {/* Row 1: Search + Sort + Filter + Clear */}
           <div className="flex flex-col sm:flex-row gap-3">
@@ -223,11 +300,11 @@ const Products = () => {
                 )}
               </button>
 
-              {/* Clear — shown on sm+ */}
+              {/* Clear */}
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-muted text-sm text-muted-foreground hover:text-foreground transition whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-border bg-background hover:bg-muted text-sm text-muted-foreground hover:text-foreground transition whitespace-nowrap"
                 >
                   <X className="w-3.5 h-3.5" />
                   Clear
@@ -313,26 +390,131 @@ const Products = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Clear all — mobile only, inside panel */}
-                {hasActiveFilters && (
-                  <div className="flex justify-end mt-4 pt-3 border-t border-border sm:hidden">
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-semibold"
-                    >
-                      <X className="w-3.5 h-3.5" /> Clear all filters
-                    </button>
-                  </div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
+        {/* ── Mobile: Filter drawer (overlay) ── */}
+        {showFilters && (
+          <div className="sm:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => setShowFilters(false)}>
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl border-t border-border shadow-2xl max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drawer handle */}
+              <div className="sticky top-0 bg-card border-b border-border p-4 flex items-center justify-between">
+                <h3 className="font-semibold text-base">Filters</h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="p-2 hover:bg-muted rounded-lg transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-4 space-y-5">
+                {/* Category */}
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Category</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                  >
+                    {categories.map((c) => (
+                      <option key={c} value={c}>
+                        {c === "all" ? "All Categories" : c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Brand */}
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Brand</label>
+                  <select
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                  >
+                    {brands.map((b) => (
+                      <option key={b} value={b}>
+                        {b === "all" ? "All Brands" : b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Price range */}
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">
+                    Price Range: ₹{priceMin.toLocaleString()} – {priceMax >= 100000 ? "Any" : `₹${priceMax.toLocaleString()}`}
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Min ₹"
+                      value={priceMin || ""}
+                      onChange={(e) => setPriceMin(Number(e.target.value) || 0)}
+                      className="flex-1 px-3 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                      aria-label="Minimum price"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Max ₹"
+                      value={priceMax >= 100000 ? "" : priceMax}
+                      onChange={(e) => setPriceMax(Number(e.target.value) || 100000)}
+                      className="flex-1 px-3 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                      aria-label="Maximum price"
+                    />
+                  </div>
+                </div>
+
+                {/* Sort */}
+                <div>
+                  <label className="text-sm font-semibold mb-2 block">Sort By</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full px-3 py-3 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                  >
+                    <option value="featured">Featured</option>
+                    <option value="price-low">Price: Low → High</option>
+                    <option value="price-high">Price: High → Low</option>
+                    <option value="name">Name: A–Z</option>
+                  </select>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-3 pt-2 pb-4">
+                  <button
+                    onClick={clearFilters}
+                    className="flex-1 px-4 py-3 border border-border rounded-xl text-sm font-medium hover:bg-muted transition"
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {/* Result count */}
         {!loading && (
-          <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 px-1">
             {visible.length === 0
               ? "No products found"
               : `Showing ${visible.length} product${visible.length !== 1 ? "s" : ""}`}
@@ -342,7 +524,7 @@ const Products = () => {
 
         {/* ── Grid ── */}
         {loading && products.length === 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -379,7 +561,7 @@ const Products = () => {
         ) : (
           <>
             {/* 2-col mobile → 3-col tablet → 4-col desktop */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-5">
               {visible.map((product, index) => (
                 <ProductCard key={product.id} product={product} index={index} />
               ))}
@@ -387,11 +569,11 @@ const Products = () => {
 
             {/* Load more */}
             {hasMore && (
-              <div className="flex justify-center mt-10 sm:mt-14">
+              <div className="flex justify-center mt-8 sm:mt-12 pb-4 sm:pb-0">
                 <button
                   onClick={loadMore}
                   disabled={loading}
-                  className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm sm:text-base shadow-sm"
+                  className="px-6 sm:px-8 py-2.5 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-xs sm:text-sm shadow-sm"
                   aria-busy={loading}
                 >
                   {loading ? (

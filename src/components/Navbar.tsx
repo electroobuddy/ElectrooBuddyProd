@@ -565,7 +565,7 @@ const Navbar = () => {
           .book-btn {
             gap: 8px;
             margin-left: 10px;
-            padding: 10px 22px;
+            padding: 10px;
             font-size: 14px;
             border-radius: 10px;
           }

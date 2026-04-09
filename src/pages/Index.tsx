@@ -11,19 +11,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Section from "@/components/Section";
-import ServiceCard from "@/components/ServiceCard";
 import ServiceCard2 from "@/components/ServiceCard2";
 import ProductCard from "@/components/ProductCard";
-import AnimatedCounter, { COUNTER_DATA } from "@/components/AnimatedCounter";
-import ProcessTimeline from "@/components/ProcessTimeline";
-import VideoSection from "@/components/VideoSection";
-import TestimonialSlider from "@/components/TestimonialSlider";
-import ProductsSection from "@/components/ProductsSection";
-import SEO from "@/components/SEO";
+
 import RequestServiceSection from "@/components/Requestservicesection";
 import { services as staticServices } from "@/data/services";
-import { teamMembers as staticTeam } from "@/data/team";
-import { testimonials as staticTestimonials } from "@/data/testimonials";
 import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
 import { PHONE_NUMBER } from "@/data/services";
 
@@ -44,6 +36,7 @@ import portfolio6 from "@/images/portfolio-6.jpg";
 import team1 from "@/images/team-1.png";
 import team2 from "@/images/dilip.jpeg";
 import team3 from "@/images/no-profile.png";
+import HeroCard from "@/components/HeroCard";
 
 export default function Index() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
@@ -371,109 +364,123 @@ export default function Index() {
   }
 `}</style>
 
-      {/* ── HERO SECTION ── */}
-      <section id="home" className="hero-gradient text-white py-16 md:py-28 lg:py-32 slide-up">
+      <section
+        id="home"
+        className="hero-gradient text-white py-12 md:py-20 lg:py-24"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center gap-10 md:gap-8">
 
-            {/* Left: Text + Buttons */}
-            <div className="md:w-1/2 text-center md:text-left">
+          <div className="grid md:grid-cols-2 items-center gap-8">
+
+            {/* LEFT CONTENT */}
+            <div className="text-center md:text-left">
 
               {/* Badge */}
-              <div className="hero-badge justify-center md:justify-start">
-                Ujjain's Most Trusted Since 1992
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-xs sm:text-sm mb-3">
+                ⚡ Ujjain's Most Trusted Since 1992
               </div>
 
               {/* Tagline */}
-              <p className="text-blue-300 dark:text-blue-400 font-semibold text-base sm:text-lg mb-4">
+              <p className="text-blue-300 font-medium text-sm sm:text-base mb-3">
                 ElectrooBuddy - Home Appliance Services
               </p>
 
-              {/* Headline */}
-              <h1 className="hero-headline text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6">
+              {/* Heading */}
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mb-4">
                 Expert Appliance{" "}
-                <span style={{
-                  background: "linear-gradient(135deg, #93c5fd, #bfdbfe)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text"
-                }}>
+                <span className="bg-gradient-to-r from-blue-300 to-blue-100 bg-clip-text text-transparent">
                   Care & Repair
-                </span>
-                {" "}at Your Doorstep
+                </span>{" "}
+                at Your Doorstep
               </h1>
 
               {/* Subtext */}
-              <p className="hero-subtext text-base sm:text-lg mb-8 max-w-xl mx-auto md:mx-0">
-                Over {new Date().getFullYear() - 1992} years of certified expertise — from ACs and fans to TVs and wiring.
-                Fast response, transparent pricing, and guaranteed workmanship, right at your home.
+              <p className="text-sm sm:text-base text-gray-200 mb-6 max-w-lg mx-auto md:mx-0">
+                Over {new Date().getFullYear() - 1992}+ years of certified expertise —
+                from ACs and fans to TVs and wiring. Fast response, transparent pricing,
+                and guaranteed workmanship.
               </p>
 
-              {/* Trust indicators */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-8 text-sm opacity-80">
-                <span className="flex items-center gap-1.5">
-                  <span style={{ color: "#fbbf24" }}>★★★★★</span> 4.9 Rated
-                </span>
-                <span className="w-px h-4 bg-white/30" />
-                <span>5,000+ Happy Customers</span>
-                <span className="w-px h-4 bg-white/30" />
-                <span>45-min Response</span>
+              {/* Stats Row */}
+              <div className="flex items-center justify-center md:justify-start gap-5 mb-6 text-xs sm:text-sm opacity-90">
+
+                <div>
+                  <div className="font-bold text-base sm:text-lg">45min</div>
+                  <div className="text-gray-300 text-xs">Response</div>
+                </div>
+
+                <div className="w-px h-4 bg-white/30" />
+
+                <div>
+                  <div className="font-bold text-base sm:text-lg flex items-center gap-1">
+                    4.9 <span className="text-yellow-400">★</span>
+                  </div>
+                  <div className="text-gray-300 text-xs">Rating</div>
+                </div>
+
+                <div className="w-px h-4 bg-white/30" />
+
+                <div>
+                  <div className="font-bold text-base sm:text-lg">8K+</div>
+                  <div className="text-gray-300 text-xs">Jobs Done</div>
+                </div>
               </div>
 
-              {/* Buttons */}
-              <div className="flex flex-wrap gap-3 items-center justify-center md:justify-start">
+              {/* CTA BUTTONS */}
+              <div className="flex flex-col sm:flex-row gap-3 items-center justify-center md:justify-start">
+
+                {/* Primary */}
                 <button
-                  onClick={() => scrollToSection('request-service')}
-                  className="w-full xs:w-auto bg-white text-blue-800 hover:bg-gray-100 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 text-center"
-                  style={{ fontFamily: "'Inter', sans-serif" }}
+                  onClick={() => scrollToSection("request-service")}
+                  className="w-full sm:w-auto bg-white text-blue-800 hover:bg-gray-100 px-5 py-2.5 rounded-lg font-semibold text-sm sm:text-base transition shadow-sm hover:shadow-md"
                 >
-                  Request Service Now
+                  Request Service
                 </button>
+
+                {/* Secondary */}
                 <Link
                   to="/products"
-                  className="w-full xs:w-auto bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 inline-flex items-center justify-center gap-2"
-                  style={{ fontFamily: "'Inter', sans-serif" }}
+                  className="w-full sm:w-auto border border-white/40 hover:bg-white hover:text-blue-800 px-5 py-2.5 rounded-lg font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2"
                 >
-                  <ShoppingBag size={20} /> Buy Products
+                  <ShoppingBag size={18} />
+                  Products
                 </Link>
+
+                {/* Tertiary */}
                 <button
-                  onClick={() => scrollToSection('contact')}
-                  className="w-full xs:w-auto border-2 border-white hover:bg-white hover:text-blue-800 px-6 py-3 sm:px-8 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition duration-300 text-center"
-                  style={{ fontFamily: "'Inter', sans-serif" }}
+                  onClick={() => scrollToSection("contact")}
+                  className="w-full sm:w-auto text-white/80 hover:text-white px-4 py-2 text-sm sm:text-base font-medium transition"
                 >
-                  Contact Us
+                  Contact →
                 </button>
+
               </div>
             </div>
 
-            {/* Right: Image */}
-            {/* FIX: added mt-8 md:mt-0 so image has top gap on mobile, max-w-sm centers it on small screens */}
-            <div className="md:w-1/2 relative mt-2 md:mt-0">
+            {/* RIGHT IMAGE */}
+            <div className="relative flex justify-center md:justify-end mt-4 md:mt-0">
+
               <img
                 src={heroImage}
-                alt="Professional appliance repair technician at work"
-                className="rounded-lg shadow-2xl floating-button w-full max-w-sm mx-auto md:max-w-none"
+                alt="Professional appliance repair technician"
+                className="w-full max-w-xs sm:max-w-sm md:max-w-md object-contain rounded-lg shadow-xl"
                 loading="eager"
               />
-              {/* FIX: use bottom-2 left-2 on mobile to avoid overflow; revert to -bottom-5 -left-5 on md+ */}
-              <div className="absolute bottom-2 left-2 md:-bottom-5 md:-left-5 bg-blue-700 dark:bg-blue-600 text-white px-3 py-2 md:px-6 md:py-3 rounded-lg shadow-lg max-w-[90%] md:max-w-none">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 flex-shrink-0" />
-                  <span className="font-bold text-xs sm:text-sm md:text-base leading-tight">
-                    24/7 Emergency Service Available
-                  </span>
-                </div>
+
+              {/* Floating Badge */}
+              <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 bg-yellow-400 text-black px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold shadow-lg">
+                ⚡ 24/7 Emergency Available
               </div>
+
             </div>
 
           </div>
         </div>
       </section>
 
-      {/* ── STATS SECTION ── */}
       <section className="bg-white dark:bg-gray-800 py-12 md:py-16 fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* FIX: sm:grid-cols-3 so it goes 3-column at 640px instead of waiting for md (768px) */}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-8">
 
             <div className="stats-counter bg-blue-50 dark:bg-gray-700 p-6 md:p-8 rounded-xl text-center transition duration-300">
@@ -731,12 +738,12 @@ export default function Index() {
                 </div>
               </div>
               <div className="md:w-1/2">
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3668.612100355346!2d75.8147001!3d23.147849700000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396373645886aa75%3A0x8770f5f8e13dc716!2sPragya%20Electric%20Work%20Shop!5e0!3m2!1sen!2sin!4v1773309507219!5m2!1sen!2sin" 
-                  className="w-full h-full min-h-[400px]" 
-                  style={{ border: 0 }} 
-                  allowFullScreen 
-                  loading="lazy" 
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3668.612100355346!2d75.8147001!3d23.147849700000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396373645886aa75%3A0x8770f5f8e13dc716!2sPragya%20Electric%20Work%20Shop!5e0!3m2!1sen!2sin!4v1773309507219!5m2!1sen!2sin"
+                  className="w-full h-full min-h-[400px]"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   title="ElectrooBuddy Service Location"
                 />
@@ -792,7 +799,7 @@ export default function Index() {
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="relative max-w-5xl mx-auto">
-            <div 
+            <div
               ref={(el) => {
                 if (el) {
                   el.scrollTo({
@@ -801,7 +808,7 @@ export default function Index() {
                   });
                 }
               }}
-              className="flex overflow-x-auto pb-6 scrollbar-hide gap-4" 
+              className="flex overflow-x-auto pb-6 scrollbar-hide gap-4"
               style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}
             >
               {testimonials.map((testimonial, index) => (
@@ -822,15 +829,15 @@ export default function Index() {
                 </div>
               ))}
             </div>
-            <button 
-              onClick={prevTestimonial} 
+            <button
+              onClick={prevTestimonial}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white dark:bg-gray-700 p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-300 z-10"
               aria-label="Previous testimonial"
             >
               <ChevronRight className="h-6 w-6 text-gray-700 dark:text-gray-300 rotate-180" />
             </button>
-            <button 
-              onClick={nextTestimonial} 
+            <button
+              onClick={nextTestimonial}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white dark:bg-gray-700 p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition duration-300 z-10"
               aria-label="Next testimonial"
             >
