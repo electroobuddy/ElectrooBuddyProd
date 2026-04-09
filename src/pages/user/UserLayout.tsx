@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-  { label: "My Bookings", to: "/dashboard/bookings", icon: Calendar },
+  // { label: "My Bookings", to: "/dashboard/bookings", icon: Calendar },
   { label: "My Orders", to: "/dashboard/orders", icon: Package },
   { label: "Products", to: "/dashboard/products", icon: ShoppingBag },
   { label: "Services", to: "/dashboard/services", icon: Wrench },
@@ -113,17 +113,21 @@ const UserLayout = () => {
       )}
 
       {/* Mobile bottom nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border flex justify-around py-2">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border flex justify-around py-1.5 px-1">
         {navItems.map((item) => {
           const active = location.pathname === item.to;
           return (
             <Link
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center gap-0.5 text-xs ${active ? "text-primary" : "text-muted-foreground"}`}
+              className={`flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 py-1 ${
+                active ? "text-primary" : "text-muted-foreground"
+              }`}
             >
-              <item.icon className="w-4 h-4" />
-              {item.label}
+              <item.icon className="w-4 h-4 flex-shrink-0" />
+              <span className="text-[10px] leading-tight truncate w-full text-center font-medium">
+                {item.label.split(" ")[0]}
+              </span>
             </Link>
           );
         })}

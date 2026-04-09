@@ -907,7 +907,7 @@ const ProductDetails = () => {
             font-weight: 700;
           }
         `}</style>
-        <div className="container mx-auto px-4 py-8">
+        <div className=" px-4 py-8">
           {/* breadcrumb */}
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
             <Link to="/" className="hover:text-foreground transition">Home</Link>
