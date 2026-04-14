@@ -63,6 +63,9 @@ const TechnicianBookings = () => {
 
   const handleUpdateStatus = async (bookingId: string, newStatus: string) => {
     try {
+      const booking = bookings.find(b => b.id === bookingId);
+      const oldStatus = booking?.status;
+      
       const { error } = await supabase
         .from("bookings")
         .update({ status: newStatus })
@@ -73,6 +76,19 @@ const TechnicianBookings = () => {
       setBookings(prev => prev.map(b => 
         b.id === bookingId ? { ...b, status: newStatus } : b
       ));
+
+      // Trigger notifications
+      try {
+        await supabase.functions.invoke("notify-booking-status", {
+          body: {
+            bookingId,
+            oldStatus,
+            newStatus,
+          },
+        });
+      } catch (notifError) {
+        console.error("Notification error:", notifError);
+      }
 
       toast.success(`Booking marked as ${newStatus}`);
     } catch (error) {

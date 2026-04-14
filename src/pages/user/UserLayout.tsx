@@ -2,6 +2,8 @@ import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Zap, LayoutDashboard, Calendar, User, LogOut, Loader2, Menu, X, Package, ShoppingBag, Wrench } from "lucide-react";
 import { useState } from "react";
+import NotificationBell from "@/components/NotificationBell";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
@@ -38,6 +40,11 @@ const UserLayout = () => {
             <Zap className="w-4 h-4 text-primary-foreground" />
           </div>
           <span className="font-heading font-bold text-foreground">My Panel</span>
+        </div>
+        
+        {/* Notifications */}
+        <div className="px-5 py-3 border-b border-border">
+          <NotificationBell userId={user?.id || null} />
         </div>
         <nav className="flex-1 py-4 space-y-0.5 px-3">
           {navItems.map((item) => {
@@ -77,9 +84,12 @@ const UserLayout = () => {
           </div>
           <span className="font-heading font-bold text-foreground text-sm">My Panel</span>
         </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground p-1">
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBell userId={user?.id || null} />
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground p-1">
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu overlay */}
@@ -137,6 +147,9 @@ const UserLayout = () => {
       <main className="flex-1 p-4 md:p-8 pt-16 md:pt-8 pb-20 md:pb-8 overflow-auto">
         <Outlet />
       </main>
+
+      {/* Push Notification Prompt */}
+      <PushNotificationPrompt userId={user?.id || null} />
     </div>
   );
 };

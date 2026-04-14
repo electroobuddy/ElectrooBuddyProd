@@ -87,6 +87,8 @@ const BookingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    // Ensure user_id is set for authenticated users, null for guests
+    // The RLS policy "Anyone can create bookings" allows both authenticated and guest users
     const insertData: any = {
       name: form.name,
       phone: form.phone,
@@ -101,10 +103,8 @@ const BookingForm = () => {
       is_switch_working: form.is_switch_working || null,
       has_old_fan: form.has_old_fan || null,
       is_electricity_supply_on: form.is_electricity_supply_on || null,
+      user_id: user?.id || null, // Always include user_id (null for guests, UUID for authenticated users)
     };
-    if (user) {
-      insertData.user_id = user.id;
-    }
     
     try {
       // Insert booking
@@ -114,6 +114,64 @@ const BookingForm = () => {
       
       const bookingId = bookingData.id;
       toast.success("Booking submitted! Assigning technician...");
+      
+      // Notify admins about new booking
+      try {
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+        
+        if (adminRoles && adminRoles.length > 0) {
+          for (const adminRole of adminRoles) {
+            await supabase.rpc("create_notification", {
+              p_user_id: adminRole.user_id,
+              p_type: "new_booking",
+              p_title: "New Booking Received",
+              p_message: `New booking from ${form.name} for ${form.service_type} on ${form.preferred_date}`,
+              p_booking_id: bookingId,
+              p_metadata: { 
+                customer_name: form.name, 
+                service: form.service_type,
+                is_guest: !user 
+              },
+            });
+            
+            // Send push notification to admin
+            try {
+              await supabase.functions.invoke("send-push-notification", {
+                body: {
+                  userId: adminRole.user_id,
+                  title: "🔔 New Booking Received",
+                  body: `${form.name} booked ${form.service_type} for ${form.preferred_date}`,
+                  url: `/admin/bookings`,
+                  type: "new_booking",
+                },
+              });
+            } catch (pushError) {
+              console.error("Failed to send push to admin:", pushError);
+            }
+          }
+        }
+      } catch (adminNotifError) {
+        console.error("Failed to notify admins:", adminNotifError);
+      }
+      
+      // If user is authenticated, notify them too
+      if (user?.id) {
+        try {
+          await supabase.rpc("create_notification", {
+            p_user_id: user.id,
+            p_type: "booking_created",
+            p_title: "Booking Submitted",
+            p_message: `Your booking for ${form.service_type} has been submitted successfully.`,
+            p_booking_id: bookingId,
+            p_metadata: { service: form.service_type, date: form.preferred_date },
+          });
+        } catch (userNotifError) {
+          console.error("Failed to notify user:", userNotifError);
+        }
+      }
       
       // Call auto-assign function
       try {
