@@ -88,6 +88,62 @@ const UserBookings = () => {
       toast.error("Failed to submit booking. Please try again.");
     } else {
       toast.success("Booking submitted! We'll confirm your appointment shortly.");
+      
+      // Trigger notifications
+      try {
+        // Get the inserted booking ID
+        const { data: insertedBooking } = await supabase
+          .from("bookings")
+          .select("*")
+          .eq("user_id", user!.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (insertedBooking) {
+          // Notify user
+          await supabase.rpc("create_notification", {
+            p_user_id: user!.id,
+            p_type: "booking_created",
+            p_title: "Booking Submitted",
+            p_message: `Your booking for ${insertedBooking.service_type} has been submitted successfully. We'll confirm it shortly.`,
+            p_booking_id: insertedBooking.id,
+            p_metadata: { service: insertedBooking.service_type, date: insertedBooking.preferred_date },
+          });
+          
+          // Send email to user
+          await supabase.functions.invoke("send-notification-email", {
+            body: {
+              to: bookingForm.email,
+              type: "booking_created",
+              booking: insertedBooking,
+            },
+          });
+          
+          // Get admin users and notify them
+          const { data: adminRoles } = await supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin");
+          
+          if (adminRoles) {
+            for (const adminRole of adminRoles) {
+              await supabase.rpc("create_notification", {
+                p_user_id: adminRole.user_id,
+                p_type: "new_booking",
+                p_title: "New Booking Received",
+                p_message: `New booking from ${insertedBooking.name} for ${insertedBooking.service_type} on ${insertedBooking.preferred_date}.`,
+                p_booking_id: insertedBooking.id,
+                p_metadata: { customer_name: insertedBooking.name, service: insertedBooking.service_type },
+              });
+            }
+          }
+        }
+      } catch (notifError) {
+        console.error("Notification error:", notifError);
+        // Don't show error to user - booking was successful
+      }
+      
       setBookingForm({ 
         name: "", 
         phone: "", 

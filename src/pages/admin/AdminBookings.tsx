@@ -81,7 +81,17 @@ const AdminBookings = () => {
     const oldStatus = booking?.status;
     const { error } = await supabase.from("bookings").update({ status: newStatus }).eq("id", id);
     if (error) return toast.error(error.message);
-    supabase.functions.invoke("notify-booking-status", { body: { bookingId: id, oldStatus, newStatus } }).catch(console.error);
+    
+    // Trigger notifications via Edge Function
+    supabase.functions.invoke("notify-booking-status", { 
+      body: { 
+        bookingId: id, 
+        oldStatus, 
+        newStatus,
+        technicianId: booking?.assigned_technician_id 
+      } 
+    }).catch(console.error);
+    
     toast.success("Status updated");
     fetchData();
     if (viewing?.id === id) setViewing({ ...viewing, status: newStatus });

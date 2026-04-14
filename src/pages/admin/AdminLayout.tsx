@@ -7,6 +7,8 @@ import {
   ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
+import NotificationBell from "@/components/NotificationBell";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 
 const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000;
 
@@ -145,6 +147,11 @@ const AdminLayout = () => {
           </div>
         </div>
 
+        {/* Notifications */}
+        <div className="flex-shrink-0 px-3 py-2 border-b border-zinc-800">
+          <NotificationBell userId={user?.id || null} />
+        </div>
+
         {/* Nav — scrollable, fixed height */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 min-h-0
           [&::-webkit-scrollbar]:w-1
@@ -200,10 +207,13 @@ const AdminLayout = () => {
           </div>
           <span className="text-sm font-bold text-white">{currentPage}</span>
         </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)}
-          className="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
-          {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBell userId={user?.id || null} />
+          <button onClick={() => setMobileOpen(!mobileOpen)}
+            className="w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 transition-colors">
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* ── Mobile slide-over menu ── */}
@@ -288,6 +298,9 @@ const AdminLayout = () => {
         [&::-webkit-scrollbar-thumb]:rounded-full">
         <Outlet />
       </main>
+
+      {/* Push Notification Prompt */}
+      <PushNotificationPrompt userId={user?.id || null} />
     </div>
   );
 };

@@ -170,25 +170,103 @@ const AdminTechnicians = () => {
       // Generate random password if not provided
       const password = form.password || Math.random().toString(36).slice(-8);
 
-      // Call the Edge Function to create technician
-      const { data, error } = await supabase.functions.invoke('create-technician-by-admin', {
-        body: {
-          email: form.email,
-          password: password,
-          name: form.name,
-          phone: form.phone,
-          address: form.address,
-          skills: form.skills,
-          experience: form.experience,
-          daily_limit: form.daily_limit,
-          priority: form.priority,
-          status: form.status,
-          profile_url: form.profile_url,
+      // Step 1: Sign up the user (creates auth account)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: password,
+        options: {
+          data: { name: form.name },
+          emailRedirectTo: `${window.location.origin}/technician/login`,
         },
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error("Failed to create technician");
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create user account");
+
+      const userId = authData.user.id;
+
+      // Wait a moment for the auth user to be fully committed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Step 2: Auto-confirm email via RPC function
+      const { error: confirmError } = await supabase.rpc("confirm_user_email", { p_user_id: userId });
+      if (confirmError) {
+        console.warn("Email confirmation failed (may already be confirmed):", confirmError);
+      }
+
+      // Step 3: Assign technician role (with retry logic)
+      let roleInsertSuccess = false;
+      let roleError: any = null;
+      
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { error: roleErr } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: userId,
+            role: "technician",
+          });
+
+        if (!roleErr) {
+          roleInsertSuccess = true;
+          break;
+        }
+        
+        roleError = roleErr;
+        
+        // If it's a duplicate key error, treat as success
+        if (roleErr.code === '23505' || roleErr.message?.includes('duplicate')) {
+          roleInsertSuccess = true;
+          break;
+        }
+        
+        // Wait before retrying
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
+      }
+
+      if (!roleInsertSuccess) {
+        throw roleError || new Error("Failed to assign technician role");
+      }
+
+      // Step 4: Create technician record (with retry logic)
+      let techInsertSuccess = false;
+      let techError: any = null;
+      
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { error: techErr } = await supabase
+          .from("technicians")
+          .insert({
+            user_id: userId,
+            name: form.name,
+            email: form.email,
+            phone: form.phone,
+            address: form.address,
+            skills: form.skills,
+            experience: form.experience,
+            daily_limit: form.daily_limit,
+            priority: form.priority,
+            status: form.status,
+            profile_url: form.profile_url,
+            approval_status: "approved",
+          });
+
+        if (!techErr) {
+          techInsertSuccess = true;
+          break;
+        }
+        
+        techError = techErr;
+        
+        // Wait before retrying
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
+      }
+
+      if (!techInsertSuccess) {
+        throw techError || new Error("Failed to create technician record");
+      }
 
       toast.success("Technician created successfully");
       
@@ -230,7 +308,7 @@ const AdminTechnicians = () => {
       resetForm();
       fetchTechnicians();
     } catch (error: any) {
-      console.error(error);
+      console.error("Error creating technician:", error);
       toast.error(error.message || "Failed to create technician");
     } finally {
       setSaving(false);

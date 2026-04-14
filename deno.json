@@ -3,16 +3,14 @@
     "target": "ES2022",
     "lib": ["ES2022", "DOM"],
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleDetection": "force",
     "allowJs": true,
-    "checkJs": false,
     "noEmit": true,
     "strict": true,
     "noImplicitAny": false,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "resolveJsonModule": true,
-    "types": ["npm:@types/node"]
+    "resolveJsonModule": true
   },
   "include": [
     "supabase/functions/**/*.ts"
