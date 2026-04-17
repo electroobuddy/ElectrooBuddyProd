@@ -18,8 +18,9 @@ import RequestServiceSection from "@/components/Requestservicesection";
 import { services as staticServices } from "@/data/services";
 import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
 import { PHONE_NUMBER } from "@/data/services";
+import { teamMembers as staticTeam } from "@/data/team";
 
-// Image importss
+// Image imports
 import heroImage from "@/images/hero.jpg";
 import aboutImage from "@/images/about.png";
 import testimonial1 from "@/images/testimonial-1.jpg";
@@ -36,10 +37,23 @@ import portfolio6 from "@/images/portfolio-6.jpg";
 import team1 from "@/images/team-1.png";
 import team2 from "@/images/dilip.jpeg";
 import team3 from "@/images/no-profile.png";
+import teamDefault from "@/images/team-.jpg";
 import HeroCard from "@/components/HeroCard";
+import { getTeamImage } from "@/components/about/TeamCard";
+
+// Local team image mapping for fallbacks
+const localTeamImageMap: Record<string, string> = {
+  "Dilip Parihar": team2,
+  "Viraj Parihar": team1,
+  "Karan Parihar": team3,
+  "Mr. Dilip Parihar": team2,
+  "Mr. Viraj Parihar": team1,
+  "Mr. Karan Parihar": team3,
+};
 
 export default function Index() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [currentService, setCurrentService] = useState(0);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [preselectedService, setPreselectedService] = useState<string>("");
   const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", subject: "", message: "" });
@@ -49,6 +63,8 @@ export default function Index() {
   const [services, setServices] = useState<any[]>([]);
   const { products, loading: productsLoading } = useProducts();
   const displayProducts = products.slice(0, 4);
+  const [team, setTeam] = useState<any[]>([]);
+  const [teamLoading, setTeamLoading] = useState(true);
 
   const counters = useMemo(() => ({
     experience: new Date().getFullYear() - 1992,
@@ -56,17 +72,106 @@ export default function Index() {
     projects: 8000
   }), []);
 
+  const serviceShowcase = [
+    {
+      icon: Snowflake,
+      title: 'AC Repair & Service',
+      description: 'Expert AC repair, maintenance, and installation services for all brands',
+      features: ['Gas Refilling', 'Deep Cleaning', 'Compressor Repair', 'Installation'],
+      color: 'from-blue-400 to-blue-600'
+    },
+    {
+      icon: Tv,
+      title: 'TV Mounting & Repair',
+      description: 'Professional TV wall mounting and repair services at your doorstep',
+      features: ['Wall Mounting', 'Screen Repair', 'Smart TV Setup', 'Cable Management'],
+      color: 'from-purple-400 to-purple-600'
+    },
+    {
+      icon: Zap,
+      title: 'Electrical Services',
+      description: 'Complete electrical solutions including short circuit and wiring',
+      features: ['Short Circuit Fix', 'Wiring', 'Panel Upgrade', 'Safety Inspection'],
+      color: 'from-yellow-400 to-orange-600'
+    },
+    {
+      icon: Fan,
+      title: 'Fan Installation & Repair',
+      description: 'Ceiling, table, and exhaust fan installation and repair services',
+      features: ['Ceiling Fans', 'Exhaust Fans', 'Speed Control', 'Balancing'],
+      color: 'from-green-400 to-green-600'
+    },
+    {
+      icon: SatelliteDish,
+      title: 'DTH Setup & Service',
+      description: 'DTH installation, realignment, and troubleshooting services',
+      features: ['New Installation', 'Signal Setup', 'Cable Routing', 'Channel Issues'],
+      color: 'from-indigo-400 to-indigo-600'
+    },
+    {
+      icon: Wrench,
+      title: 'Appliance Repair',
+      description: 'Repair and maintenance for all home appliances',
+      features: ['Refrigerator', 'Washing Machine', 'Microwave', 'Water Purifier'],
+      color: 'from-red-400 to-red-600'
+    }
+  ];
+
+  // Auto-rotate service showcase
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentService((prev) => (prev + 1) % serviceShowcase.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   const whyChooseUs = [
     { icon: Clock, title: 'Fast Response', accent: '#3b82f6' },
     { icon: Shield, title: 'Trusted Service', accent: '#10b981' },
     { icon: BadgeDollarSign, title: 'Affordable Pricing', accent: '#f59e0b' },
     { icon: HeartHandshake, title: 'Customer First', accent: '#ef4444' }
   ];
-  const team = [
-    { name: 'Dilip Parihar', role: 'Founder & Chairman', image: team2, description: 'With over 30 years in the industry, Mr. Dilip Parihar built ElectrooBuddy from the ground up with a vision for quality service.' },
-    { name: 'Viraj Parihar', role: 'Co-founder & CEO', image: team1, description: 'Mr. Viraj leads the company\'s expansion and digital transformation, bringing modern solutions to traditional services.' },
-    { name: 'Karan Parihar', role: 'Co-founder & COO', image: team3, description: 'Mr. Karan oversees daily operations and technician training, ensuring consistent service quality.' }
-  ];
+
+  // Fetch team data from database
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchTeam = async () => {
+      try {
+        setTeamLoading(true);
+        
+        const { data, error } = await supabase
+          .from("team_members")
+          .select("*")
+          .order("sort_order");
+
+        if (!mounted) return;
+
+        if (error) {
+          console.error("Error fetching team:", error);
+          setTeam(staticTeam);
+        } else {
+          console.log("Team data from DB:", data);
+          setTeam(data && data.length > 0 ? data : staticTeam);
+        }
+      } catch (err) {
+        console.error("Failed to load team:", err);
+        if (mounted) {
+          setTeam(staticTeam);
+        }
+      } finally {
+        if (mounted) {
+          setTeamLoading(false);
+        }
+      }
+    };
+
+    fetchTeam();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -457,21 +562,74 @@ export default function Index() {
               </div>
             </div>
 
-            {/* RIGHT IMAGE */}
+            {/* RIGHT SERVICE SHOWCASE SLIDER */}
             <div className="relative flex justify-center md:justify-end mt-4 md:mt-0">
+              <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
+                {/* Service Card */}
+                <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-xl p-6 border border-white/20">
+                  {/* Icon */}
+                  {(() => {
+                    const IconComponent = serviceShowcase[currentService].icon;
+                    return (
+                      <>
+                        <div className={`w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br ${serviceShowcase[currentService].color} flex items-center justify-center shadow-lg transition-all duration-500`}>
+                          <IconComponent size={40} className="text-white" />
+                        </div>
 
-              <img
-                src={heroImage}
-                alt="Professional appliance repair technician"
-                className="w-full max-w-xs sm:max-w-sm md:max-w-md object-contain rounded-lg shadow-xl"
-                loading="eager"
-              />
+                        {/* Title */}
+                        <h3 className="text-xl md:text-2xl font-bold text-white text-center mb-2 transition-all duration-500">
+                          {serviceShowcase[currentService].title}
+                        </h3>
+
+                        {/* Description */}
+                        <p className="text-sm md:text-base text-gray-200 text-center mb-4 transition-all duration-500">
+                          {serviceShowcase[currentService].description}
+                        </p>
+
+                        {/* Features */}
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                          {serviceShowcase[currentService].features.map((feature, idx) => (
+                            <div key={idx} className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 transition-all duration-500">
+                              <Check size={14} className="text-green-400 flex-shrink-0" />
+                              <span className="text-xs md:text-sm text-white">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* CTA */}
+                        <button
+                          onClick={() => handleBookService(serviceShowcase[currentService].title)}
+                          className="w-full bg-white text-blue-800 hover:bg-gray-100 px-4 py-2.5 rounded-lg font-semibold text-sm transition shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        >
+                          Book This Service
+                          <ArrowRight size={16} />
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+
+                {/* Slider Indicators */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {serviceShowcase.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentService(idx)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        idx === currentService
+                          ? 'bg-white w-6'
+                          : 'bg-white/40 hover:bg-white/60'
+                      }`}
+                      aria-label={`Go to service ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
 
               {/* Floating Badge */}
               <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 bg-yellow-400 text-black px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold shadow-lg">
                 ⚡ 24/7 Emergency Available
               </div>
-
             </div>
 
           </div>
@@ -968,18 +1126,47 @@ export default function Index() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Meet Our Team</h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {team.map((member, index) => (
-              <div key={index} className="team-member text-center">
-                <div className="overflow-hidden rounded-full h-48 w-48 mx-auto mb-6">
-                  <img src={member.image} alt={member.name} className="h-full w-full object-cover bg-white rounded-full transition duration-300 hover:scale-105" loading="lazy" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">{member.name}</h3>
-                <p className="text-blue-600 dark:text-blue-400 font-medium mb-2">{member.role}</p>
-                <p className="text-gray-600 dark:text-gray-300">{member.description}</p>
-              </div>
-            ))}
-          </div>
+          {teamLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+              {team.map((member, index) => {
+                // Handle image URL - check for empty strings or null values
+                const photoUrl = member.photo_url || member.image_url;
+                const isValidUrl = photoUrl && photoUrl.trim() && photoUrl.startsWith('http');
+                const finalImageUrl = getTeamImage(member.name, isValidUrl ? photoUrl : null);
+                
+                return (
+                  <div key={member.id || index} className="team-member text-center">
+                    <div className="overflow-hidden rounded-full h-40 w-40 sm:h-48 sm:w-48 mx-auto mb-4 md:mb-6">
+                      <img 
+                        src={finalImageUrl} 
+                        alt={member.name} 
+                        className="h-full w-full object-cover bg-white rounded-full transition duration-300 hover:scale-105" 
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.onerror = null; // Prevent infinite loop
+                          // Fallback to local image based on name, then to default
+                          const fallbackImage = localTeamImageMap[member.name] || teamDefault;
+                          if (target.src !== fallbackImage) {
+                            target.src = fallbackImage;
+                          } else {
+                            target.src = team3; // Ultimate fallback to no-profile.png
+                          }
+                        }}
+                      />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">{member.name}</h3>
+                    <p className="text-blue-600 dark:text-blue-400 font-medium mb-2 text-sm sm:text-base">{member.role}</p>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">{member.bio}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
