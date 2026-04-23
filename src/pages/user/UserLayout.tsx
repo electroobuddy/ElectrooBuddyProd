@@ -1,6 +1,6 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Zap, LayoutDashboard, Calendar, User, LogOut, Loader2, Menu, X, Package, ShoppingBag, Wrench } from "lucide-react";
+import { Zap, LayoutDashboard, Calendar, User, LogOut, Loader2, Menu, X, Package, ShoppingBag, Wrench, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
@@ -9,6 +9,7 @@ const navItems = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
   // { label: "My Bookings", to: "/dashboard/bookings", icon: Calendar },
   { label: "My Orders", to: "/dashboard/orders", icon: Package },
+  { label: "Subscriptions", to: "/dashboard/subscriptions", icon: ShieldCheck },
   { label: "Products", to: "/dashboard/products", icon: ShoppingBag },
   { label: "Services", to: "/dashboard/services", icon: Wrench },
   { label: "Profile", to: "/dashboard/profile", icon: User },

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen,
   Mail, Settings, LogOut, Loader2, UserCog, Menu, X, Package,
-  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck, Tag
+  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck, Tag, ShieldCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
@@ -19,6 +19,7 @@ const navItems = [
   { label: "Categories & Coupons", to: "/admin/coupons-categories", icon: ShoppingCart, group: "store" },
   { label: "Orders",       to: "/admin/orders",       icon: ShoppingCart,    group: "store" },
   { label: "Payments",     to: "/admin/payments",     icon: DollarSign,      group: "store" },
+  { label: "Subscriptions", to: "/admin/subscriptions", icon: ShieldCheck,    group: "store" },
   { label: "Shipping",     to: "/admin/shipping",     icon: Truck,           group: "store" },
   { label: "Services",     to: "/admin/services",     icon: Wrench,          group: "services" },
   { label: "Bookings",     to: "/admin/bookings",     icon: CalendarDays,    group: "services" },
