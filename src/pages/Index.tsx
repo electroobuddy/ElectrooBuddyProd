@@ -1,4 +1,4 @@
-﻿import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import Section from "@/components/Section";
 import ServiceCard2 from "@/components/ServiceCard2";
 import ProductCard from "@/components/ProductCard";
+import OfferBannerSlider from "@/components/OfferBannerSlider";
 
 import RequestServiceSection from "@/components/Requestservicesection";
 import { services as staticServices } from "@/data/services";
@@ -469,9 +470,11 @@ export default function Index() {
   }
 `}</style>
 
+      <OfferBannerSlider visibility="home_hero" />
+
       <section
         id="home"
-        className="hero-gradient text-white py-12 md:py-20 lg:py-24"
+        className="hero-gradient text-white pt-8 pb-12 md:pt-12 md:pb-20 lg:pt-16 lg:pb-24"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 

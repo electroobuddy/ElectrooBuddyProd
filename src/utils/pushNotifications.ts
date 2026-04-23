@@ -87,19 +87,28 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
       applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
     });
 
-    console.log('[Push] Subscription created:', subscription.endpoint);
+    const subscriptionJson = subscription.toJSON();
+    const endpoint = subscriptionJson.endpoint;
+
+    if (!endpoint) {
+      console.error('[Push] Failed to get endpoint from subscription');
+      return false;
+    }
+
+    console.log('[Push] Subscription created:', endpoint);
 
     // Save subscription to database
     const { error } = await supabase
       .from('push_subscriptions')
       .upsert({
         user_id: userId,
-        subscription: JSON.stringify(subscription),
+        endpoint: endpoint,
+        subscription: subscriptionJson as any,
         browser_name: navigator.userAgent,
         is_active: true,
         updated_at: new Date().toISOString()
       }, {
-        onConflict: 'user_id,subscription'
+        onConflict: 'endpoint'
       });
 
     if (error) {
@@ -109,8 +118,12 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
 
     console.log('[Push] Subscription saved to database');
     return true;
-  } catch (error) {
-    console.error('[Push] Subscription failed:', error);
+  } catch (error: any) {
+    if (error.name === 'NotAllowedError') {
+      console.error('[Push] Browser permission denied');
+    } else {
+      console.error('[Push] Subscription failed:', error);
+    }
     return false;
   }
 }

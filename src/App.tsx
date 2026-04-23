@@ -58,6 +58,7 @@ import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminShippingSettings from "./pages/admin/AdminShippingSettings";
 import AdminTechnicians from "./pages/admin/AdminTechnicians";
+import AdminOffers from "./pages/admin/AdminOffers";
 import TechnicianLogin from "./pages/technician/TechnicianLogin";
 import TechnicianLayout from "./pages/technician/TechnicianLayout";
 import TechnicianDashboard from "./pages/technician/TechnicianDashboard";
@@ -171,6 +172,7 @@ const AppContent = () => {
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/coupons-categories" element={<AdminCouponsCategories />} />
+              <Route path="/admin/offers" element={<AdminOffers />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/services" element={<AdminServices />} />
               <Route path="/admin/bookings" element={<AdminBookings />} />

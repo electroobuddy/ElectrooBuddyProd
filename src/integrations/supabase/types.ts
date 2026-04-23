@@ -844,6 +844,7 @@ export type Database = {
         Row: {
           id: string
           user_id: string | null
+          endpoint: string | null
           subscription: Json
           browser_name: string | null
           is_active: boolean | null
@@ -853,6 +854,7 @@ export type Database = {
         Insert: {
           id?: string
           user_id?: string | null
+          endpoint?: string | null
           subscription: Json
           browser_name?: string | null
           is_active?: boolean | null
@@ -862,6 +864,7 @@ export type Database = {
         Update: {
           id?: string
           user_id?: string | null
+          endpoint?: string | null
           subscription?: Json
           browser_name?: string | null
           is_active?: boolean | null
@@ -1202,6 +1205,141 @@ export type Database = {
           },
         ]
       }
+      offer_products: {
+        Row: {
+          id: string
+          offer_id: string
+          product_id: string
+        }
+        Insert: {
+          id?: string
+          offer_id: string
+          product_id: string
+        }
+        Update: {
+          id?: string
+          offer_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_products_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offer_services: {
+        Row: {
+          id: string
+          offer_id: string
+          service_id: string
+        }
+        Insert: {
+          id?: string
+          offer_id: string
+          service_id: string
+        }
+        Update: {
+          id?: string
+          offer_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_services_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offer_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offers: {
+        Row: {
+          banner_url: string | null
+          bg_gradient: string | null
+          created_at: string
+          cta_link: string | null
+          cta_text: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          max_discount: number | null
+          min_purchase: number | null
+          priority: number
+          start_date: string
+          status: Database["public"]["Enums"]["offer_status"]
+          subtitle: string | null
+          title: string
+          type: Database["public"]["Enums"]["offer_type"]
+          updated_at: string
+          value: number | null
+          visibility: string[]
+        }
+        Insert: {
+          banner_url?: string | null
+          bg_gradient?: string | null
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          max_discount?: number | null
+          min_purchase?: number | null
+          priority?: number
+          start_date?: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          subtitle?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["offer_type"]
+          updated_at?: string
+          value?: number | null
+          visibility?: string[]
+        }
+        Update: {
+          banner_url?: string | null
+          bg_gradient?: string | null
+          created_at?: string
+          cta_link?: string | null
+          cta_text?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          max_discount?: number | null
+          min_purchase?: number | null
+          priority?: number
+          start_date?: string
+          status?: Database["public"]["Enums"]["offer_status"]
+          subtitle?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["offer_type"]
+          updated_at?: string
+          value?: number | null
+          visibility?: string[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1370,9 +1508,36 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      get_active_offers: {
+        Args: { p_visibility: string }
+        Returns: {
+          banner_url: string | null
+          bg_gradient: string | null
+          created_at: string
+          cta_link: string | null
+          cta_text: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          max_discount: number | null
+          min_purchase: number | null
+          priority: number
+          start_date: string
+          status: Database["public"]["Enums"]["offer_status"]
+          subtitle: string | null
+          title: string
+          type: Database["public"]["Enums"]["offer_type"]
+          updated_at: string
+          value: number | null
+          visibility: string[]
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "technician"
+      offer_status: "active" | "inactive" | "scheduled" | "expired"
+      offer_type: "percentage" | "flat" | "bogo" | "shipping" | "custom"
     }
     CompositeTypes: {
       [_ in never]: never

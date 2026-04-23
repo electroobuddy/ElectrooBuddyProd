@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { useProducts } from "@/hooks/useOptimizedData";
 import ProductCard from "@/components/ProductCard";
+import OfferBannerSlider from "@/components/OfferBannerSlider";
 
 /* ─── debounce hook ─────────────────────────────────────────── */
 function useDebounce<T>(value: T, delay: number): T {
@@ -58,7 +59,6 @@ const Products = () => {
   const [priceMax, setPriceMax] = useState<number>(100000);
   const [sortBy, setSortBy] = useState("featured");
   const [showFilters, setShowFilters] = useState(false);
-  const [currentAdSlide, setCurrentAdSlide] = useState(0);
   const [currentServiceSlide, setCurrentServiceSlide] = useState(0);
 
   const searchTerm = useDebounce(searchInput, 400);
@@ -88,41 +88,7 @@ const Products = () => {
     setSortBy("featured");
   };
 
-  // Advertisement slides
-  const adSlides = [
-    {
-      id: 1,
-      title: "🎉 Summer Special: 20% OFF on AC Services",
-      subtitle: "Book now and save big! Valid till end of summer",
-      bg: "from-blue-600 to-blue-800",
-      link: "/#request-service",
-      cta: "Book AC Service"
-    },
-    {
-      id: 2,
-      title: "⚡ Free Health Check on All Electrical Appliances",
-      subtitle: "Limited time offer - Get your appliances inspected for FREE",
-      bg: "from-yellow-500 to-orange-600",
-      link: "/#request-service",
-      cta: "Book Now"
-    },
-    {
-      id: 3,
-      title: "🔧 Combo Offer: Fan + Light Installation",
-      subtitle: "Get both installed at just ₹999 (Save ₹500)",
-      bg: "from-green-600 to-teal-700",
-      link: "/#request-service",
-      cta: "Grab Offer"
-    },
-    {
-      id: 4,
-      title: "📺 LED TV Mounting at ₹599 Only",
-      subtitle: "Professional installation with cable management included",
-      bg: "from-purple-600 to-pink-600",
-      link: "/#request-service",
-      cta: "Book TV Mounting"
-    }
-  ];
+
 
   // Service slides
   const serviceSlides = [
@@ -182,13 +148,7 @@ const Products = () => {
     }
   ];
 
-  // Auto-rotate advertisement
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentAdSlide((prev) => (prev + 1) % adSlides.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+
 
   // Auto-rotate service slides
   useEffect(() => {
@@ -202,9 +162,7 @@ const Products = () => {
     navigate(`/?service=${encodeURIComponent(serviceTitle)}#request-service`);
   };
 
-  const handleAdClick = (link: string) => {
-    navigate(link);
-  };
+
 
   useEffect(() => {
     document.title = "Products | Electrobuddy – Electrical Components & Accessories";
@@ -291,92 +249,8 @@ const Products = () => {
         </div>
       </section>
 
-      {/* ── Advertisement Slider ── */}
-      <section className="bg-white dark:bg-gray-800 py-6 sm:py-8">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="relative rounded-2xl overflow-hidden shadow-xl">
-            {/* Slides */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentAdSlide}
-                initial={{ opacity: 0, x: 300 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -300 }}
-                transition={{ duration: 0.5 }}
-                className={`bg-gradient-to-r ${adSlides[currentAdSlide].bg} text-white p-6 sm:p-8 md:p-12 cursor-pointer`}
-                onClick={() => handleAdClick(adSlides[currentAdSlide].link)}
-              >
-                <div className="max-w-3xl">
-                  <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4"
-                  >
-                    {adSlides[currentAdSlide].title}
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-sm sm:text-lg mb-4 sm:mb-6 opacity-90"
-                  >
-                    {adSlides[currentAdSlide].subtitle}
-                  </motion.p>
-                  <motion.button
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="bg-white text-gray-900 px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold text-sm sm:text-base hover:bg-gray-100 transition flex items-center gap-2"
-                  >
-                    {adSlides[currentAdSlide].cta}
-                    <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </motion.button>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Navigation Arrows */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentAdSlide((prev) => (prev - 1 + adSlides.length) % adSlides.length);
-              }}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm p-2 sm:p-3 rounded-full transition"
-              aria-label="Previous ad"
-            >
-              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentAdSlide((prev) => (prev + 1) % adSlides.length);
-              }}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 backdrop-blur-sm p-2 sm:p-3 rounded-full transition"
-              aria-label="Next ad"
-            >
-              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </button>
-
-            {/* Dots Indicator */}
-            <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-              {adSlides.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentAdSlide(idx);
-                  }}
-                  className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
-                    idx === currentAdSlide ? "bg-white w-6 sm:w-8" : "bg-white/50 hover:bg-white/70"
-                  }`}
-                  aria-label={`Go to ad ${idx + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ── Dynamic Advertisement Slider ── */}
+      <OfferBannerSlider visibility="products_page" />
 
       {/* ── Services Quick Access Slider ── */}
       <section className="bg-gray-50 dark:bg-gray-900 py-6 sm:py-8">
