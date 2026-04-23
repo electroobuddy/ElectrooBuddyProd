@@ -39,6 +39,7 @@ import UserDashboard from "./pages/user/UserDashboard";
 import UserBookings from "./pages/user/UserBookings";
 import UserProfile from "./pages/user/UserProfile";
 import UserOrders from "./pages/user/UserOrders";
+import UserSubscriptions from "./pages/user/UserSubscriptions";
 import UserProducts from "./pages/user/UserProducts";
 import UserServices from "./pages/user/UserServices";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -58,6 +59,7 @@ import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminShippingSettings from "./pages/admin/AdminShippingSettings";
 import AdminTechnicians from "./pages/admin/AdminTechnicians";
+import AdminOffers from "./pages/admin/AdminOffers";
 import TechnicianLogin from "./pages/technician/TechnicianLogin";
 import TechnicianLayout from "./pages/technician/TechnicianLayout";
 import TechnicianDashboard from "./pages/technician/TechnicianDashboard";
@@ -65,6 +67,9 @@ import TechnicianBookings from "./pages/technician/TechnicianBookings";
 import TechnicianProfile from "./pages/technician/TechnicianProfile";
 import TechnicianSettings from "./pages/technician/TechnicianSettings";
 import TechnicianSignUp from "./pages/technician/TechnicianSignUp";
+import Subscriptions from "@/components/Subscriptions";
+import AdminSubscriptions from "@/components/AdminSubscriptions";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 
 const queryClient = new QueryClient();
 
@@ -148,6 +153,8 @@ const AppContent = () => {
             <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
             <Route path="/tips" element={<PageTransition><Tips /></PageTransition>} />
             <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
+            <Route path="/subscriptions" element={<PageTransition><Subscriptions /></PageTransition>} />
+            <Route path="/subscription-success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
             <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
             <Route path="/products/:slug" element={<PageTransition><ProductDetails /></PageTransition>} />
@@ -160,6 +167,7 @@ const AppContent = () => {
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
               <Route path="/dashboard/orders" element={<UserOrders />} />
+              <Route path="/dashboard/subscriptions" element={<UserSubscriptions />} />
               <Route path="/dashboard/products" element={<UserProducts />} />
               <Route path="/dashboard/services" element={<UserServices />} />
               <Route path="/dashboard/profile" element={<UserProfile />} />
@@ -171,6 +179,7 @@ const AppContent = () => {
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/coupons-categories" element={<AdminCouponsCategories />} />
+              <Route path="/admin/offers" element={<AdminOffers />} />
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/services" element={<AdminServices />} />
               <Route path="/admin/bookings" element={<AdminBookings />} />
@@ -181,6 +190,7 @@ const AppContent = () => {
               <Route path="/admin/messages" element={<AdminMessages />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/payments" element={<AdminPayments />} />
+              <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
               <Route path="/admin/shipping" element={<AdminShippingSettings />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>

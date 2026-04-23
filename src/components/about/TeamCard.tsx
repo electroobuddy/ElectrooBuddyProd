@@ -18,9 +18,12 @@ const localTeamImages: Record<string, string> = {
   "Dilip Parihar": team2,
   "Viraj Parihar": team1,
   "Karan Parihar": team3,
+  "Mr. Dilip Parihar": team2,
+  "Mr. Viraj Parihar": team1,
+  "Mr. Karan Parihar": team3,
 };
 
-const getTeamImage = (name: string, photoUrl: string | null) => {
+export const getTeamImage = (name: string, photoUrl: string | null) => {
   if (photoUrl) return photoUrl;
   return localTeamImages[name] ?? team3;
 };

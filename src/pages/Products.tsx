@@ -7,10 +7,21 @@ import {
   X,
   AlertCircle,
   Zap,
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  Fan,
+  Tv,
+  Snowflake,
+  Wrench,
+  SatelliteDish,
+  Lightbulb,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import SEO from "@/components/SEO";
 import { useProducts } from "@/hooks/useOptimizedData";
 import ProductCard from "@/components/ProductCard";
+import OfferBannerSlider from "@/components/OfferBannerSlider";
 
 /* ─── debounce hook ─────────────────────────────────────────── */
 function useDebounce<T>(value: T, delay: number): T {
@@ -40,6 +51,7 @@ const SkeletonCard = memo(() => (
 
 /* ─── main component ─────────────────────────────────────────── */
 const Products = () => {
+  const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
@@ -47,6 +59,7 @@ const Products = () => {
   const [priceMax, setPriceMax] = useState<number>(100000);
   const [sortBy, setSortBy] = useState("featured");
   const [showFilters, setShowFilters] = useState(false);
+  const [currentServiceSlide, setCurrentServiceSlide] = useState(0);
 
   const searchTerm = useDebounce(searchInput, 400);
   const filters = { category: selectedCategory, brand: selectedBrand, searchTerm, sortBy };
@@ -74,6 +87,82 @@ const Products = () => {
     setPriceMax(100000);
     setSortBy("featured");
   };
+
+
+
+  // Service slides
+  const serviceSlides = [
+    {
+      id: "fan",
+      icon: Fan,
+      title: "Fan Repair & Installation",
+      description: "Ceiling, table & exhaust fans",
+      price: "Starting ₹199",
+      bg: "from-green-500 to-green-700",
+      service: "Fan Installation & Repair"
+    },
+    {
+      id: "lcd-led",
+      icon: Tv,
+      title: "LCD/LED TV Services",
+      description: "Mounting, repair & setup",
+      price: "Starting ₹299",
+      bg: "from-purple-500 to-purple-700",
+      service: "TV Mounting & Repair"
+    },
+    {
+      id: "ac",
+      icon: Snowflake,
+      title: "AC Repair & Service",
+      description: "All brands & models",
+      price: "Starting ₹499",
+      bg: "from-blue-500 to-blue-700",
+      service: "AC Repair & Service"
+    },
+    {
+      id: "electrical",
+      icon: Wrench,
+      title: "Electrical Services",
+      description: "Wiring, short circuit & more",
+      price: "Starting ₹399",
+      bg: "from-yellow-500 to-orange-600",
+      service: "Electrical Services"
+    },
+    {
+      id: "dth",
+      icon: SatelliteDish,
+      title: "DTH Setup & Service",
+      description: "Installation & realignment",
+      price: "Starting ₹249",
+      bg: "from-indigo-500 to-indigo-700",
+      service: "DTH Setup & Service"
+    },
+    {
+      id: "lighting",
+      icon: Lightbulb,
+      title: "Lighting Solutions",
+      description: "Installation & repair",
+      price: "Starting ₹149",
+      bg: "from-amber-500 to-amber-700",
+      service: "Lighting Installation"
+    }
+  ];
+
+
+
+  // Auto-rotate service slides
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentServiceSlide((prev) => (prev + 1) % serviceSlides.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleServiceClick = (serviceTitle: string) => {
+    navigate(`/?service=${encodeURIComponent(serviceTitle)}#request-service`);
+  };
+
+
 
   useEffect(() => {
     document.title = "Products | Electrobuddy – Electrical Components & Accessories";
@@ -157,6 +246,82 @@ const Products = () => {
               Discover our wide range of high-quality electrical products and accessories
             </motion.p>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ── Dynamic Advertisement Slider ── */}
+      <OfferBannerSlider visibility="products_page" />
+
+      {/* ── Services Quick Access Slider ── */}
+      <section className="bg-gray-50 dark:bg-gray-900 py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Our Services
+            </h2>
+            <button
+              onClick={() => navigate("/#services")}
+              className="text-sm sm:text-base text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1"
+            >
+              View All <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Service Cards Slider */}
+          <div className="relative">
+            <div className="overflow-hidden rounded-2xl">
+              <motion.div
+                className="flex gap-4 sm:gap-6"
+                animate={{ x: `-${currentServiceSlide * (100 / 3)}%` }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                {serviceSlides.map((service) => {
+                  const IconComponent = service.icon;
+                  return (
+                    <div
+                      key={service.id}
+                      onClick={() => handleServiceClick(service.service)}
+                      className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 cursor-pointer group"
+                    >
+                      <div className={`bg-gradient-to-br ${service.bg} text-white p-5 sm:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105`}>
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+                            <IconComponent className="w-6 h-6 sm:w-8 sm:h-8" />
+                          </div>
+                          <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
+                            {service.price}
+                          </span>
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-bold mb-2">{service.title}</h3>
+                        <p className="text-xs sm:text-sm opacity-90 mb-4">{service.description}</p>
+                        <div className="flex items-center gap-2 text-sm sm:text-base font-semibold group-hover:gap-3 transition-all">
+                          Book Now <ArrowRight className="w-4 h-4" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            </div>
+
+            {/* Service Slider Navigation */}
+            <button
+              onClick={() => setCurrentServiceSlide((prev) => Math.max(0, prev - 1))}
+              disabled={currentServiceSlide === 0}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 sm:-translate-x-4 bg-white dark:bg-gray-800 shadow-lg p-2 sm:p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Previous services"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-300" />
+            </button>
+            <button
+              onClick={() => setCurrentServiceSlide((prev) => Math.min(serviceSlides.length - 3, prev + 1))}
+              disabled={currentServiceSlide >= serviceSlides.length - 3}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 sm:translate-x-4 bg-white dark:bg-gray-800 shadow-lg p-2 sm:p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Next services"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-300" />
+            </button>
+          </div>
         </div>
       </section>
 
