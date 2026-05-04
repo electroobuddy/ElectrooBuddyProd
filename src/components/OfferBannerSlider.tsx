@@ -4,23 +4,44 @@ import Autoplay from "embla-carousel-autoplay";
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { Tables } from "@/integrations/supabase/types";
 
-interface Offer {
-  id: string;
-  title: string;
-  subtitle: string | null;
-  description: string | null;
-  banner_url: string;
-  cta_text: string | null;
-  cta_link: string | null;
-  bg_gradient: string | null;
-  type: string;
-  value: number | null;
-}
+type Offer = Tables<'offers'>;
 
 interface OfferBannerSliderProps {
   visibility?: "home_hero" | "products_page" | "popup";
 }
+
+const CountdownTimer = ({ expiresAt }: { expiresAt: string }) => {
+  const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number } | null>(null);
+
+  useEffect(() => {
+    const calculate = () => {
+      const distance = new Date(expiresAt).getTime() - new Date().getTime();
+      if (distance <= 0) return null;
+      return {
+        h: Math.floor(distance / (1000 * 60 * 60)),
+        m: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        s: Math.floor((distance % (1000 * 60)) / 1000),
+      };
+    };
+
+    setTimeLeft(calculate());
+    const timer = setInterval(() => setTimeLeft(calculate()), 1000);
+    return () => clearInterval(timer);
+  }, [expiresAt]);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div className="hidden xs:flex items-center gap-1 font-mono text-[10px] sm:text-[11px] bg-black/20 px-2 py-0.5 rounded text-white border border-white/10 shrink-0">
+      <span className="opacity-70 uppercase text-[8px] mr-1 font-sans font-bold hidden sm:inline">Ends in</span>
+      <span>{String(timeLeft.h).padStart(2, '0')}</span>:
+      <span>{String(timeLeft.m).padStart(2, '0')}</span>:
+      <span>{String(timeLeft.s).padStart(2, '0')}</span>
+    </div>
+  );
+};
 
 const OfferBannerSlider: React.FC<OfferBannerSliderProps> = ({ visibility = "home_hero" }) => {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -89,7 +110,18 @@ const OfferBannerSlider: React.FC<OfferBannerSliderProps> = ({ visibility = "hom
             return (
               <div
                 key={offer.id}
-                className="flex-[0_0_100%] min-w-0 relative"
+                className="flex-[0_0_100%] min-w-0 relative cursor-pointer"
+                onClick={() => {
+                  const link = offer.cta_link || "";
+                  if (link.startsWith("http://") || link.startsWith("https://")) {
+                    window.open(link, "_blank", "noopener,noreferrer");
+                  } else if (link) {
+                    window.location.href = link;
+                  } else {
+                    // Default fallback: go to products
+                    window.location.href = "/products";
+                  }
+                }}
               >
                 {/* Per-slide gradient */}
                 <div
@@ -140,17 +172,32 @@ const OfferBannerSlider: React.FC<OfferBannerSliderProps> = ({ visibility = "hom
                     )}
                   </div>
 
+                  {/* ── Countdown Timer ── */}
+                  {offer.expires_at && <CountdownTimer expiresAt={offer.expires_at} />}
+
                   {/* ── Right: CTA button ── */}
-                  <Link
-                    to={offer.cta_link || "/#request-service"}
-                    className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-50 transition-colors shadow group/btn"
-                  >
-                    {offer.cta_text || "Claim"}
-                    <ArrowRight
-                      size={11}
-                      className="group-hover/btn:translate-x-0.5 transition-transform"
-                    />
-                  </Link>
+                  {offer.cta_link && (offer.cta_link.startsWith('http://') || offer.cta_link.startsWith('https://')) ? (
+
+                    <a
+                      href={offer.cta_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-50 transition-colors shadow group/btn"
+                    >
+                      {offer.cta_text || "Claim"}
+                      <ArrowRight size={11} className="group-hover/btn:translate-x-0.5 transition-transform" />
+                    </a>
+                  ) : (
+                    <Link
+                      to={offer.cta_link || "/products"}
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-50 transition-colors shadow group/btn"
+                    >
+                      {offer.cta_text || "Claim"}
+                      <ArrowRight size={11} className="group-hover/btn:translate-x-0.5 transition-transform" />
+                    </Link>
+                  )}
                 </div>
               </div>
             );
@@ -159,49 +206,52 @@ const OfferBannerSlider: React.FC<OfferBannerSliderProps> = ({ visibility = "hom
       </div>
 
       {/* ── Prev / Next arrows (only shown when > 1 offer) ── */}
-      {offers.length > 1 && (
-        <>
-          <button
-            onClick={scrollPrev}
-            aria-label="Previous offer"
-            className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <button
-            onClick={scrollNext}
-            aria-label="Next offer"
-            className="absolute right-8 sm:right-9 top-1/2 -translate-y-1/2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
-          >
-            <ChevronRight size={14} />
-          </button>
-        </>
-      )}
+      {
+        offers.length > 1 && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); scrollPrev(); }}
+              aria-label="Previous offer"
+              className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 ..."
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); scrollNext(); }}
+              aria-label="Next offer"
+              className="absolute right-8 sm:right-9 top-1/2 -translate-y-1/2 z-20 ..."
+            >
+              <ChevronRight size={14} />
+            </button>
+          </>
+        )
+      }
 
       {/* ── Dot indicators (shown when > 1 offer) ── */}
-      {offers.length > 1 && (
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-1 flex gap-1 z-10">
-          {offers.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => emblaApi?.scrollTo(i)}
-              className={`h-1 rounded-full transition-all ${
-                i === selectedIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
-              }`}
-            />
-          ))}
-        </div>
-      )}
+      {
+        offers.length > 1 && (
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-1 flex gap-1 z-10">
+            {offers.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => emblaApi?.scrollTo(i)}
+                className={`h-1 rounded-full transition-all ${i === selectedIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
+                  }`}
+              />
+            ))}
+          </div>
+        )
+      }
 
       {/* ── Dismiss button ── */}
       <button
-        onClick={() => setDismissed(true)}
+        onClick={(e) => { e.stopPropagation(); setDismissed(true); }}
         aria-label="Close"
         className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-5 w-5 items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
       >
         <X size={12} />
       </button>
-    </div>
+    </div >
   );
 };
 
