@@ -3,10 +3,10 @@ import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Zap, ArrowRight, Shield, Clock, BadgeDollarSign, HeartHandshake,
-  Users, X, Phone, CheckCircle, Loader2, Calendar, MapPin, Wrench,
-  AlignLeft, ChevronRight, Star, ShoppingCart, Instagram, Linkedin,
-  Mail, ChevronDown, MessageCircle, Award, Smile, ChevronUp,
-  SatelliteDish, Tv, Fan, Snowflake, Check, ShoppingBag, Send
+  Users, X, Phone, Loader2, MapPin, Wrench,
+  AlignLeft, ChevronRight, Star, Instagram, Linkedin,
+  Mail, ChevronDown, MessageCircle, Award, Smile
+  , Check, ShoppingBag, Send
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,13 +22,8 @@ import { PHONE_NUMBER } from "@/data/services";
 import { teamMembers as staticTeam } from "@/data/team";
 
 // Image imports
-import heroImage from "@/images/hero.jpg";
+
 import aboutImage from "@/images/about.png";
-import testimonial1 from "@/images/testimonial-1.jpg";
-import testimonial2 from "@/images/testimonial-2.jpg";
-import testimonial3 from "@/images/testimonial-3.jpg";
-import testimonial4 from "@/images/no-profile.png";
-import testimonial5 from "@/images/no-profile.png";
 import portfolio1 from "@/images/portfolio-1.jpg";
 import portfolio2 from "@/images/portfolio-2.jpg";
 import portfolio3 from "@/images/portfolio-3.jpg";
@@ -39,8 +34,9 @@ import team1 from "@/images/team-1.png";
 import team2 from "@/images/dilip.jpeg";
 import team3 from "@/images/no-profile.png";
 import teamDefault from "@/images/team-.jpg";
-import HeroCard from "@/components/HeroCard";
 import { getTeamImage } from "@/components/about/TeamCard";
+import { applianceTips, faqs, serviceShowcase } from "@/data/faqs";
+import { testimonials } from "@/data/testimonials";
 
 // Local team image mapping for fallbacks
 const localTeamImageMap: Record<string, string> = {
@@ -73,50 +69,6 @@ export default function Index() {
     projects: 8000
   }), []);
 
-  const serviceShowcase = [
-    {
-      icon: Snowflake,
-      title: 'AC Repair & Service',
-      description: 'Expert AC repair, maintenance, and installation services for all brands',
-      features: ['Gas Refilling', 'Deep Cleaning', 'Compressor Repair', 'Installation'],
-      color: 'from-blue-400 to-blue-600'
-    },
-    {
-      icon: Tv,
-      title: 'TV Mounting & Repair',
-      description: 'Professional TV wall mounting and repair services at your doorstep',
-      features: ['Wall Mounting', 'Screen Repair', 'Smart TV Setup', 'Cable Management'],
-      color: 'from-purple-400 to-purple-600'
-    },
-    {
-      icon: Zap,
-      title: 'Electrical Services',
-      description: 'Complete electrical solutions including short circuit and wiring',
-      features: ['Short Circuit Fix', 'Wiring', 'Panel Upgrade', 'Safety Inspection'],
-      color: 'from-yellow-400 to-orange-600'
-    },
-    {
-      icon: Fan,
-      title: 'Fan Installation & Repair',
-      description: 'Ceiling, table, and exhaust fan installation and repair services',
-      features: ['Ceiling Fans', 'Exhaust Fans', 'Speed Control', 'Balancing'],
-      color: 'from-green-400 to-green-600'
-    },
-    {
-      icon: SatelliteDish,
-      title: 'DTH Setup & Service',
-      description: 'DTH installation, realignment, and troubleshooting services',
-      features: ['New Installation', 'Signal Setup', 'Cable Routing', 'Channel Issues'],
-      color: 'from-indigo-400 to-indigo-600'
-    },
-    {
-      icon: Wrench,
-      title: 'Appliance Repair',
-      description: 'Repair and maintenance for all home appliances',
-      features: ['Refrigerator', 'Washing Machine', 'Microwave', 'Water Purifier'],
-      color: 'from-red-400 to-red-600'
-    }
-  ];
 
   // Auto-rotate service showcase
   useEffect(() => {
@@ -140,7 +92,7 @@ export default function Index() {
     const fetchTeam = async () => {
       try {
         setTeamLoading(true);
-        
+
         const { data, error } = await supabase
           .from("team_members")
           .select("*")
@@ -181,148 +133,7 @@ export default function Index() {
     }
   };
 
-  const testimonials = [
-    { name: 'Kunal Yadav', location: 'Ujjain', image: testimonial1, rating: 5, text: 'ElectrooBuddy fixed my AC within an hour of calling them. The technician was professional and explained everything clearly.' },
-    { name: 'Naman Singh', location: 'Ujjain', image: testimonial2, rating: 5, text: 'I called ElectrooBuddy for an emergency electrical issue at midnight. They arrived in 30 minutes and fixed the problem safely.' },
-    { name: 'Udit Joshi', location: 'Ujjain', image: testimonial3, rating: 5, text: 'Their team installed my new 65-inch TV perfectly on the wall. They handled everything from unpacking to cable management.' },
-    { name: 'Anjali Verma', location: 'Ujjain', image: testimonial4, rating: 5, text: 'The technician arrived exactly on time and fixed our refrigerator quickly. Very reasonable pricing compared to other services.' },
-    { name: 'Rajesh Gupta', location: 'Ujjain', image: testimonial5, rating: 5, text: 'I\'ve used ElectrooBuddy multiple times for different appliances. Always professional, and their work comes with a warranty.' }
-  ];
 
-  // const faqs = [
-  //   { question: 'How quickly can you respond to service requests?', answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.' },
-  //   { question: 'What are your service charges?', answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.' },
-  //   { question: 'Do you offer warranties on repairs?', answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.' },
-  //   { question: 'What payment methods do you accept?', answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.' },
-  //   { question: 'Do you service appliances still under manufacturer warranty?', answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.' }
-  // ];
-  //   const faqs = [
-  //   {
-  //     question: 'How quickly can you respond to service requests?',
-  //     answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.'
-  //   },
-  //   {
-  //     question: 'Do you provide late night or emergency services?',
-  //     answer: 'Yes, we offer emergency services including late night support. Our technicians are available beyond regular hours for urgent electrical issues.'
-  //   },
-  //   {
-  //     question: 'What are your service charges?',
-  //     answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.'
-  //   },
-  //   {
-  //     question: 'Are there extra charges for emergency or night services?',
-  //     answer: 'Yes, a small additional fee may apply for late night or emergency visits depending on the time and urgency. All charges are communicated clearly before booking confirmation.'
-  //   },
-  //   {
-  //     question: 'Do you offer warranties on repairs?',
-  //     answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.'
-  //   },
-  //   {
-  //     question: 'What payment methods do you accept?',
-  //     answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.'
-  //   },
-  //   {
-  //     question: 'Can I schedule a service for a specific time?',
-  //     answer: 'Yes, you can book services in advance and choose a preferred time slot based on availability.'
-  //   },
-  //   {
-  //     question: 'Do you provide same-day service?',
-  //     answer: 'Yes, we offer same-day service for most requests depending on technician availability in your area.'
-  //   },
-  //   {
-  //     question: 'What areas do you currently serve?',
-  //     answer: 'We currently serve Ujjain city and nearby areas. Expansion to more cities is coming soon.'
-  //   },
-  //   {
-  //     question: 'Do you service appliances still under manufacturer warranty?',
-  //     answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.'
-  //   },
-  //   {
-  //     question: 'Is it safe to book services online?',
-  //     answer: 'Yes, our platform is secure and all technicians are verified professionals with proper background checks.'
-  //   },
-  //   {
-  //     question: 'What if I am not satisfied with the service?',
-  //     answer: 'Customer satisfaction is our priority. You can contact our support team and we will resolve your issue or arrange a revisit if needed.'
-  //   }
-  // ];
-  const faqs = [
-    {
-      question: 'How quickly can you respond to service requests?',
-      answer: 'Our average response time is 45 minutes within Ujjain city. For emergency services, we aim to arrive within 30 minutes.'
-    },
-    {
-      question: 'Do you provide late night or emergency services?',
-      answer: 'Yes, we offer both emergency and late night services to handle urgent electrical issues anytime you need.'
-    },
-    {
-      question: 'Are there extra charges for emergency or night services?',
-      answer: 'Yes, emergency service charges are ₹350 and late night service charges are ₹500. These are fixed additional fees and will be clearly shown before booking.'
-    },
-    {
-      question: 'What are your service charges?',
-      answer: 'We charge a standard diagnostic fee of ₹400 which is waived if you proceed with the repair. Our technicians provide a transparent cost estimate before starting any work.'
-    },
-    {
-      question: 'Do you offer warranties on repairs?',
-      answer: 'Yes, we offer a 90-day warranty on all repairs and a 1-year warranty on parts we install.'
-    },
-    {
-      question: 'What payment methods do you accept?',
-      answer: 'We accept cash, UPI payments (PhonePe, Google Pay, Paytm), and credit/debit cards.'
-    },
-    {
-      question: 'Can I schedule a service for a specific time?',
-      answer: 'Yes, you can book services in advance and choose a preferred time slot based on availability.'
-    },
-    {
-      question: 'Do you provide same-day service?',
-      answer: 'Yes, we offer same-day service for most requests depending on technician availability in your area.'
-    },
-    {
-      question: 'What areas do you currently serve?',
-      answer: 'We currently serve Ujjain city and nearby areas. Expansion to more cities is coming soon.'
-    },
-    {
-      question: 'Do you service appliances still under manufacturer warranty?',
-      answer: 'We recommend first contacting the manufacturer for appliances under warranty, as unauthorized repairs may void it. However, we can assist with diagnostics.'
-    },
-    {
-      question: 'Is it safe to book services online?',
-      answer: 'Yes, our platform is secure and all technicians are verified professionals with proper background checks.'
-    },
-    {
-      question: 'What if I am not satisfied with the service?',
-      answer: 'Customer satisfaction is our priority. You can contact our support team and we will resolve your issue or arrange a revisit if needed.'
-    }
-  ];
-
-  const applianceTips = [
-    {
-      icon: 'fa-wind',
-      bgIcon: 'fa-snowflake',
-      label: 'Air conditioner maintenance tips',
-      title: '5 Essential AC Maintenance Tips',
-      description: 'Keep your air conditioner running efficiently and extend its lifespan with these simple maintenance tips.',
-      color: 'text-blue-600 dark:text-blue-400'
-    },
-    {
-      icon: 'fa-thermometer-half',
-      bgIcon: 'fa-tint',
-      label: 'Refrigerator energy saving tips',
-      title: 'How to Reduce Your Refrigerator\'s Energy Consumption',
-      description: 'Simple adjustments can significantly lower your electricity bill while keeping your food fresh.',
-      color: 'text-blue-600 dark:text-blue-400'
-    },
-    {
-      icon: 'fa-shield-alt',
-      bgIcon: 'fa-home',
-      label: 'Home electrical safety tips',
-      title: 'Electrical Safety Tips Every Homeowner Should Know',
-      description: 'Protect your home and family from electrical hazards with these important safety measures.',
-      color: 'text-blue-600 dark:text-blue-400'
-    }
-  ];
 
   const nextTestimonial = () => {
     setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
@@ -612,20 +423,37 @@ export default function Index() {
                   })()}
                 </div>
 
-                {/* Slider Indicators */}
-                <div className="flex justify-center gap-2 mt-4">
-                  {serviceShowcase.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentService(idx)}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                        idx === currentService
+                {/* Slider Nav — prev/next + dots */}
+                <div className="flex items-center justify-center gap-3 mt-4">
+                  <button
+                    onClick={() => setCurrentService((currentService - 1 + serviceShowcase.length) % serviceShowcase.length)}
+                    className="w-9 h-9 rounded-lg bg-white/15 border border-white/30 hover:bg-white/25 text-white flex items-center justify-center transition-all duration-200"
+                    aria-label="Previous service"
+                  >
+                    <ChevronRight size={18} className="rotate-180" />
+                  </button>
+
+                  <div className="flex gap-2">
+                    {serviceShowcase.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentService(idx)}
+                        className={`h-2 rounded-full transition-all duration-300 ${idx === currentService
                           ? 'bg-white w-6'
-                          : 'bg-white/40 hover:bg-white/60'
-                      }`}
-                      aria-label={`Go to service ${idx + 1}`}
-                    />
-                  ))}
+                          : 'w-2 bg-white/40 hover:bg-white/60'
+                          }`}
+                        aria-label={`Go to service ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentService((currentService + 1) % serviceShowcase.length)}
+                    className="w-9 h-9 rounded-lg bg-white/15 border border-white/30 hover:bg-white/25 text-white flex items-center justify-center transition-all duration-200"
+                    aria-label="Next service"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
                 </div>
               </div>
 
@@ -1140,14 +968,14 @@ export default function Index() {
                 const photoUrl = member.photo_url || member.image_url;
                 const isValidUrl = photoUrl && photoUrl.trim() && photoUrl.startsWith('http');
                 const finalImageUrl = getTeamImage(member.name, isValidUrl ? photoUrl : null);
-                
+
                 return (
                   <div key={member.id || index} className="team-member text-center">
                     <div className="overflow-hidden rounded-full h-40 w-40 sm:h-48 sm:w-48 mx-auto mb-4 md:mb-6">
-                      <img 
-                        src={finalImageUrl} 
-                        alt={member.name} 
-                        className="h-full w-full object-cover bg-white rounded-full transition duration-300 hover:scale-105" 
+                      <img
+                        src={finalImageUrl}
+                        alt={member.name}
+                        className="h-full w-full object-cover bg-white rounded-full transition duration-300 hover:scale-105"
                         loading="lazy"
                         onError={(e) => {
                           const target = e.currentTarget;

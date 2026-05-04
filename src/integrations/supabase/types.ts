@@ -1293,6 +1293,7 @@ export type Database = {
           updated_at: string
           value: number | null
           visibility: string[]
+          expires_at: string | null;
         }
         Insert: {
           banner_url?: string | null

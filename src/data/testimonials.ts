@@ -1,14 +1,23 @@
+import testimonial1 from "@/images/testimonial-1.jpg";
+import testimonial2 from "@/images/testimonial-2.jpg";
+import testimonial3 from "@/images/testimonial-3.jpg";
+import testimonial4 from "@/images/no-profile.png";
+import testimonial5 from "@/images/no-profile.png";
+
 export interface Testimonial {
-  id: string;
-  name: string;
-  rating: number;
+  id?: string;
+  image?:string;
+  name?: string;
+  rating?: number;
   text: string;
-  service: string;
+  service?: string;
+  location?: string;
 }
 
 export const testimonials: Testimonial[] = [
-  { id: "1", name: "Ananya M.", rating: 5, text: "Electroobuddy fixed our entire wiring system in just one day. Professional, punctual, and affordable!", service: "Wiring & Maintenance" },
-  { id: "2", name: "Suresh R.", rating: 5, text: "Amazing service! They installed all our smart home devices perfectly. Highly recommended.", service: "Device Installation" },
-  { id: "3", name: "Meera K.", rating: 4, text: "Quick response time and very knowledgeable team. They diagnosed our electrical issue within minutes.", service: "Home Troubleshooting" },
-  { id: "4", name: "Deepak J.", rating: 5, text: "The safety inspection was thorough and they provided a detailed report. Feel much safer now.", service: "Safety Inspection" },
-];
+    { name: 'Kunal Yadav', location: 'Ujjain', image: testimonial1, rating: 5, text: 'ElectrooBuddy fixed my AC within an hour of calling them. The technician was professional and explained everything clearly.' },
+    { name: 'Naman Singh', location: 'Ujjain', image: testimonial2, rating: 5, text: 'I called ElectrooBuddy for an emergency electrical issue at midnight. They arrived in 30 minutes and fixed the problem safely.' },
+    { name: 'Udit Joshi', location: 'Ujjain', image: testimonial3, rating: 5, text: 'Their team installed my new 65-inch TV perfectly on the wall. They handled everything from unpacking to cable management.' },
+    { name: 'Anjali Verma', location: 'Ujjain', image: testimonial4, rating: 5, text: 'The technician arrived exactly on time and fixed our refrigerator quickly. Very reasonable pricing compared to other services.' },
+    { name: 'Rajesh Gupta', location: 'Ujjain', image: testimonial5, rating: 5, text: 'I\'ve used ElectrooBuddy multiple times for different appliances. Always professional, and their work comes with a warranty.' }
+  ];
