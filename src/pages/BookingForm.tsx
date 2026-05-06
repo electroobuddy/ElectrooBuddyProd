@@ -6,21 +6,21 @@ import Section from "@/components/Section";
 import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, UserCheck, Sun, Moon } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useServicesStore } from "@/stores/servicesStore";
 
 const BookingForm = () => {
   const [params] = useSearchParams();
   const preselected = params.get("service") || "";
-  const [services, setServices] = useState<any[]>([]);
+  const { bookingServices, getServiceCharge, fetchBookingServices } = useServicesStore();
   const [submitting, setSubmitting] = useState(false);
   const [assigningTechnician, setAssigningTechnician] = useState(false);
   const [done, setDone] = useState(false);
   const { user } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
-  const [selectedServiceCharge, setSelectedServiceCharge] = useState<{ amount: string; label: string; show: boolean } | null>(null);
 
   // Dark mode effect
   useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true' || 
+    const isDark = localStorage.getItem('darkMode') === 'true' ||
       (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
     setDarkMode(isDark);
     if (isDark) document.documentElement.classList.add('dark');
@@ -47,18 +47,17 @@ const BookingForm = () => {
     has_old_fan: "",
     is_electricity_supply_on: "",
   });
-  
+
   const [gettingLocation, setGettingLocation] = useState(false);
 
+  // Fetch booking services on mount
   useEffect(() => {
-    supabase.from("services").select("title, service_charge, show_visit_charge, visit_charge_label").order("sort_order").then(({ data }) => {
-      setServices(data || []);
-    });
-  }, []);
+    fetchBookingServices();
+  }, [fetchBookingServices]);
 
   // Add Custom Service option to services list
   const servicesWithOptions = [
-    ...services,
+    ...bookingServices,
     { title: "Custom Service" }
   ];
 
@@ -66,23 +65,8 @@ const BookingForm = () => {
     if (preselected) setForm((f) => ({ ...f, service_type: preselected }));
   }, [preselected]);
 
-  // Update service charge when service_type changes
-  useEffect(() => {
-    if (form.service_type) {
-      const selectedService = services.find(s => s.title === form.service_type);
-      if (selectedService && selectedService.show_visit_charge && selectedService.service_charge) {
-        setSelectedServiceCharge({
-          amount: selectedService.service_charge,
-          label: selectedService.visit_charge_label || 'Visit Charge',
-          show: selectedService.show_visit_charge
-        });
-      } else {
-        setSelectedServiceCharge(null);
-      }
-    } else {
-      setSelectedServiceCharge(null);
-    }
-  }, [form.service_type, services]);
+  // Get service charge using store helper
+  const selectedServiceCharge = form.service_type ? getServiceCharge(form.service_type) : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,23 +89,23 @@ const BookingForm = () => {
       is_electricity_supply_on: form.is_electricity_supply_on || null,
       user_id: user?.id || null, // Always include user_id (null for guests, UUID for authenticated users)
     };
-    
+
     try {
       // Insert booking
       const { data: bookingData, error } = await supabase.from("bookings").insert(insertData).select().single();
-      
+
       if (error) throw error;
-      
+
       const bookingId = bookingData.id;
       toast.success("Booking submitted! Assigning technician...");
-      
+
       // Notify admins about new booking
       try {
         const { data: adminRoles } = await supabase
           .from("user_roles")
           .select("user_id")
           .eq("role", "admin");
-        
+
         if (adminRoles && adminRoles.length > 0) {
           for (const adminRole of adminRoles) {
             await supabase.rpc("create_notification", {
@@ -130,13 +114,13 @@ const BookingForm = () => {
               p_title: "New Booking Received",
               p_message: `New booking from ${form.name} for ${form.service_type} on ${form.preferred_date}`,
               p_booking_id: bookingId,
-              p_metadata: { 
-                customer_name: form.name, 
+              p_metadata: {
+                customer_name: form.name,
                 service: form.service_type,
-                is_guest: !user 
+                is_guest: !user
               },
             });
-            
+
             // Send push notification to admin
             try {
               await supabase.functions.invoke("send-push-notification", {
@@ -156,7 +140,7 @@ const BookingForm = () => {
       } catch (adminNotifError) {
         console.error("Failed to notify admins:", adminNotifError);
       }
-      
+
       // If user is authenticated, notify them too
       if (user?.id) {
         try {
@@ -172,13 +156,13 @@ const BookingForm = () => {
           console.error("Failed to notify user:", userNotifError);
         }
       }
-      
+
       // Call auto-assign function
       try {
         const response = await supabase.functions.invoke("auto-assign-technician", {
           body: { bookingId },
         });
-        
+
         if (response.error) {
           console.error("Auto-assign error:", response.error);
           toast.info("Booking submitted but no technician available right now. Admin will assign manually.");
@@ -191,16 +175,16 @@ const BookingForm = () => {
         console.error("Failed to call auto-assign function:", funcError);
         // Don't show error to user - booking was successful
       }
-      
+
       setDone(true);
-      setForm({ 
-        name: "", 
-        phone: "", 
-        email: "", 
-        address: "", 
-        service_type: "", 
-        preferred_date: "", 
-        preferred_time: "", 
+      setForm({
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+        service_type: "",
+        preferred_date: "",
+        preferred_time: "",
         description: "",
         exact_location: "",
         custom_service_demand: "",
@@ -224,145 +208,145 @@ const BookingForm = () => {
     { name: "phone", label: "Phone Number", type: "tel", placeholder: "+91 98765 43210" },
     { name: "email", label: "Email Address", type: "email", placeholder: "your@email.com" },
   ];
-  
-const handleGetCurrentLocation = () => {
-  setGettingLocation(true);
-  if (!navigator.geolocation) {
-    setGettingLocation(false);
-    toast.error("Geolocation is not supported by your browser.");
-    return;
-  }
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const { latitude, longitude } = position.coords;
-
-      const buildAddress = (a: any): string => {
-        // Most granular → least granular
-        const level1 = [
-          a.house_number,
-          a.house_name,
-          a.building,
-          a.amenity,
-          a.shop,
-          a.office,
-          a.tourism,
-          a.leisure,
-        ].filter(Boolean).join(", ");
-
-        const level2 = [
-          a.road,
-          a.pedestrian,
-          a.footway,
-          a.street,
-          a.path,
-          a.residential,
-        ].filter(Boolean)[0] || "";
-
-        const level3 = [
-          a.neighbourhood,
-          a.quarter,
-          a.suburb,
-          a.hamlet,
-          a.village,
-        ].filter(Boolean)[0] || "";
-
-        const level4 = [
-          a.city_district,
-          a.district,
-          a.town,
-          a.city,
-          a.county,
-          a.state_district,
-        ].filter(Boolean)[0] || "";
-
-        const level5 = a.state || "";
-        const level6 = a.postcode || "";
-
-        const parts = [level1, level2, level3, level4, level5, level6].filter(Boolean);
-        return parts.join(", ");
-      };
-
-      // Try Nominatim first with zoom=18 (street level)
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18&accept-language=en`,
-          { headers: { "Accept-Language": "en" } }
-        );
-        const data = await res.json();
-        const a = data.address || {};
-        let address = buildAddress(a);
-
-        // If result is still vague (no road/street found), use display_name first 4 parts
-        if (!a.road && !a.pedestrian && !a.footway && !a.street && !a.residential) {
-          const displayParts = (data.display_name || "").split(",").map((s: string) => s.trim());
-          // Take up to first 5 meaningful parts (skip country)
-          address = displayParts.slice(0, 5).join(", ");
-        }
-
-        if (address) {
-          setForm((prev) => ({ ...prev, address, exact_location: address }));
-          toast.success("Address fetched successfully!");
-          setGettingLocation(false);
-          return;
-        }
-      } catch (_) {}
-
-      // Fallback: try OpenCage (no key needed for low usage)
-      try {
-        const res = await fetch(
-          `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_OPENCAGE_KEY&language=en&pretty=1&no_annotations=1`
-        );
-        const data = await res.json();
-        const formatted = data.results?.[0]?.formatted;
-        if (formatted) {
-          setForm((prev) => ({ ...prev, address: formatted, exact_location: formatted }));
-          toast.success("Address fetched!");
-          setGettingLocation(false);
-          return;
-        }
-      } catch (_) {}
-
-      // Last fallback: BigDataCloud (free, no key)
-      try {
-        const res = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-        );
-        const data = await res.json();
-        const parts = [
-          data.locality,
-          data.localityInfo?.administrative?.find((x: any) => x.adminLevel === 6)?.name,
-          data.localityInfo?.administrative?.find((x: any) => x.adminLevel === 4)?.name,
-          data.city || data.principalSubdivision,
-          data.postcode,
-        ].filter(Boolean);
-
-        const address = parts.join(", ");
-        if (address) {
-          setForm((prev) => ({ ...prev, address, exact_location: address }));
-          toast.success("Address fetched!");
-          setGettingLocation(false);
-          return;
-        }
-      } catch (_) {}
-
-      // All APIs failed
-      toast.error("Couldn't resolve address. Please type it manually.");
+  const handleGetCurrentLocation = () => {
+    setGettingLocation(true);
+    if (!navigator.geolocation) {
       setGettingLocation(false);
-    },
-    (error) => {
-      setGettingLocation(false);
-      if (error.code === error.PERMISSION_DENIED) {
-        toast.error("Location permission denied. Please allow access or enter address manually.");
-      } else if (error.code === error.TIMEOUT) {
-        toast.error("Location request timed out. Please try again.");
-      } else {
-        toast.error("Unable to get location. Please enter manually.");
-      }
-    },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-  );
-};
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        const buildAddress = (a: any): string => {
+          // Most granular → least granular
+          const level1 = [
+            a.house_number,
+            a.house_name,
+            a.building,
+            a.amenity,
+            a.shop,
+            a.office,
+            a.tourism,
+            a.leisure,
+          ].filter(Boolean).join(", ");
+
+          const level2 = [
+            a.road,
+            a.pedestrian,
+            a.footway,
+            a.street,
+            a.path,
+            a.residential,
+          ].filter(Boolean)[0] || "";
+
+          const level3 = [
+            a.neighbourhood,
+            a.quarter,
+            a.suburb,
+            a.hamlet,
+            a.village,
+          ].filter(Boolean)[0] || "";
+
+          const level4 = [
+            a.city_district,
+            a.district,
+            a.town,
+            a.city,
+            a.county,
+            a.state_district,
+          ].filter(Boolean)[0] || "";
+
+          const level5 = a.state || "";
+          const level6 = a.postcode || "";
+
+          const parts = [level1, level2, level3, level4, level5, level6].filter(Boolean);
+          return parts.join(", ");
+        };
+
+        // Try Nominatim first with zoom=18 (street level)
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18&accept-language=en`,
+            { headers: { "Accept-Language": "en" } }
+          );
+          const data = await res.json();
+          const a = data.address || {};
+          let address = buildAddress(a);
+
+          // If result is still vague (no road/street found), use display_name first 4 parts
+          if (!a.road && !a.pedestrian && !a.footway && !a.street && !a.residential) {
+            const displayParts = (data.display_name || "").split(",").map((s: string) => s.trim());
+            // Take up to first 5 meaningful parts (skip country)
+            address = displayParts.slice(0, 5).join(", ");
+          }
+
+          if (address) {
+            setForm((prev) => ({ ...prev, address, exact_location: address }));
+            toast.success("Address fetched successfully!");
+            setGettingLocation(false);
+            return;
+          }
+        } catch (_) { }
+
+        // Fallback: try OpenCage (no key needed for low usage)
+        try {
+          const res = await fetch(
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_OPENCAGE_KEY&language=en&pretty=1&no_annotations=1`
+          );
+          const data = await res.json();
+          const formatted = data.results?.[0]?.formatted;
+          if (formatted) {
+            setForm((prev) => ({ ...prev, address: formatted, exact_location: formatted }));
+            toast.success("Address fetched!");
+            setGettingLocation(false);
+            return;
+          }
+        } catch (_) { }
+
+        // Last fallback: BigDataCloud (free, no key)
+        try {
+          const res = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          const data = await res.json();
+          const parts = [
+            data.locality,
+            data.localityInfo?.administrative?.find((x: any) => x.adminLevel === 6)?.name,
+            data.localityInfo?.administrative?.find((x: any) => x.adminLevel === 4)?.name,
+            data.city || data.principalSubdivision,
+            data.postcode,
+          ].filter(Boolean);
+
+          const address = parts.join(", ");
+          if (address) {
+            setForm((prev) => ({ ...prev, address, exact_location: address }));
+            toast.success("Address fetched!");
+            setGettingLocation(false);
+            return;
+          }
+        } catch (_) { }
+
+        // All APIs failed
+        toast.error("Couldn't resolve address. Please type it manually.");
+        setGettingLocation(false);
+      },
+      (error) => {
+        setGettingLocation(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error("Location permission denied. Please allow access or enter address manually.");
+        } else if (error.code === error.TIMEOUT) {
+          toast.error("Location request timed out. Please try again.");
+        } else {
+          toast.error("Unable to get location. Please enter manually.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
 
   return (
     <div className="booking-page bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -751,9 +735,9 @@ const handleGetCurrentLocation = () => {
       {/* Hero */}
       <section className="hero-gradient text-white booking-hero slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }} 
-            animate={{ opacity: 1, y: 0 }} 
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
           >
             <motion.div
@@ -765,8 +749,8 @@ const handleGetCurrentLocation = () => {
               <CalendarDays className="w-5 h-5" />
               <span className="font-semibold text-sm uppercase tracking-wide">Appointments</span>
             </motion.div>
-            
-            <motion.h1 
+
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
@@ -774,8 +758,8 @@ const handleGetCurrentLocation = () => {
             >
               Book a Service
             </motion.h1>
-            
-            <motion.p 
+
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}

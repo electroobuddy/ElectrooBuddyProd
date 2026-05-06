@@ -4,14 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { PHONE_NUMBER } from "@/data/services";
+import { useServicesStore } from "@/stores/servicesStore";
 
 
 export default function RequestServiceSection({ preselectedService }: { preselectedService?: string }) {
   const [serviceFormDone, setServiceFormDone] = useState(false);
   const [serviceFormSubmitting, setServiceFormSubmitting] = useState(false);
   const { user } = useAuth();
-  const [services, setServices] = useState<any[]>([]);
-  const [selectedServiceCharge, setSelectedServiceCharge] = useState<{ amount: string; label: string; show: boolean } | null>(null);
+  const { bookingServices, getServiceCharge, fetchBookingServices } = useServicesStore();
   const [serviceForm, setServiceForm] = useState({
     name: "", phone: "", email: "", address: "",
     exact_location: "", service_type: preselectedService || "", preferred_date: "",
@@ -22,22 +22,15 @@ export default function RequestServiceSection({ preselectedService }: { preselec
     clients: 5000,
     projects: 8000
   }), []);
-  // Fetch services from database
+
+  // Fetch services on mount
   useEffect(() => {
-    supabase.from("services").select("title, service_charge, show_visit_charge, visit_charge_label").order("sort_order").then(({ data }) => {
-      if (data) {
-        setServices(data);
-        // If preselected service matches a database service, update form
-        if (preselectedService && data.some((s: any) => s.title === preselectedService)) {
-          setServiceForm(prev => ({ ...prev, service_type: preselectedService }));
-        }
-      }
-    });
-  }, []);
+    fetchBookingServices();
+  }, [fetchBookingServices]);
 
   // Add Custom Service option to services list
   const servicesWithOptions = [
-    ...services,
+    ...bookingServices,
     { title: "Custom Service" }
   ];
 
@@ -48,23 +41,8 @@ export default function RequestServiceSection({ preselectedService }: { preselec
     }
   }, [preselectedService]);
 
-  // Update service charge when service_type changes
-  useEffect(() => {
-    if (serviceForm.service_type) {
-      const selectedService = services.find(s => s.title === serviceForm.service_type);
-      if (selectedService && selectedService.show_visit_charge && selectedService.service_charge) {
-        setSelectedServiceCharge({
-          amount: selectedService.service_charge,
-          label: selectedService.visit_charge_label || 'Visit Charge',
-          show: selectedService.show_visit_charge
-        });
-      } else {
-        setSelectedServiceCharge(null);
-      }
-    } else {
-      setSelectedServiceCharge(null);
-    }
-  }, [serviceForm.service_type, services]);
+  // Get service charge using store helper
+  const selectedServiceCharge = serviceForm.service_type ? getServiceCharge(serviceForm.service_type) : null;
 
   const handleServiceFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

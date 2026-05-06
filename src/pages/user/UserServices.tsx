@@ -1,52 +1,18 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Zap, Loader2, Phone, MessageCircle, Calendar, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
-import { useServices } from "@/hooks/useOptimizedData";
+import { Loader2 } from "lucide-react";
+import { useServicesStore } from "@/stores/servicesStore";
 import ServiceCard2 from "@/components/ServiceCard2";
-import { services as staticServices } from "@/data/services";
 
 const UserServices = () => {
-  const { services: dbServices, loading: servicesLoading } = useServices();
-  const [services, setServices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [preselectedService, setPreselectedService] = useState<string>("");
+  const { services, loading, fetchServices } = useServicesStore();
 
-  // Load services from database or fallback to static
+  // Fetch services on mount
   useEffect(() => {
-    if (dbServices && dbServices.length > 0) {
-      setServices(dbServices);
-    } else {
-      setServices(staticServices.map(s => ({
-        id: s.title.toLowerCase().replace(/\s+/g, '-'),
-        icon_name: getIconNameForService(s.title),
-        title: s.title,
-        description: s.description,
-        whatsapp_enabled: true,
-        call_enabled: true,
-        book_now_enabled: true
-      })));
-    }
-    setLoading(false);
-  }, [dbServices]);
-
-  const getIconNameForService = (title: string): string => {
-    const iconMap: Record<string, string> = {
-      'DTH': 'SatelliteDish',
-      'TV': 'Tv',
-      'Short Circuit': 'Zap',
-      'Fan': 'Fan',
-      'AC': 'Snowflake',
-      'Appliance': 'Wrench'
-    };
-    for (const [key, iconName] of Object.entries(iconMap)) {
-      if (title.includes(key)) return iconName;
-    }
-    return 'Zap';
-  };
+    fetchServices();
+  }, [fetchServices]);
 
   const handleBookService = (serviceTitle: string) => {
-    setPreselectedService(serviceTitle);
     window.location.href = `/booking?service=${encodeURIComponent(serviceTitle)}`;
   };
 

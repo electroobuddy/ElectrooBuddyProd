@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronDown, ArrowRight, User, ShoppingCart, Sun, Moon, Zap } from "lucide-react";
+import {
+  Menu,
+  X,
+  ChevronDown,
+  ArrowRight,
+  User,
+  ShoppingCart,
+  Sun,
+  Moon,
+  Zap,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,8 +20,8 @@ import { useCart } from "@/contexts/CartContext";
 import favicon from "/favicon.png";
 
 const navLinks = [
-  { label: "Home",     to: "/" },
-  { label: "About",    to: "/about" },
+  { label: "Home", to: "/" },
+  { label: "About", to: "/about" },
   { label: "Services", to: "/services" },
   { label: "Products", to: "/products" },
   { label: "Subscriptions", to: "/subscriptions" },
@@ -19,13 +29,13 @@ const navLinks = [
   {
     label: "Pages",
     children: [
-      { label: "Track Booking",    to: "/track-booking" },
-      { label: "FAQs",               to: "/faq" },
-      { label: "Privacy Policy",     to: "/privacy" },
+      { label: "Track Booking", to: "/track-booking" },
+      { label: "FAQs", to: "/faq" },
+      { label: "Privacy Policy", to: "/privacy" },
       { label: "Terms & Conditions", to: "/terms" },
+      { label: "Contact", to: "/contact" },
     ],
   },
-  { label: "Contact", to: "/contact" },
 ];
 
 // ─── Blinking Eye Component ───────────────────────────────────────────────────
@@ -43,7 +53,7 @@ const BlinkingEye = () => {
       setTimeout(() => setBlink(false), 120);
 
       // Second blink (double-blink feel)
-      setTimeout(() => setBlink(true),  420);
+      setTimeout(() => setBlink(true), 420);
       setTimeout(() => setBlink(false), 540);
 
       // Schedule next cycle: 3–5 s random interval
@@ -168,22 +178,22 @@ const LogoText = () => (
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 const Navbar = () => {
-  const [open, setOpen]           = useState(false);
+  const [open, setOpen] = useState(false);
   const [pagesOpen, setPagesOpen] = useState(false);
-  const [scrolled, setScrolled]   = useState(false);
-  const [darkMode, setDarkMode]   = useState(true); // Default to dark mode
-  const location                  = useLocation();
-  const { user }                  = useAuth();
-  const { itemCount }             = useCart();
+  const [scrolled, setScrolled] = useState(false);
+  const [darkMode, setDarkMode] = useState(true); // Default to dark mode
+  const location = useLocation();
+  const { user } = useAuth();
+  const { itemCount } = useCart();
 
   // Dark mode effect for mobile menu
   useEffect(() => {
     // Check localStorage first, if not set, default to dark mode (true)
-    const storedMode = localStorage.getItem('darkMode');
-    const isDark = storedMode !== null ? storedMode === 'true' : true;
+    const storedMode = localStorage.getItem("darkMode");
+    const isDark = storedMode !== null ? storedMode === "true" : true;
     setDarkMode(isDark);
     // Ensure dark class is applied
-    document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.classList.toggle("dark", isDark);
   }, []);
 
   useEffect(() => {
@@ -192,7 +202,10 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  useEffect(() => { setOpen(false); setPagesOpen(false); }, [location]);
+  useEffect(() => {
+    setOpen(false);
+    setPagesOpen(false);
+  }, [location]);
 
   const isActive = (to: string) => location.pathname === to;
 
@@ -823,11 +836,14 @@ const Navbar = () => {
 
       <nav className={`navbar-root ${scrolled ? "scrolled" : "top"}`}>
         <div className="nav-inner">
-
           {/* ── Logo ── */}
           <Link to="/" className="nav-logo">
             <div className="logo-icon">
-              <img src={favicon} alt="Electroo Buddy" className="w-full h-full object-contain rounded-lg" />
+              <img
+                src={favicon}
+                alt="Electroo Buddy"
+                className="w-full h-full object-contain rounded-lg"
+              />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               <LogoText />
@@ -839,22 +855,34 @@ const Navbar = () => {
           <div className="desktop-nav">
             {navLinks.map((link) =>
               link.children ? (
-                <div key={link.label} style={{ position: "relative" }}
+                <div
+                  key={link.label}
+                  style={{ position: "relative" }}
                   onMouseEnter={() => setPagesOpen(true)}
-                  onMouseLeave={() => setPagesOpen(false)}>
+                  onMouseLeave={() => setPagesOpen(false)}
+                >
                   <button className="nav-dropdown-trigger">
                     {link.label}
-                    <ChevronDown size={14} className={`trigger-chevron ${pagesOpen ? "open" : ""}`} />
+                    <ChevronDown
+                      size={14}
+                      className={`trigger-chevron ${pagesOpen ? "open" : ""}`}
+                    />
                   </button>
                   <AnimatePresence>
                     {pagesOpen && (
-                      <motion.div className="dropdown-menu"
+                      <motion.div
+                        className="dropdown-menu"
                         initial={{ opacity: 0, y: 10, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.96 }}
-                        transition={{ duration: 0.18 }}>
-                        {link.children.map(child => (
-                          <Link key={child.to} to={child.to} className="dropdown-item">
+                        transition={{ duration: 0.18 }}
+                      >
+                        {link.children.map((child) => (
+                          <Link
+                            key={child.to}
+                            to={child.to}
+                            className="dropdown-item"
+                          >
                             {child.label}
                             <ArrowRight size={13} className="dropdown-arrow" />
                           </Link>
@@ -864,26 +892,48 @@ const Navbar = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <Link key={link.to} to={link.to!} className={`nav-link ${isActive(link.to!) ? "active" : ""}`}>
+                <Link
+                  key={link.to}
+                  to={link.to!}
+                  className={`nav-link ${isActive(link.to!) ? "active" : ""}`}
+                >
                   {link.label}
                 </Link>
-              )
+              ),
             )}
 
-            <div style={{ marginLeft: 4 }}><ThemeToggle /></div>
+            <div style={{ marginLeft: 4 }}>
+              <ThemeToggle />
+            </div>
 
-            <Link to="/cart" className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" style={{ marginRight: 6 }}>
-              <ShoppingCart size={18} className="text-gray-700 dark:text-gray-300" />
+            <Link
+              to="/cart"
+              className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              style={{ marginRight: 6 }}
+            >
+              <ShoppingCart
+                size={18}
+                className="text-gray-700 dark:text-gray-300"
+              />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center" style={{ fontSize: '10px' }}>
+                <span
+                  className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center"
+                  style={{ fontSize: "10px" }}
+                >
                   {itemCount}
                 </span>
               )}
             </Link>
 
-            <Link to={user ? "/dashboard" : "/login"} className="nav-link" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <Link
+              to={user ? "/dashboard" : "/login"}
+              className="nav-link"
+              style={{ display: "flex", alignItems: "center", gap: 4 }}
+            >
               <User size={13} />
-              <span className="hidden xl:inline">{user ? "Dashboard" : "Login"}</span>
+              <span className="hidden xl:inline">
+                {user ? "Dashboard" : "Login"}
+              </span>
               <span className="xl:hidden">{user ? "Dash" : "Login"}</span>
             </Link>
 
@@ -894,15 +944,26 @@ const Navbar = () => {
 
           {/* ── Mobile controls ── */}
           <div className="mobile-controls">
-            <Link to="/cart" className="relative p-2 mr-1" style={{ color: "#6b7280" }}>
+            <Link
+              to="/cart"
+              className="relative p-2 mr-1"
+              style={{ color: "#6b7280" }}
+            >
               <ShoppingCart size={18} className="dark:text-gray-300" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center" style={{ fontSize: '10px' }}>
+                <span
+                  className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center"
+                  style={{ fontSize: "10px" }}
+                >
                   {itemCount}
                 </span>
               )}
             </Link>
-            <button className="hamburger-btn" onClick={() => setOpen(!open)} aria-label="Toggle menu">
+            <button
+              className="hamburger-btn"
+              onClick={() => setOpen(!open)}
+              aria-label="Toggle menu"
+            >
               {open ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
@@ -911,33 +972,45 @@ const Navbar = () => {
         {/* ── Mobile menu ── */}
         <AnimatePresence>
           {open && (
-            <motion.div className="mobile-menu"
+            <motion.div
+              className="mobile-menu"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}>
+              transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            >
               <div className="mobile-menu-inner">
                 {/* Theme Toggle Row */}
                 <div className="mobile-theme-row">
                   <span className="mobile-theme-label">
                     {darkMode ? <Moon size={14} /> : <Sun size={14} />}
-                    <span className="hidden sm:inline">{darkMode ? 'Dark Mode' : 'Light Mode'}</span>
-                    <span className="sm:hidden">{darkMode ? 'Dark' : 'Light'}</span>
+                    <span className="hidden sm:inline">
+                      {darkMode ? "Dark Mode" : "Light Mode"}
+                    </span>
+                    <span className="sm:hidden">
+                      {darkMode ? "Dark" : "Light"}
+                    </span>
                   </span>
                   <button
                     className="mobile-theme-toggle"
                     onClick={() => {
                       const newMode = !darkMode;
                       setDarkMode(newMode);
-                      document.documentElement.classList.toggle('dark', newMode);
-                      localStorage.setItem('darkMode', String(newMode));
+                      document.documentElement.classList.toggle(
+                        "dark",
+                        newMode,
+                      );
+                      localStorage.setItem("darkMode", String(newMode));
                     }}
                     aria-label="Toggle theme"
                   >
                     {darkMode ? (
                       <Sun size={16} className="text-yellow-500" />
                     ) : (
-                      <Moon size={16} className="text-gray-700 dark:text-gray-300" />
+                      <Moon
+                        size={16}
+                        className="text-gray-700 dark:text-gray-300"
+                      />
                     )}
                   </button>
                 </div>
@@ -945,9 +1018,15 @@ const Navbar = () => {
                 {navLinks.map((link) =>
                   link.children ? (
                     <div key={link.label}>
-                      <button className="mobile-trigger" onClick={() => setPagesOpen(!pagesOpen)}>
+                      <button
+                        className="mobile-trigger"
+                        onClick={() => setPagesOpen(!pagesOpen)}
+                      >
                         {link.label}
-                        <ChevronDown size={14} className={`trigger-chevron ${pagesOpen ? "open" : ""}`} />
+                        <ChevronDown
+                          size={14}
+                          className={`trigger-chevron ${pagesOpen ? "open" : ""}`}
+                        />
                       </button>
                       <AnimatePresence>
                         {pagesOpen && (
@@ -956,10 +1035,18 @@ const Navbar = () => {
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.25 }}
-                            style={{ overflow: "hidden" }}>
-                            {link.children.map(child => (
-                              <Link key={child.to} to={child.to} className="mobile-sub-link"
-                                onClick={() => { setOpen(false); setPagesOpen(false); }}>
+                            style={{ overflow: "hidden" }}
+                          >
+                            {link.children.map((child) => (
+                              <Link
+                                key={child.to}
+                                to={child.to}
+                                className="mobile-sub-link"
+                                onClick={() => {
+                                  setOpen(false);
+                                  setPagesOpen(false);
+                                }}
+                              >
                                 {child.label}
                               </Link>
                             ))}
@@ -969,25 +1056,49 @@ const Navbar = () => {
                       <div className="mobile-divider" />
                     </div>
                   ) : (
-                    <Link key={link.to} to={link.to!} className={`mobile-link ${isActive(link.to!) ? "active" : ""}`}
-                      onClick={() => setOpen(false)}>
+                    <Link
+                      key={link.to}
+                      to={link.to!}
+                      className={`mobile-link ${isActive(link.to!) ? "active" : ""}`}
+                      onClick={() => setOpen(false)}
+                    >
                       {link.label}
                     </Link>
-                  )
+                  ),
                 )}
-                <Link to={user ? "/dashboard" : "/login"} className="mobile-link" onClick={() => setOpen(false)}
-                  style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <User size={14} /> 
-                  <span className="hidden sm:inline">{user ? "My Dashboard" : "Login / Sign Up"}</span>
-                  <span className="sm:hidden">{user ? "Dashboard" : "Login"}</span>
+                <Link
+                  to={user ? "/dashboard" : "/login"}
+                  className="mobile-link"
+                  onClick={() => setOpen(false)}
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                >
+                  <User size={14} />
+                  <span className="hidden sm:inline">
+                    {user ? "My Dashboard" : "Login / Sign Up"}
+                  </span>
+                  <span className="sm:hidden">
+                    {user ? "Dashboard" : "Login"}
+                  </span>
                 </Link>
-                <Link to="/cart" className="mobile-link" onClick={() => setOpen(false)}
-                  style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <ShoppingCart size={14} /> 
-                  <span className="hidden sm:inline">My Cart {itemCount > 0 && `(${itemCount})`}</span>
-                  <span className="sm:hidden">Cart {itemCount > 0 && `(${itemCount})`}</span>
+                <Link
+                  to="/cart"
+                  className="mobile-link"
+                  onClick={() => setOpen(false)}
+                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                >
+                  <ShoppingCart size={14} />
+                  <span className="hidden sm:inline">
+                    My Cart {itemCount > 0 && `(${itemCount})`}
+                  </span>
+                  <span className="sm:hidden">
+                    Cart {itemCount > 0 && `(${itemCount})`}
+                  </span>
                 </Link>
-                <Link to="/booking" className="mobile-book-btn" onClick={() => setOpen(false)}>
+                <Link
+                  to="/booking"
+                  className="mobile-book-btn"
+                  onClick={() => setOpen(false)}
+                >
                   ⚡ Book Now
                 </Link>
               </div>

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
@@ -16,8 +16,8 @@ import ProductCard from "@/components/ProductCard";
 import OfferBannerSlider from "@/components/OfferBannerSlider";
 
 import RequestServiceSection from "@/components/Requestservicesection";
-import { services as staticServices } from "@/data/services";
-import { useServices, useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
+import { useServicesStore } from "@/stores/servicesStore";
+import { useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
 import { PHONE_NUMBER } from "@/data/services";
 import { teamMembers as staticTeam } from "@/data/team";
 
@@ -56,8 +56,7 @@ export default function Index() {
   const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", subject: "", message: "" });
   const [contactSubmitting, setContactSubmitting] = useState(false);
   const [contactDone, setContactDone] = useState(false);
-  const { services: dbServices, loading: servicesLoading } = useServices();
-  const [services, setServices] = useState<any[]>([]);
+  const { services, loading: servicesLoading, fetchServices } = useServicesStore();
   const { products, loading: productsLoading } = useProducts();
   const displayProducts = products.slice(0, 4);
   const [team, setTeam] = useState<any[]>([]);
@@ -174,37 +173,10 @@ export default function Index() {
     setContactSubmitting(false);
   };
 
-  // Load services from database or fallback to static
+  // Fetch services on mount
   useEffect(() => {
-    if (dbServices && dbServices.length > 0) {
-      setServices(dbServices);
-    } else {
-      setServices(staticServices.map(s => ({
-        id: s.title.toLowerCase().replace(/\s+/g, '-'),
-        icon_name: getIconNameForService(s.title),
-        title: s.title,
-        description: s.description,
-        whatsapp_enabled: true,
-        call_enabled: true,
-        book_now_enabled: true
-      })));
-    }
-  }, [dbServices]);
-
-  const getIconNameForService = (title: string): string => {
-    const iconMap: Record<string, string> = {
-      'DTH': 'SatelliteDish',
-      'TV': 'Tv',
-      'Short Circuit': 'Zap',
-      'Fan': 'Fan',
-      'AC': 'Snowflake',
-      'Appliance': 'Wrench'
-    };
-    for (const [key, iconName] of Object.entries(iconMap)) {
-      if (title.includes(key)) return iconName;
-    }
-    return 'Zap';
-  };
+    fetchServices();
+  }, [fetchServices]);
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen index-page">

@@ -1,25 +1,25 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import Section from "@/components/Section";
 import SEO from "@/components/SEO";
-import ServiceCard from "@/components/ServiceCard";
 import { Zap, Loader2, Sun, Moon } from "lucide-react";
-import { services as defaultServices, PHONE_NUMBER } from "@/data/services";
-import { useServices } from "@/hooks/useOptimizedData";
+import { PHONE_NUMBER } from "@/data/services";
+import { useServicesStore } from "@/stores/servicesStore";
 import ServiceCard2 from "@/components/ServiceCard2";
 
 const Services = () => {
-  // Use optimized hook with caching instead of direct Supabase query
-  const { services: dbServices, loading: servicesLoading } = useServices();
-  const [services, setServices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { services, loading, fetchServices } = useServicesStore();
   const [darkMode, setDarkMode] = useState(false);
   const [preselectedService, setPreselectedService] = useState<string>("");
 
+  // Fetch services on mount
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
+
   // Dark mode effect
   useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true' || 
+    const isDark = localStorage.getItem('darkMode') === 'true' ||
       (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
     setDarkMode(isDark);
     if (isDark) document.documentElement.classList.add('dark');
@@ -30,16 +30,6 @@ const Services = () => {
     document.documentElement.classList.toggle('dark');
     localStorage.setItem('darkMode', String(!darkMode));
   };
-
-  useEffect(() => {
-    // Use cached services from hook, fallback to static data if empty
-    if (dbServices && dbServices.length > 0) {
-      setServices(dbServices);
-    } else {
-      setServices(defaultServices);
-    }
-    setLoading(false);
-  }, [dbServices]);
 
   const handleBookService = (serviceTitle: string) => {
     setPreselectedService(serviceTitle);
