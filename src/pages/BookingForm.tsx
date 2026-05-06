@@ -1,22 +1,54 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Section from "@/components/Section";
-import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, UserCheck, Sun, Moon } from "lucide-react";
+import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, UserCheck, Sun, Moon, Tag, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useServicesStore } from "@/stores/servicesStore";
 
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
+
+interface CouponValidation {
+  is_valid: boolean;
+  offer_id: string | null;
+  title: string | null;
+  type: string | null;
+  value: number | null;
+  message: string;
+  discount_amount: number;
+}
+
 const BookingForm = () => {
   const [params] = useSearchParams();
   const preselected = params.get("service") || "";
+  const preselectedOffer = params.get("offer") || "";
+
+  // Debug logging
+  console.log("BookingForm URL params:", { preselected, preselectedOffer, fullUrl: window.location.href });
+
   const { bookingServices, getServiceCharge, fetchBookingServices } = useServicesStore();
   const [submitting, setSubmitting] = useState(false);
   const [assigningTechnician, setAssigningTechnician] = useState(false);
   const [done, setDone] = useState(false);
   const { user } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedServiceCharge, setSelectedServiceCharge] = useState<{ amount: string; label: string; show: boolean } | null>(null);
+  // Coupon state
+  const [couponCode, setCouponCode] = useState(preselectedOffer);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
 
   // Dark mode effect
   useEffect(() => {
@@ -48,6 +80,29 @@ const BookingForm = () => {
     is_electricity_supply_on: "",
   });
 
+  // Calculate discount based on service charge and coupon
+  const calculateDiscount = (): { original: number; discount: number; final: number } => {
+    const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
+
+    if (!appliedCoupon?.success || !baseAmount) {
+      return { original: baseAmount, discount: 0, final: baseAmount };
+    }
+
+    // Use the discount_amount directly from the applied coupon response
+    const discount = appliedCoupon?.discount_amount || 0;
+
+    // Ensure discount doesn't exceed base amount
+    const finalDiscount = Math.min(discount, baseAmount);
+
+    return {
+      original: baseAmount,
+      discount: finalDiscount,
+      final: baseAmount - finalDiscount
+    };
+  };
+
+  const { original, discount, final } = calculateDiscount();
+
   const [gettingLocation, setGettingLocation] = useState(false);
 
   // Fetch booking services on mount
@@ -65,12 +120,120 @@ const BookingForm = () => {
     if (preselected) setForm((f) => ({ ...f, service_type: preselected }));
   }, [preselected]);
 
-  // Get service charge using store helper
-  const selectedServiceCharge = form.service_type ? getServiceCharge(form.service_type) : null;
+  // Update selected service charge when service type changes
+  useEffect(() => {
+    if (form.service_type && form.service_type !== "Custom Service") {
+      const chargeInfo = getServiceCharge(form.service_type);
+      setSelectedServiceCharge(chargeInfo);
+    } else {
+      setSelectedServiceCharge(null);
+    }
+  }, [form.service_type, getServiceCharge]);
+
+  // Coupon handler using same pattern as Checkout
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+    
+    if (!user) {
+      toast.error('Please login to apply coupon');
+      return;
+    }
+
+    // Validate service charge
+    const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
+    if (!baseAmount || baseAmount <= 0) {
+      toast.error('Please select a service first');
+      return;
+    }
+    
+    setApplyingCoupon(true);
+    
+    // Add timeout for better UX
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 10000)
+    );
+    
+    try {
+      const applyPromise = supabase.rpc('apply_coupon', {
+        p_coupon_code: couponCode.toUpperCase().trim(),
+        p_user_id: user.id,
+        p_cart_total: baseAmount,
+        p_cart_items: [] as any
+      });
+      
+      // Race between apply and timeout
+      const { data, error } = await Promise.race([applyPromise, timeoutPromise]) as any;
+      
+      if (error) {
+        console.error('Coupon RPC error:', error);
+        toast.error(error.message || "Failed to apply coupon");
+        setAppliedCoupon(null);
+        return;
+      }
+      
+      if (!data || data.length === 0) {
+        toast.error("Invalid coupon code");
+        setAppliedCoupon(null);
+        return;
+      }
+      
+      const result = data[0];
+      
+      // Validate result structure
+      if (!result || typeof result !== 'object') {
+        toast.error("Invalid coupon response");
+        setAppliedCoupon(null);
+        return;
+      }
+      
+      if (result.success) {
+        // Validate discount amount
+        if (typeof result.discount_amount !== 'number' || result.discount_amount < 0) {
+          toast.error("Invalid discount amount");
+          setAppliedCoupon(null);
+          return;
+        }
+        
+        setAppliedCoupon(result);
+        const couponCodeDisplay = couponCode.toUpperCase().trim();
+        toast.success(`Coupon applied! ${couponCodeDisplay}`);
+      } else {
+        toast.error(result.message || "Cannot apply this coupon");
+        setAppliedCoupon(null);
+      }
+    } catch (error: any) {
+      console.error('Error applying coupon:', error);
+      const errorMsg = error.message === 'Request timeout' 
+        ? 'Request timed out. Please try again.'
+        : 'Failed to apply coupon. Please try again.';
+      toast.error(errorMsg);
+      setAppliedCoupon(null);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  // Auto-validate if coupon code comes from URL
+  useEffect(() => {
+    console.log("Auto-validate check:", { preselectedOffer, serviceType: form.service_type });
+    if (preselectedOffer && user) {
+      // Small delay to ensure all state is settled
+      const timer = setTimeout(() => {
+        handleApplyCoupon();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [preselectedOffer, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+
+    const { original, discount, final } = calculateDiscount();
+
     // Ensure user_id is set for authenticated users, null for guests
     // The RLS policy "Anyone can create bookings" allows both authenticated and guest users
     const insertData: any = {
@@ -88,6 +251,13 @@ const BookingForm = () => {
       has_old_fan: form.has_old_fan || null,
       is_electricity_supply_on: form.is_electricity_supply_on || null,
       user_id: user?.id || null, // Always include user_id (null for guests, UUID for authenticated users)
+      // Coupon fields
+      coupon_code: couponCode || null,
+      offer_id: null, // Set to null since we're using coupons system, not offers system
+      discount_amount: discount > 0 ? discount : null,
+      original_amount: original > 0 ? original : null,
+      final_amount: final > 0 ? final : null,
+      offer_applied: appliedCoupon?.success || false,
     };
 
     try {
@@ -858,6 +1028,71 @@ const BookingForm = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Coupon Code Field */}
+                <div className="field-group">
+                  <label className="field-label flex items-center gap-2">
+                    <Tag size={14} />
+                    Coupon Code
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter offer code (e.g. SUMMER20)"
+                      className="field-input flex-1"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase());
+                        setAppliedCoupon(null); // Reset validation when typing
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={applyingCoupon || !couponCode.trim()}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    >
+                      {applyingCoupon ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : appliedCoupon?.success ? (
+                        <Check size={14} />
+                      ) : null}
+                      {appliedCoupon?.success ? 'Applied' : 'Apply'}
+                    </button>
+                  </div>
+                  {appliedCoupon?.success && (
+                    <div className="mt-2 text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <Check size={14} />
+                      Coupon applied! ₹{appliedCoupon.discount_amount?.toFixed(2) || '0.00'} off
+                    </div>
+                  )}
+                  {appliedCoupon && !appliedCoupon.success && (
+                    <div className="mt-2 text-sm text-red-500">
+                      {appliedCoupon.message || 'Invalid coupon code'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Discount Summary */}
+                {appliedCoupon?.success && discount > 0 && (
+                  <div className="field-group">
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Original Amount</span>
+                        <span className="text-sm line-through text-gray-500">₹{original.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-green-600 dark:text-green-400 font-medium">Discount</span>
+                        <span className="text-sm text-green-600 dark:text-green-400 font-bold">-₹{discount.toFixed(2)}</span>
+                      </div>
+                      <div className="h-px bg-green-200 dark:bg-green-800 my-2" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-semibold text-gray-800 dark:text-gray-200">Final Amount</span>
+                        <span className="text-lg font-bold text-green-700 dark:text-green-400">₹{final.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Custom Service Demand Input - Show only when Custom Service is selected */}
                 {form.service_type === "Custom Service" && (

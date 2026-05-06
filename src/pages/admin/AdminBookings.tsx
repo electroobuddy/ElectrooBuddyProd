@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Pencil, Trash2, X, Eye, Calendar, Clock, Phone,
   MapPin, Search, Download, User, Wrench, AlignLeft, Check,
-  CalendarDays, Filter, ChevronRight, Save, CheckCircle, UserCheck
+  CalendarDays, Filter, ChevronRight, Save, CheckCircle, UserCheck, Tag
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,7 +55,10 @@ const AdminBookings = () => {
     name: "", phone: "", email: "", address: "", service_type: "",
     preferred_date: "", preferred_time: "", description: "", status: "pending",
     exact_location: "", custom_service_demand: "", is_switch_working: "",
-    has_old_fan: "", is_electricity_supply_on: "", assigned_technician_id: ""
+    has_old_fan: "", is_electricity_supply_on: "", assigned_technician_id: "",
+    // Coupon fields
+    coupon_code: "", offer_applied: false, discount_amount: "", 
+    original_amount: "", final_amount: ""
   });
   const patchEdit = (u: any) => setEditForm(prev => ({ ...prev, ...u }));
 
@@ -115,14 +118,29 @@ const AdminBookings = () => {
       is_switch_working: b.is_switch_working || "",
       has_old_fan: b.has_old_fan || "",
       is_electricity_supply_on: b.is_electricity_supply_on || "",
-      assigned_technician_id: b.assigned_technician_id || ""
+      assigned_technician_id: b.assigned_technician_id || "",
+      // Coupon fields
+      coupon_code: b.coupon_code || "",
+      offer_applied: b.offer_applied || false,
+      discount_amount: b.discount_amount?.toString() || "",
+      original_amount: b.original_amount?.toString() || "",
+      final_amount: b.final_amount?.toString() || ""
     }));
   };
 
   const handleSaveEdit = async () => {
     if (!editing?.id) return;
     setSaving(true);
-    const { error } = await supabase.from("bookings").update(editForm).eq("id", editing.id);
+    
+    // Convert numeric fields back to numbers or null
+    const updateData = {
+      ...editForm,
+      discount_amount: editForm.discount_amount ? parseFloat(editForm.discount_amount) || null : null,
+      original_amount: editForm.original_amount ? parseFloat(editForm.original_amount) || null : null,
+      final_amount: editForm.final_amount ? parseFloat(editForm.final_amount) || null : null,
+    };
+    
+    const { error } = await supabase.from("bookings").update(updateData).eq("id", editing.id);
     if (error) { toast.error(error.message); setSaving(false); return; }
     toast.success("Booking updated");
     setEditing(null); fetchData();
@@ -548,6 +566,43 @@ const AdminBookings = () => {
                   )}
                 </SectionCard>
 
+                {/* Coupon/Offer Details */}
+                {viewing.offer_applied && (
+                  <SectionCard title="Offer Applied" icon={<Tag size={13} />}>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-xl border border-green-200 dark:border-green-800">
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-950/30 flex items-center justify-center">
+                          <Tag size={18} className="text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-green-900 dark:text-green-300">{viewing.coupon_code || 'Offer Applied'}</p>
+                          {viewing.discount_amount > 0 && (
+                            <p className="text-xs text-green-700 dark:text-green-400">
+                              Saved ₹{viewing.discount_amount}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {(viewing.original_amount || viewing.final_amount) && (
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-center">
+                            <p className="text-xs text-zinc-400">Original</p>
+                            <p className="font-semibold text-zinc-600 line-through">₹{viewing.original_amount}</p>
+                          </div>
+                          <div className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-center">
+                            <p className="text-xs text-zinc-400">Discount</p>
+                            <p className="font-semibold text-green-600">-₹{viewing.discount_amount}</p>
+                          </div>
+                          <div className="p-2 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-center">
+                            <p className="text-xs text-zinc-400">Final</p>
+                            <p className="font-semibold text-green-700">₹{viewing.final_amount}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </SectionCard>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-3">
                   <button onClick={() => { setViewing(null); handleEdit(viewing); }}
@@ -654,6 +709,70 @@ const AdminBookings = () => {
                         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />{cfg.label}
                       </button>
                     ))}
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="Coupon/Offer Details" icon={<Tag size={13} />}>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="offer_applied"
+                        checked={editForm.offer_applied}
+                        onChange={e => patchEdit({ offer_applied: e.target.checked })}
+                        className="w-4 h-4 text-blue-600 border-zinc-300 rounded focus:ring-blue-500"
+                      />
+                      <label htmlFor="offer_applied" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Offer/Coupon Applied
+                      </label>
+                    </div>
+                    
+                    {editForm.offer_applied && (
+                      <>
+                        <div>
+                          <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Coupon Code</label>
+                          <input
+                            placeholder="e.g. SUMMER20"
+                            value={editForm.coupon_code}
+                            onChange={e => patchEdit({ coupon_code: e.target.value })}
+                            className={inputCls}
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Original Amount</label>
+                            <input
+                              type="number"
+                              placeholder="0.00"
+                              value={editForm.original_amount}
+                              onChange={e => patchEdit({ original_amount: e.target.value })}
+                              className={inputCls}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Discount Amount</label>
+                            <input
+                              type="number"
+                              placeholder="0.00"
+                              value={editForm.discount_amount}
+                              onChange={e => patchEdit({ discount_amount: e.target.value })}
+                              className={inputCls}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-zinc-500 mb-1.5 block">Final Amount</label>
+                            <input
+                              type="number"
+                              placeholder="0.00"
+                              value={editForm.final_amount}
+                              onChange={e => patchEdit({ final_amount: e.target.value })}
+                              className={inputCls}
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </SectionCard>
               </div>

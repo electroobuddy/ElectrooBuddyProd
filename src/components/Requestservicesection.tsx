@@ -1,13 +1,34 @@
-import { useState, useEffect, useMemo } from "react";
-import { Check, Phone, CheckCircle, Loader2, CalendarDays } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Check, Phone, CheckCircle, Loader2, CalendarDays, Tag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { PHONE_NUMBER } from "@/data/services";
 import { useServicesStore } from "@/stores/servicesStore";
 
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
 
-export default function RequestServiceSection({ preselectedService }: { preselectedService?: string }) {
+interface CouponValidation {
+  is_valid: boolean;
+  offer_id: string | null;
+  title: string | null;
+  type: string | null;
+  value: number | null;
+  message: string;
+}
+
+
+export default function RequestServiceSection({ preselectedService, preselectedOffer }: { preselectedService?: string; preselectedOffer?: string }) {
   const [serviceFormDone, setServiceFormDone] = useState(false);
   const [serviceFormSubmitting, setServiceFormSubmitting] = useState(false);
   const { user } = useAuth();
@@ -17,6 +38,11 @@ export default function RequestServiceSection({ preselectedService }: { preselec
     exact_location: "", service_type: preselectedService || "", preferred_date: "",
     preferred_time: "", description: "",
   });
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState(preselectedOffer || "");
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const counters = useMemo(() => ({
     experience: new Date().getFullYear() - 1992,
     clients: 5000,
@@ -44,10 +70,121 @@ export default function RequestServiceSection({ preselectedService }: { preselec
   // Get service charge using store helper
   const selectedServiceCharge = serviceForm.service_type ? getServiceCharge(serviceForm.service_type) : null;
 
+  // Coupon handler using same pattern as Checkout
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+    
+    if (!user) {
+      toast.error('Please login to apply coupon');
+      return;
+    }
+
+    // Validate service charge
+    const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
+    if (!baseAmount || baseAmount <= 0) {
+      toast.error('Please select a service first');
+      return;
+    }
+    
+    setApplyingCoupon(true);
+    
+    // Add timeout for better UX
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 10000)
+    );
+    
+    try {
+      const applyPromise = supabase.rpc('apply_coupon', {
+        p_coupon_code: couponCode.toUpperCase().trim(),
+        p_user_id: user.id,
+        p_cart_total: baseAmount,
+        p_cart_items: [] as any
+      });
+      
+      // Race between apply and timeout
+      const { data, error } = await Promise.race([applyPromise, timeoutPromise]) as any;
+      
+      if (error) {
+        console.error('Coupon RPC error:', error);
+        toast.error(error.message || "Failed to apply coupon");
+        setAppliedCoupon(null);
+        return;
+      }
+      
+      if (!data || data.length === 0) {
+        toast.error("Invalid coupon code");
+        setAppliedCoupon(null);
+        return;
+      }
+      
+      const result = data[0];
+      
+      // Validate result structure
+      if (!result || typeof result !== 'object') {
+        toast.error("Invalid coupon response");
+        setAppliedCoupon(null);
+        return;
+      }
+      
+      if (result.success) {
+        // Validate discount amount
+        if (typeof result.discount_amount !== 'number' || result.discount_amount < 0) {
+          toast.error("Invalid discount amount");
+          setAppliedCoupon(null);
+          return;
+        }
+        
+        setAppliedCoupon(result);
+        const couponCodeDisplay = couponCode.toUpperCase().trim();
+        toast.success(`Coupon applied! ${couponCodeDisplay}`);
+      } else {
+        toast.error(result.message || "Cannot apply this coupon");
+        setAppliedCoupon(null);
+      }
+    } catch (error: any) {
+      console.error('Error applying coupon:', error);
+      const errorMsg = error.message === 'Request timeout' 
+        ? 'Request timed out. Please try again.'
+        : 'Failed to apply coupon. Please try again.';
+      toast.error(errorMsg);
+      setAppliedCoupon(null);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  // Calculate amounts
+  const calculateAmounts = () => {
+    const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
+
+    if (!appliedCoupon?.success || !baseAmount) {
+      return { original: baseAmount, discount: 0, final: baseAmount };
+    }
+
+    // Use the discount_amount directly from the applied coupon response
+    const discount = appliedCoupon?.discount_amount || 0;
+
+    // Ensure discount doesn't exceed base amount
+    const finalDiscount = Math.min(discount, baseAmount);
+
+    return {
+      original: baseAmount,
+      discount: finalDiscount,
+      final: baseAmount - finalDiscount
+    };
+  };
+
+  const { original, discount, final } = calculateAmounts();
+
   const handleServiceFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setServiceFormSubmitting(true);
-    
+
+    const { original, discount, final } = calculateAmounts();
+
     try {
       const insertData: any = {
         name: serviceForm.name,
@@ -59,8 +196,15 @@ export default function RequestServiceSection({ preselectedService }: { preselec
         preferred_time: serviceForm.preferred_time || null,
         description: serviceForm.service_type === "Custom Service" ? serviceForm.description : (serviceForm.description || null),
         exact_location: serviceForm.exact_location || null,
+        // Coupon fields
+        coupon_code: couponCode || null,
+        offer_id: null, // Set to null since we're using coupons system, not offers system
+        discount_amount: discount > 0 ? discount : null,
+        original_amount: original > 0 ? original : null,
+        final_amount: final > 0 ? final : null,
+        offer_applied: appliedCoupon?.success || false,
       };
-      
+
       if (user) {
         insertData.user_id = user.id;
       }
@@ -634,6 +778,68 @@ export default function RequestServiceSection({ preselectedService }: { preselec
                       <div className="rs-service-charge-box">
                         <span className="rs-service-charge-label">{selectedServiceCharge.label}</span>
                         <span className="rs-service-charge-amount">₹{selectedServiceCharge.amount}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Coupon Code Row */}
+                <div className="rs-form-grid" style={{ marginTop: 20 }}>
+                  <div className="rs-field" style={{ marginBottom: 0 }}>
+                    <label className="rs-label flex items-center gap-2">
+                      <Tag size={14} />
+                      Coupon Code
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        className="rs-input flex-1"
+                        type="text"
+                        placeholder="Enter offer code"
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase());
+                          setAppliedCoupon(null);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={applyingCoupon || !couponCode.trim()}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {applyingCoupon ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : appliedCoupon?.success ? (
+                          <Check size={14} />
+                        ) : null}
+                        {appliedCoupon?.success ? 'Applied' : 'Apply'}
+                      </button>
+                    </div>
+                    {appliedCoupon?.success && (
+                      <div className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                        <Check size={14} />
+                        Coupon applied! ₹{appliedCoupon.discount_amount?.toFixed(2) || '0.00'} off
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Discount Summary */}
+                  <div className="rs-field" style={{ marginBottom: 0 }}>
+                    {appliedCoupon?.success && discount > 0 && (
+                      <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-gray-600">Original</span>
+                          <span className="line-through">₹{original.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-green-600">Discount</span>
+                          <span className="text-green-600 font-bold">-₹{discount.toFixed(2)}</span>
+                        </div>
+                        <div className="h-px bg-green-200 my-1" />
+                        <div className="flex justify-between">
+                          <span className="font-semibold">Final</span>
+                          <span className="font-bold text-green-700">₹{final.toFixed(2)}</span>
+                        </div>
                       </div>
                     )}
                   </div>

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Calendar, Clock, MapPin, Plus, CheckCircle, AlertCircle, FileText, Phone, X, Zap } from "lucide-react";
+import { Loader2, Calendar, Clock, MapPin, Plus, CheckCircle, AlertCircle, FileText, Phone, X, Zap, Tag } from "lucide-react";
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400", label: "Pending" },
@@ -538,6 +538,22 @@ const UserBookings = () => {
                   <div className="flex items-start gap-2 mt-3 text-sm text-muted-foreground/70">
                     <FileText className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                     <p className="line-clamp-2">{b.description}</p>
+                  </div>
+                )}
+                {/* Offer/Coupon Details */}
+                {b.offer_applied && (
+                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-semibold text-green-700 dark:text-green-400">{b.coupon_code || 'Offer Applied'}</span>
+                    </div>
+                    {(b.original_amount || b.final_amount) && (
+                      <div className="flex items-center gap-4 text-xs">
+                        <span className="text-gray-500 line-through">₹{b.original_amount}</span>
+                        <span className="text-green-600 font-semibold">-₹{b.discount_amount}</span>
+                        <span className="text-green-700 font-bold">₹{b.final_amount}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
