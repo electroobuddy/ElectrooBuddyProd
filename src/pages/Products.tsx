@@ -208,6 +208,9 @@ const Products = () => {
         }}
       />
 
+      {/* ── Dynamic Advertisement Slider ── */}
+      <OfferBannerSlider visibility="products_page" />
+      
       {/* ── Hero ── */}
       <section className="hero-gradient text-white products-hero slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -249,8 +252,6 @@ const Products = () => {
         </div>
       </section>
 
-      {/* ── Dynamic Advertisement Slider ── */}
-      <OfferBannerSlider visibility="products_page" />
 
       {/* ── Services Quick Access Slider ── */}
       <section className="bg-gray-50 dark:bg-gray-900 py-6 sm:py-8">

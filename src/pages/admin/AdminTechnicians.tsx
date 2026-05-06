@@ -170,76 +170,14 @@ const AdminTechnicians = () => {
       // Generate random password if not provided
       const password = form.password || Math.random().toString(36).slice(-8);
 
-      // Step 1: Sign up the user (creates auth account)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: form.email,
-        password: password,
-        options: {
-          data: { name: form.name },
-          emailRedirectTo: `${window.location.origin}/technician/login`,
-        },
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user account");
-
-      const userId = authData.user.id;
-
-      // Wait a moment for the auth user to be fully committed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Step 2: Auto-confirm email via RPC function
-      const { error: confirmError } = await supabase.rpc("confirm_user_email", { p_user_id: userId });
-      if (confirmError) {
-        console.warn("Email confirmation failed (may already be confirmed):", confirmError);
-      }
-
-      // Step 3: Assign technician role (with retry logic)
-      let roleInsertSuccess = false;
-      let roleError: any = null;
-      
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const { error: roleErr } = await supabase
-          .from("user_roles")
-          .insert({
-            user_id: userId,
-            role: "technician",
-          });
-
-        if (!roleErr) {
-          roleInsertSuccess = true;
-          break;
-        }
-        
-        roleError = roleErr;
-        
-        // If it's a duplicate key error, treat as success
-        if (roleErr.code === '23505' || roleErr.message?.includes('duplicate')) {
-          roleInsertSuccess = true;
-          break;
-        }
-        
-        // Wait before retrying
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-        }
-      }
-
-      if (!roleInsertSuccess) {
-        throw roleError || new Error("Failed to assign technician role");
-      }
-
-      // Step 4: Create technician record (with retry logic)
-      let techInsertSuccess = false;
-      let techError: any = null;
-      
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const { error: techErr } = await supabase
-          .from("technicians")
-          .insert({
-            user_id: userId,
+      // Use edge function to create technician with all related records atomically
+      const { data: result, error: functionError } = await supabase.functions.invoke(
+        'create-technician-by-admin',
+        {
+          body: {
             name: form.name,
             email: form.email,
+            password: password,
             phone: form.phone,
             address: form.address,
             skills: form.skills,
@@ -248,29 +186,22 @@ const AdminTechnicians = () => {
             priority: form.priority,
             status: form.status,
             profile_url: form.profile_url,
-            approval_status: "approved",
-          });
+          },
+        }
+      );
 
-        if (!techErr) {
-          techInsertSuccess = true;
-          break;
-        }
-        
-        techError = techErr;
-        
-        // Wait before retrying
-        if (attempt < 2) {
-          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-        }
+      if (functionError) {
+        throw new Error(functionError.message || "Failed to create technician");
       }
 
-      if (!techInsertSuccess) {
-        throw techError || new Error("Failed to create technician record");
+      if (!result?.success) {
+        throw new Error(result?.error || "Failed to create technician");
       }
 
       toast.success("Technician created successfully");
       
-      // Show credentials with copy button
+      // Show credentials with copy button (use returned password from edge function)
+      const finalPassword = result.password || password;
       toast.custom(
         (t) => (
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-lg max-w-sm">
@@ -280,7 +211,7 @@ const AdminTechnicians = () => {
                 <p className="text-xs text-zinc-500 mt-0.5">Save these securely</p>
               </div>
               <button
-                onClick={() => copyCredentials(form.email, password)}
+                onClick={() => copyCredentials(form.email, finalPassword)}
                 className="p-2 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
                 title="Copy credentials"
               >
@@ -295,7 +226,7 @@ const AdminTechnicians = () => {
               <div className="flex items-center gap-2">
                 <span className="text-zinc-400 text-xs">🔑</span>
                 <code className="bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded text-xs font-mono text-zinc-700 dark:text-zinc-300">
-                  {password}
+                  {finalPassword}
                 </code>
               </div>
             </div>

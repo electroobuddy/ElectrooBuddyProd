@@ -1,23 +1,42 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { ChevronLeft, ChevronRight, ArrowRight, Sparkles, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, X, Copy, Check, Ticket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
-import { Tables } from "@/integrations/supabase/types";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
-type Offer = Tables<'offers'>;
-
-interface OfferBannerSliderProps {
-  visibility?: "home_hero" | "products_page" | "popup";
+interface Offer {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  banner_url: string | null;
+  offer_type: string;
+  value: number | null;
+  min_purchase: number | null;
+  max_discount: number | null;
+  start_date: string;
+  end_date: string | null;
+  priority: number;
+  visibility: string[];
+  cta_text: string | null;
+  cta_link: string | null;
+  bg_gradient: string | null;
+  status: string;
+  is_active: boolean;
+  coupon_code: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-const CountdownTimer = ({ expiresAt }: { expiresAt: string }) => {
+// Memoized CountdownTimer to prevent unnecessary re-renders
+const CountdownTimer = memo(({ expiresAt }: { expiresAt: string }) => {
   const [timeLeft, setTimeLeft] = useState<{ h: number; m: number; s: number } | null>(null);
 
   useEffect(() => {
     const calculate = () => {
-      const distance = new Date(expiresAt).getTime() - new Date().getTime();
+      const distance = new Date(expiresAt).getTime() - Date.now();
       if (distance <= 0) return null;
       return {
         h: Math.floor(distance / (1000 * 60 * 60)),
@@ -27,7 +46,11 @@ const CountdownTimer = ({ expiresAt }: { expiresAt: string }) => {
     };
 
     setTimeLeft(calculate());
-    const timer = setInterval(() => setTimeLeft(calculate()), 1000);
+    const timer = setInterval(() => {
+      const remaining = calculate();
+      setTimeLeft(remaining);
+      if (!remaining) clearInterval(timer);
+    }, 1000);
     return () => clearInterval(timer);
   }, [expiresAt]);
 
@@ -41,17 +64,143 @@ const CountdownTimer = ({ expiresAt }: { expiresAt: string }) => {
       <span>{String(timeLeft.s).padStart(2, '0')}</span>
     </div>
   );
-};
+});
+CountdownTimer.displayName = 'CountdownTimer';
 
-const OfferBannerSlider: React.FC<OfferBannerSliderProps> = ({ visibility = "home_hero" }) => {
+interface OfferBannerSliderProps {
+  visibility?: "home_hero" | "products_page" | "popup";
+}
+
+
+// Memoized single offer slide component
+const OfferSlide = memo(({ 
+  offer, 
+  onGrabOffer, 
+  isCopied 
+}: { 
+  offer: Offer; 
+  onGrabOffer: (offer: Offer) => void;
+  isCopied: boolean;
+}) => {
+  // Memoize discount label calculation
+  const discountLabel = useMemo(() => {
+    if (!offer.value || offer.value <= 0) return null;
+    return offer.offer_type === "percentage" 
+      ? `${offer.value}% OFF` 
+      : `₹${offer.value} OFF`;
+  }, [offer.value, offer.offer_type]);
+
+  const handleClick = useCallback(() => onGrabOffer(offer), [onGrabOffer, offer]);
+  const handleButtonClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    onGrabOffer(offer);
+  }, [onGrabOffer, offer]);
+
+  return (
+    <div
+      className="flex-[0_0_100%] min-w-0 relative cursor-pointer"
+      onClick={handleClick}
+    >
+      {/* Per-slide gradient */}
+      <div
+        className={`absolute inset-0 bg-gradient-to-r ${offer.bg_gradient || "from-blue-600 to-blue-800"}`}
+      />
+
+      {/* Strip content */}
+      <div className="relative h-10 sm:h-11 flex items-center justify-center gap-2 sm:gap-4 px-10 sm:px-14">
+
+        {/* ── Left: Offer badge ── */}
+        <div className="hidden sm:flex items-center gap-1 shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+          {offer.coupon_code ? (
+            <>
+              <Ticket size={9} className="text-yellow-300" />
+              Coupon
+            </>
+          ) : (
+            <>
+              <Sparkles size={9} className="text-yellow-300" />
+              Offer
+            </>
+          )}
+        </div>
+
+        {/* ── Centre: title + subtitle + discount ── */}
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Discount pill (always visible) */}
+          {discountLabel && (
+            <span className="shrink-0 rounded-full bg-yellow-400 px-2 py-0.5 text-[11px] font-extrabold text-yellow-900 leading-none">
+              {discountLabel}
+            </span>
+          )}
+
+          {/* Title */}
+          <p className="text-white font-semibold text-sm sm:text-[13px] leading-none truncate max-w-[200px] sm:max-w-none">
+            {offer.title}
+          </p>
+
+          {/* Separator + subtitle (hidden on xs) */}
+          {offer.subtitle && (
+            <>
+              <span className="hidden sm:block h-3 w-px bg-white/30 shrink-0" />
+              <p className="hidden sm:block text-white/80 text-[12px] leading-none truncate max-w-xs">
+                {offer.subtitle}
+              </p>
+            </>
+          )}
+
+          {/* Description (visible md+) */}
+          {offer.description && (
+            <>
+              <span className="hidden md:block h-3 w-px bg-white/30 shrink-0" />
+              <p className="hidden md:block text-white/70 text-[11px] leading-none truncate max-w-sm">
+                {offer.description}
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* ── Countdown Timer ── */}
+        {offer.end_date && <CountdownTimer expiresAt={offer.end_date} />}
+
+        {/* ── Right: CTA button ── */}
+        <button
+          onClick={handleButtonClick}
+          className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-50 transition-colors shadow group/btn"
+        >
+          {isCopied ? (
+            <>
+              <Check size={11} className="text-green-600" />
+              Copied!
+            </>
+          ) : (
+            <>
+              {offer.cta_text || "Grab Offer"}
+              <Copy size={11} className="group-hover/btn:translate-x-0.5 transition-transform" />
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+});
+OfferSlide.displayName = 'OfferSlide';
+
+const OfferBannerSlider: React.FC<OfferBannerSliderProps> = memo(({ visibility = "home_hero" }) => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissed, setDismissed] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  // Autoplay plugin with pause on hover
+  const autoplayPlugin = useMemo(() => 
+    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true }),
+  []);
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     { loop: true },
-    [Autoplay({ delay: 5000, stopOnInteraction: false })]
+    [autoplayPlugin]
   );
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
@@ -67,192 +216,164 @@ const OfferBannerSlider: React.FC<OfferBannerSliderProps> = ({ visibility = "hom
     onSelect();
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onSelect);
-    return () => { emblaApi.off("select", onSelect); emblaApi.off("reInit", onSelect); };
+    return () => { 
+      emblaApi.off("select", onSelect); 
+      emblaApi.off("reInit", onSelect); 
+    };
   }, [emblaApi, onSelect]);
 
+  // Fetch offers with retry logic
   useEffect(() => {
+    let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 2;
+
     const fetchOffers = async () => {
+      if (!isMounted) return;
+      
       try {
-        const { data, error } = await supabase.rpc("get_active_offers", { p_visibility: visibility });
+        const { data, error } = await supabase.rpc("get_active_offers_cached", { p_visibility: visibility });
         if (error) throw error;
-        setOffers((data as any[]) || []);
+        if (isMounted) setOffers((data as any[]) || []);
       } catch (err) {
-        console.error("Error fetching offers:", err);
+        console.error(`Error fetching offers (attempt ${retryCount + 1}):`, err);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          // Fallback function
+          try {
+            const { data: fallbackData, error: fallbackError } = await supabase.rpc("get_active_offers", { p_visibility: visibility });
+            if (fallbackError) throw fallbackError;
+            if (isMounted) setOffers((fallbackData as any[]) || []);
+          } catch (fallbackErr) {
+            console.error("Fallback also failed:", fallbackErr);
+            if (isMounted) setOffers([]);
+          }
+        } else {
+          if (isMounted) setOffers([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
+
     fetchOffers();
+    return () => { isMounted = false; };
   }, [visibility]);
+
+  // Memoized grab offer handler
+  const handleGrabOffer = useCallback(async (offer: Offer) => {
+    const offerCode = offer.coupon_code || offer.title;
+
+    try {
+      await navigator.clipboard.writeText(offerCode);
+      setCopiedId(offer.id);
+      toast.success(`Offer code "${offerCode}" copied! Redirecting to booking...`);
+
+      setTimeout(() => setCopiedId(null), 2000);
+
+      setTimeout(() => {
+        const serviceParam = offer.cta_link?.replace('/#request-service', '') || '';
+        navigate(`/booking?offer=${encodeURIComponent(offerCode)}&service=${encodeURIComponent(serviceParam)}`);
+      }, 500);
+    } catch (err) {
+      navigate(`/booking?offer=${encodeURIComponent(offerCode)}`);
+    }
+  }, [navigate]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') scrollPrev();
+      if (e.key === 'ArrowRight') scrollNext();
+      if (e.key === 'Escape') setDismissed(true);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [scrollPrev, scrollNext]);
 
   // ── Skeleton: strip height only ──────────────────────────────────────────
   if (loading) {
     return (
-      <div className="w-full h-10 sm:h-11 bg-blue-700 animate-pulse" />
+      <div className="w-full h-10 sm:h-11 bg-gradient-to-r from-blue-600 to-blue-800 animate-pulse" />
     );
   }
 
   if (offers.length === 0 || dismissed) return null;
 
+  const hasMultipleOffers = offers.length > 1;
+
   return (
-    <div className="relative w-full bg-blue-700 border-b border-white/10 overflow-hidden">
+    <div 
+      className="relative w-full bg-blue-700 border-b border-white/10 overflow-hidden group"
+      role="region"
+      aria-label="Promotional offers"
+    >
       {/* Embla viewport */}
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
-          {offers.map((offer) => {
-            const discountLabel =
-              offer.value && offer.value > 0
-                ? offer.type === "percentage"
-                  ? `${offer.value}% OFF`
-                  : `₹${offer.value} OFF`
-                : null;
-
-            return (
-              <div
-                key={offer.id}
-                className="flex-[0_0_100%] min-w-0 relative cursor-pointer"
-                onClick={() => {
-                  const link = offer.cta_link || "";
-                  if (link.startsWith("http://") || link.startsWith("https://")) {
-                    window.open(link, "_blank", "noopener,noreferrer");
-                  } else if (link) {
-                    window.location.href = link;
-                  } else {
-                    // Default fallback: go to products
-                    window.location.href = "/products";
-                  }
-                }}
-              >
-                {/* Per-slide gradient */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-r ${offer.bg_gradient || "from-blue-600 to-blue-800"}`}
-                />
-
-                {/* Strip content */}
-                <div className="relative h-10 sm:h-11 flex items-center justify-center gap-2 sm:gap-4 px-10 sm:px-14">
-
-                  {/* ── Left: Offer badge ── */}
-                  <div className="hidden sm:flex items-center gap-1 shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                    <Sparkles size={9} className="text-yellow-300" />
-                    Offer
-                  </div>
-
-                  {/* ── Centre: title + subtitle + discount ── */}
-                  <div className="flex items-center gap-2 min-w-0">
-                    {/* Discount pill (always visible) */}
-                    {discountLabel && (
-                      <span className="shrink-0 rounded-full bg-yellow-400 px-2 py-0.5 text-[11px] font-extrabold text-yellow-900 leading-none">
-                        {discountLabel}
-                      </span>
-                    )}
-
-                    {/* Title */}
-                    <p className="text-white font-semibold text-sm sm:text-[13px] leading-none truncate max-w-[200px] sm:max-w-none">
-                      {offer.title}
-                    </p>
-
-                    {/* Separator + subtitle (hidden on xs) */}
-                    {offer.subtitle && (
-                      <>
-                        <span className="hidden sm:block h-3 w-px bg-white/30 shrink-0" />
-                        <p className="hidden sm:block text-white/80 text-[12px] leading-none truncate max-w-xs">
-                          {offer.subtitle}
-                        </p>
-                      </>
-                    )}
-
-                    {/* Description (visible md+) */}
-                    {offer.description && (
-                      <>
-                        <span className="hidden md:block h-3 w-px bg-white/30 shrink-0" />
-                        <p className="hidden md:block text-white/70 text-[11px] leading-none truncate max-w-sm">
-                          {offer.description}
-                        </p>
-                      </>
-                    )}
-                  </div>
-
-                  {/* ── Countdown Timer ── */}
-                  {offer.expires_at && <CountdownTimer expiresAt={offer.expires_at} />}
-
-                  {/* ── Right: CTA button ── */}
-                  {offer.cta_link && (offer.cta_link.startsWith('http://') || offer.cta_link.startsWith('https://')) ? (
-
-                    <a
-                      href={offer.cta_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-50 transition-colors shadow group/btn"
-                    >
-                      {offer.cta_text || "Claim"}
-                      <ArrowRight size={11} className="group-hover/btn:translate-x-0.5 transition-transform" />
-                    </a>
-                  ) : (
-                    <Link
-                      to={offer.cta_link || "/products"}
-                      onClick={(e) => e.stopPropagation()}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-50 transition-colors shadow group/btn"
-                    >
-                      {offer.cta_text || "Claim"}
-                      <ArrowRight size={11} className="group-hover/btn:translate-x-0.5 transition-transform" />
-                    </Link>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {offers.map((offer) => (
+            <OfferSlide 
+              key={offer.id} 
+              offer={offer} 
+              onGrabOffer={handleGrabOffer}
+              isCopied={copiedId === offer.id}
+            />
+          ))}
         </div>
       </div>
 
-      {/* ── Prev / Next arrows (only shown when > 1 offer) ── */}
-      {
-        offers.length > 1 && (
-          <>
-            <button
-              onClick={(e) => { e.stopPropagation(); scrollPrev(); }}
-              aria-label="Previous offer"
-              className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 ..."
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); scrollNext(); }}
-              aria-label="Next offer"
-              className="absolute right-8 sm:right-9 top-1/2 -translate-y-1/2 z-20 ..."
-            >
-              <ChevronRight size={14} />
-            </button>
-          </>
-        )
-      }
+      {/* ── Prev / Next arrows ── */}
+      {hasMultipleOffers && (
+        <>
+          <button
+            onClick={(e) => { e.stopPropagation(); scrollPrev(); }}
+            onMouseEnter={() => autoplayPlugin.stop()}
+            onMouseLeave={() => autoplayPlugin.play()}
+            aria-label="Previous offer"
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); scrollNext(); }}
+            onMouseEnter={() => autoplayPlugin.stop()}
+            onMouseLeave={() => autoplayPlugin.play()}
+            aria-label="Next offer"
+            className="absolute right-8 sm:right-9 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </>
+      )}
 
-      {/* ── Dot indicators (shown when > 1 offer) ── */}
-      {
-        offers.length > 1 && (
-          <div className="absolute left-1/2 -translate-x-1/2 bottom-1 flex gap-1 z-10">
-            {offers.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => emblaApi?.scrollTo(i)}
-                className={`h-1 rounded-full transition-all ${i === selectedIndex ? "w-4 bg-white" : "w-1.5 bg-white/40"
-                  }`}
-              />
-            ))}
-          </div>
-        )
-      }
+      {/* ── Dot indicators ── */}
+      {hasMultipleOffers && (
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-1 flex gap-1 z-10">
+          {offers.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => emblaApi?.scrollTo(i)}
+              aria-label={`Go to offer ${i + 1}`}
+              className={`h-1 rounded-full transition-all ${i === selectedIndex ? "w-4 bg-white" : "w-1.5 bg-white/40 hover:bg-white/60"
+                }`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* ── Dismiss button ── */}
       <button
         onClick={(e) => { e.stopPropagation(); setDismissed(true); }}
-        aria-label="Close"
-        className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-5 w-5 items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        aria-label="Close offers banner"
+        className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-5 w-5 items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30"
       >
         <X size={12} />
       </button>
-    </div >
+    </div>
   );
-};
+});
+
+OfferBannerSlider.displayName = 'OfferBannerSlider';
 
 export default OfferBannerSlider;

@@ -75,6 +75,12 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string | null
+          coupon_code: string | null
+          offer_id: string | null
+          discount_amount: number | null
+          original_amount: number | null
+          final_amount: number | null
+          offer_applied: boolean
         }
         Insert: {
           address: string
@@ -98,6 +104,12 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string | null
+          coupon_code?: string | null
+          offer_id?: string | null
+          discount_amount?: number | null
+          original_amount?: number | null
+          final_amount?: number | null
+          offer_applied?: boolean
         }
         Update: {
           address?: string
@@ -121,6 +133,12 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string | null
+          coupon_code?: string | null
+          offer_id?: string | null
+          discount_amount?: number | null
+          original_amount?: number | null
+          final_amount?: number | null
+          offer_applied?: boolean
         }
         Relationships: [
           {
@@ -1532,6 +1550,73 @@ export type Database = {
           updated_at: string
           value: number | null
           visibility: string[]
+        }[]
+      }
+      get_active_offers_cached: {
+        Args: { p_visibility?: string }
+        Returns: {
+          id: string
+          title: string
+          subtitle: string
+          description: string
+          banner_url: string
+          type: string
+          value: number
+          min_purchase: number
+          max_discount: number
+          start_date: string
+          end_date: string
+          priority: number
+          visibility: string[]
+          cta_text: string
+          cta_link: string
+          bg_gradient: string
+          status: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      validate_coupon: {
+        Args: {
+          p_code: string
+          p_service_type?: string | null
+        }
+        Returns: {
+          is_valid: boolean
+          offer_id: string | null
+          title: string | null
+          type: string | null
+          value: number | null
+          message: string
+          discount_amount: number
+        }[]
+      }
+      calculate_offer_discount: {
+        Args: {
+          p_base_amount: number
+          p_offer_id: string
+        }
+        Returns: {
+          original_amount: number
+          discount_amount: number
+          final_amount: number
+          is_applied: boolean
+          message: string
+        }[]
+      }
+      get_service_offer: {
+        Args: {
+          p_service_type: string
+        }
+        Returns: {
+          offer_id: string
+          title: string
+          subtitle: string
+          type: string
+          value: number
+          cta_text: string
+          is_active: boolean
         }[]
       }
     }

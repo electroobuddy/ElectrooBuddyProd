@@ -1,21 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
-    "module": "ESNext",
-    "moduleDetection": "force",
     "allowJs": true,
-    "noEmit": true,
     "strict": true,
     "noImplicitAny": false,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "resolveJsonModule": true
+    "lib": ["deno.window"],
+    "types": ["https://deno.land/x/supabase@1.0.0/mod.ts"]
   },
-  "include": [
-    "supabase/functions/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "importMap": "./supabase/functions/import_map.json"
 }
