@@ -547,7 +547,7 @@ export default function Index() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             ) : (
-              services.map((service, index) => (
+              services.slice(0,6).map((service, index) => (
                 <ServiceCard2
                   key={service.id || index}
                   service={service}
