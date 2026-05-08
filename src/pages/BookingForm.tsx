@@ -7,6 +7,7 @@ import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, UserCheck, Sun,
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useServicesStore } from "@/stores/servicesStore";
+import { sendAdminNotification } from "@/utils/notificationUtils";
 
 // Debounce utility function
 function debounce<T extends (...args: any[]) => any>(
@@ -269,63 +270,26 @@ const BookingForm = () => {
       const bookingId = bookingData.id;
       toast.success("Booking submitted! Assigning technician...");
 
-      // Notify admins about new booking
-      try {
-        const { data: adminRoles } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "admin");
-
-        if (adminRoles && adminRoles.length > 0) {
-          for (const adminRole of adminRoles) {
-            await supabase.rpc("create_notification", {
-              p_user_id: adminRole.user_id,
-              p_type: "new_booking",
-              p_title: "New Booking Received",
-              p_message: `New booking from ${form.name} for ${form.service_type} on ${form.preferred_date}`,
-              p_booking_id: bookingId,
-              p_metadata: {
-                customer_name: form.name,
-                service: form.service_type,
-                is_guest: !user
-              },
-            });
-
-            // Send push notification to admin
-            try {
-              await supabase.functions.invoke("send-push-notification", {
-                body: {
-                  userId: adminRole.user_id,
-                  title: "🔔 New Booking Received",
-                  body: `${form.name} booked ${form.service_type} for ${form.preferred_date}`,
-                  url: `/admin/bookings`,
-                  type: "new_booking",
-                },
-              });
-            } catch (pushError) {
-              console.error("Failed to send push to admin:", pushError);
-            }
-          }
+      // Send notifications using common utility
+      await sendAdminNotification({
+        title: "🔔 New Booking Received",
+        message: `New booking from ${form.name} for ${form.service_type} on ${form.preferred_date}`,
+        type: "new_booking",
+        bookingId: bookingId,
+        customerName: form.name,
+        service: form.service_type,
+        metadata: {
+          customer_name: form.name,
+          customer_phone: form.phone,
+          customer_email: form.email,
+          service_type: form.service_type,
+          preferred_date: form.preferred_date,
+          preferred_time: form.preferred_time,
+          address: form.address,
+          exact_location: form.exact_location,
+          is_guest: !user
         }
-      } catch (adminNotifError) {
-        console.error("Failed to notify admins:", adminNotifError);
-      }
-
-      // If user is authenticated, notify them too
-      if (user?.id) {
-        try {
-          await supabase.rpc("create_notification", {
-            p_user_id: user.id,
-            p_type: "booking_created",
-            p_title: "Booking Submitted",
-            p_message: `Your booking for ${form.service_type} has been submitted successfully.`,
-            p_booking_id: bookingId,
-            p_metadata: { service: form.service_type, date: form.preferred_date },
-          });
-        } catch (userNotifError) {
-          console.error("Failed to notify user:", userNotifError);
-        }
-      }
+      }, user);
 
       // Call auto-assign function
       try {

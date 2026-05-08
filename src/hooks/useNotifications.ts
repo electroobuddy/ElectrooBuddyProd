@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { hasActiveSubscription } from "@/utils/pushNotifications";
@@ -19,12 +19,22 @@ export interface Notification {
   metadata: any;
 }
 
+const MAX_RETRIES     = 3;
+const RETRY_BASE_MS   = 2_000;
+const FETCH_LIMIT     = 50;
+
 export const useNotifications = (userId: string | null) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount]     = useState(0);
+  const [loading, setLoading]             = useState(true);
 
-  // Fetch notifications
+  // Keep a stable ref to the current channel so cleanup is always accurate
+  const channelRef  = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const retryRef    = useRef(0);
+  const retryTimer  = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef  = useRef(true);
+
+  // ── Fetch ────────────────────────────────────────────────────────────────
   const fetchNotifications = useCallback(async () => {
     if (!userId) return;
 
@@ -34,237 +44,226 @@ export const useNotifications = (userId: string | null) => {
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(FETCH_LIMIT);
 
       if (error) throw error;
+      if (!mountedRef.current) return;
 
-      setNotifications(data || []);
-      
-      // Calculate unread count
-      const unread = data?.filter(n => !n.is_read).length || 0;
-      setUnreadCount(unread);
-    } catch (error: any) {
-      console.error("Error fetching notifications:", error);
+      setNotifications(data ?? []);
+      setUnreadCount(data?.filter(n => !n.is_read).length ?? 0);
+    } catch (err: any) {
+      console.error("[useNotifications] fetch error:", err);
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [userId]);
 
-  // Mark notification as read
+  // ── Mark one as read ─────────────────────────────────────────────────────
   const markAsRead = useCallback(async (notificationId: string) => {
+    if (!userId) return;
+
+    // Optimistic update — no waiting
+    setNotifications(prev =>
+      prev.map(n =>
+        n.id === notificationId
+          ? { ...n, is_read: true, read_at: new Date().toISOString() }
+          : n
+      )
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+
     try {
       const { error } = await supabase.rpc("mark_notification_read", {
         p_notification_id: notificationId,
-        p_user_id: userId,
+        p_user_id:         userId,
       });
-
       if (error) throw error;
-
-      // Update local state
+    } catch (err: any) {
+      console.error("[useNotifications] markAsRead error:", err);
+      // Rollback optimistic update
       setNotifications(prev =>
         prev.map(n =>
           n.id === notificationId
-            ? { ...n, is_read: true, read_at: new Date().toISOString() }
+            ? { ...n, is_read: false, read_at: null }
             : n
         )
       );
-
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error: any) {
-      console.error("Error marking notification as read:", error);
+      setUnreadCount(prev => prev + 1);
       toast.error("Failed to mark notification as read");
     }
   }, [userId]);
 
-  // Mark all notifications as read
+  // ── Mark all as read ─────────────────────────────────────────────────────
   const markAllAsRead = useCallback(async () => {
     if (!userId) return;
+
+    const prev = notifications;
+    const now  = new Date().toISOString();
+
+    // Optimistic update
+    setNotifications(ns => ns.map(n => ({ ...n, is_read: true, read_at: now })));
+    setUnreadCount(0);
 
     try {
       const { data: count, error } = await supabase.rpc("mark_all_notifications_read", {
         p_user_id: userId,
       });
-
       if (error) throw error;
-
-      // Update local state
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
-      );
-
-      setUnreadCount(0);
-      toast.success(`Marked ${count || 0} notifications as read`);
-    } catch (error: any) {
-      console.error("Error marking all as read:", error);
+      toast.success(`Marked ${count ?? 0} notifications as read`);
+    } catch (err: any) {
+      console.error("[useNotifications] markAllAsRead error:", err);
+      // Rollback
+      setNotifications(prev);
+      setUnreadCount(prev.filter(n => !n.is_read).length);
       toast.error("Failed to mark all notifications as read");
     }
-  }, [userId]);
+  }, [userId, notifications]);
 
-  // Delete notification
+  // ── Delete ───────────────────────────────────────────────────────────────
   const deleteNotification = useCallback(async (notificationId: string) => {
+    if (!userId) return;
+
+    // Optimistic removal
+    setNotifications(prev => {
+      const target = prev.find(n => n.id === notificationId);
+      if (target && !target.is_read) setUnreadCount(c => Math.max(0, c - 1));
+      return prev.filter(n => n.id !== notificationId);
+    });
+
     try {
       const { error } = await supabase
         .from("notifications")
         .delete()
         .eq("id", notificationId)
         .eq("user_id", userId);
-
       if (error) throw error;
-
-      // Update local state
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    } catch (error: any) {
-      console.error("Error deleting notification:", error);
+    } catch (err: any) {
+      console.error("[useNotifications] deleteNotification error:", err);
       toast.error("Failed to delete notification");
+      fetchNotifications(); // re-sync from server
     }
-  }, [userId]);
+  }, [userId, fetchNotifications]);
 
-  // Function to trigger push notification
+  // ── Push trigger (best-effort) ───────────────────────────────────────────
   const triggerPushNotification = useCallback(async (notification: Notification) => {
     try {
-      // Check if user has active push subscription
       const hasSubscription = await hasActiveSubscription(userId);
-      if (!hasSubscription) {
-        return;
-      }
+      if (!hasSubscription) return;
 
-      // Call push notification edge function
-      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+      await supabase.functions.invoke("send-push-notification", {
         body: {
-          userId: notification.user_id,
-          title: notification.title,
-          body: notification.message,
-          type: notification.type,
+          userId:         notification.user_id,
+          title:          notification.title,
+          body:           notification.message,
+          type:           notification.type,
           notificationId: notification.id,
-          url: notification.booking_id 
-            ? '/dashboard/bookings' 
-            : notification.order_id 
-            ? '/dashboard/orders'
-            : '/dashboard'
-        }
+          url:            notification.booking_id
+            ? "/dashboard/bookings"
+            : notification.order_id
+              ? "/dashboard/orders"
+              : "/dashboard",
+        },
       });
-
-      if (error) {
-        console.error('[Notifications] Failed to trigger push notification:', error);
-      } else {
-        console.log('[Notifications] Push notification triggered:', data);
-      }
-    } catch (error) {
-      console.error('[Notifications] Error triggering push notification:', error);
+    } catch (err) {
+      console.error("[useNotifications] triggerPushNotification error:", err);
     }
   }, [userId]);
 
-  // Setup realtime subscription with reconnection logic
+  // ── Realtime subscription ────────────────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
+    mountedRef.current = true;
 
-    // Initial fetch
     fetchNotifications();
 
-    let retryCount = 0;
-    const maxRetries = 3;
-    let channel: any;
+    const teardown = () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      if (retryTimer.current) {
+        clearTimeout(retryTimer.current);
+        retryTimer.current = null;
+      }
+    };
 
-    const setupSubscription = () => {
-      // Subscribe to realtime changes
-      channel = supabase
-        .channel(`notifications-${userId}-${retryCount}`)
+    const subscribe = () => {
+      // Always tear down before creating a new channel (prevents leaks on retry)
+      teardown();
+
+      const channel = supabase
+        .channel(`notifications:${userId}:${Date.now()}`)
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
+            event:  "INSERT",
             schema: "public",
-            table: "notifications",
+            table:  "notifications",
             filter: `user_id=eq.${userId}`,
           },
           (payload) => {
-            const newNotification = payload.new as Notification;
-            
-            // Add to notifications list
-            setNotifications(prev => [newNotification, ...prev]);
-            
-            // Update unread count
-            setUnreadCount(prev => prev + 1);
+            if (!mountedRef.current) return;
+            const n = payload.new as Notification;
 
-            // Show toast notification
-            toast.info(newNotification.title, {
-              description: newNotification.message,
-              duration: 5000,
-            });
+            setNotifications(prev => [n, ...prev]);
+            setUnreadCount(c => c + 1);
 
-            // Trigger push notification
-            triggerPushNotification(newNotification);
+            toast.info(n.title, { description: n.message, duration: 5000 });
+            triggerPushNotification(n);
           }
         )
         .on(
           "postgres_changes",
           {
-            event: "UPDATE",
+            event:  "UPDATE",
             schema: "public",
-            table: "notifications",
+            table:  "notifications",
             filter: `user_id=eq.${userId}`,
           },
           (payload) => {
-            const updatedNotification = payload.new as Notification;
-            
-            // Update in notifications list
+            if (!mountedRef.current) return;
+            const updated = payload.new as Notification;
             setNotifications(prev =>
-              prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+              prev.map(n => (n.id === updated.id ? updated : n))
             );
           }
         )
-        .subscribe((status) => {
-          if (status === 'CHANNEL_ERROR') {
-            console.error('[Notifications] Realtime channel error');
-            
-            if (retryCount < maxRetries) {
-              retryCount++;
-              console.log(`[Notifications] Retrying connection (${retryCount}/${maxRetries})...`);
-              
-              // Remove old channel and retry
-              supabase.removeChannel(channel);
-              
-              // Wait before retrying
-              setTimeout(() => {
-                setupSubscription();
-              }, 2000 * retryCount); // Exponential backoff
-            } else {
-              toast.error('Real-time notifications disconnected. Please refresh the page.', {
-                duration: 10000,
-                action: {
-                  label: 'Refresh',
-                  onClick: () => window.location.reload()
-                }
+        .subscribe((status, err) => {
+          if (status === "SUBSCRIBED") {
+            retryRef.current = 0; // reset backoff on clean connect
+          }
+
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            console.warn(`[useNotifications] channel ${status}`, err ?? "");
+
+            if (retryRef.current < MAX_RETRIES && mountedRef.current) {
+              const delay = RETRY_BASE_MS * Math.pow(2, retryRef.current);
+              retryRef.current += 1;
+              console.log(`[useNotifications] retry ${retryRef.current}/${MAX_RETRIES} in ${delay}ms`);
+              retryTimer.current = setTimeout(subscribe, delay);
+            } else if (mountedRef.current) {
+              toast.error("Real-time updates lost. Refresh to reconnect.", {
+                duration: 0, // persist until dismissed
+                action: { label: "Refresh", onClick: () => window.location.reload() },
               });
             }
           }
-          if (status === 'TIMED_OUT') {
-            console.warn('[Notifications] Realtime connection timed out');
-            // Try to reconnect
-            if (retryCount < maxRetries) {
-              retryCount++;
-              setTimeout(() => setupSubscription(), 3000);
-            }
-          }
-          if (status === 'CLOSED') {
-            console.warn('[Notifications] Realtime connection closed');
-          }
-          if (status === 'SUBSCRIBED') {
-            console.log('[Notifications] Realtime connection established');
-            retryCount = 0; // Reset retry count on success
+
+          if (status === "CLOSED") {
+            console.warn("[useNotifications] channel closed");
           }
         });
+
+      channelRef.current = channel;
     };
 
-    setupSubscription();
+    subscribe();
 
-    // Cleanup subscription
     return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
+      mountedRef.current = false;
+      teardown();
     };
-  }, [userId, fetchNotifications]);
+  }, [userId, fetchNotifications, triggerPushNotification]);
 
   return {
     notifications,
