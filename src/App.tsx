@@ -60,6 +60,7 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminShippingSettings from "./pages/admin/AdminShippingSettings";
 import AdminTechnicians from "./pages/admin/AdminTechnicians";
 import AdminOffers from "./pages/admin/AdminOffers";
+import AdminNotifications from "./pages/admin/AdminNotifications";
 import TechnicianLogin from "./pages/technician/TechnicianLogin";
 import TechnicianLayout from "./pages/technician/TechnicianLayout";
 import TechnicianDashboard from "./pages/technician/TechnicianDashboard";
@@ -188,6 +189,7 @@ const AppContent = () => {
               <Route path="/admin/testimonials" element={<AdminTestimonials />} />
               <Route path="/admin/projects" element={<AdminProjects />} />
               <Route path="/admin/messages" element={<AdminMessages />} />
+              <Route path="/admin/notifications" element={<AdminNotifications />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/payments" element={<AdminPayments />} />
               <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Bell, CheckCheck, X } from "lucide-react";
+import { Bell, CheckCheck, X, RefreshCw } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -9,7 +9,14 @@ interface NotificationBellProps {
 
 const NotificationBell = ({ userId }: NotificationBellProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications(userId);
+  const [refreshing, setRefreshing] = useState(false);
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, refreshNotifications } = useNotifications(userId);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshNotifications();
+    setTimeout(() => setRefreshing(false), 500);
+  };
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
 
@@ -102,6 +109,14 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing || loading}
+                    className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors disabled:opacity-50"
+                    title="Refresh notifications"
+                  >
+                    <RefreshCw className={`w-4 h-4 text-zinc-500 ${refreshing ? 'animate-spin' : ''}`} />
+                  </button>
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}

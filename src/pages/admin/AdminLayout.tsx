@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen,
   Mail, Settings, LogOut, Loader2, UserCog, Menu, X, Package,
-  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck, Tag, ShieldCheck
+  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck, Tag, ShieldCheck, Bell
 } from "lucide-react";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
@@ -29,6 +29,7 @@ const navItems = [
   { label: "Testimonials", to: "/admin/testimonials", icon: Star,            group: "content" },
   { label: "Projects",     to: "/admin/projects",     icon: FolderOpen,      group: "content" },
   { label: "Messages",     to: "/admin/messages",     icon: Mail,            group: "content" },
+  { label: "Notifications", to: "/admin/notifications", icon: Bell,            group: "system" },
   { label: "Settings",     to: "/admin/settings",     icon: Settings,        group: "system" },
 ];
 

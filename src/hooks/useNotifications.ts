@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { hasActiveSubscription } from "@/utils/pushNotifications";
 
 export interface Notification {
   id: string;
@@ -118,73 +119,150 @@ export const useNotifications = (userId: string | null) => {
     }
   }, [userId]);
 
-  // Setup realtime subscription
+  // Function to trigger push notification
+  const triggerPushNotification = useCallback(async (notification: Notification) => {
+    try {
+      // Check if user has active push subscription
+      const hasSubscription = await hasActiveSubscription(userId);
+      if (!hasSubscription) {
+        return;
+      }
+
+      // Call push notification edge function
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          userId: notification.user_id,
+          title: notification.title,
+          body: notification.message,
+          type: notification.type,
+          notificationId: notification.id,
+          url: notification.booking_id 
+            ? '/dashboard/bookings' 
+            : notification.order_id 
+            ? '/dashboard/orders'
+            : '/dashboard'
+        }
+      });
+
+      if (error) {
+        console.error('[Notifications] Failed to trigger push notification:', error);
+      } else {
+        console.log('[Notifications] Push notification triggered:', data);
+      }
+    } catch (error) {
+      console.error('[Notifications] Error triggering push notification:', error);
+    }
+  }, [userId]);
+
+  // Setup realtime subscription with reconnection logic
   useEffect(() => {
     if (!userId) return;
 
     // Initial fetch
     fetchNotifications();
 
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel("notifications")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const newNotification = payload.new as Notification;
-          
-          // Add to notifications list
-          setNotifications(prev => [newNotification, ...prev]);
-          
-          // Update unread count
-          setUnreadCount(prev => prev + 1);
+    let retryCount = 0;
+    const maxRetries = 3;
+    let channel: any;
 
-          // Show toast notification
-          toast.info(newNotification.title, {
-            description: newNotification.message,
-            duration: 5000,
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const updatedNotification = payload.new as Notification;
-          
-          // Update in notifications list
-          setNotifications(prev =>
-            prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
-          );
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          console.error('[Notifications] Realtime channel error');
-          toast.error('Real-time notifications disconnected. Refresh page to reconnect.');
-        }
-        if (status === 'TIMED_OUT') {
-          console.warn('[Notifications] Realtime connection timed out');
-        }
-        if (status === 'CLOSED') {
-          console.warn('[Notifications] Realtime connection closed');
-        }
-      });
+    const setupSubscription = () => {
+      // Subscribe to realtime changes
+      channel = supabase
+        .channel(`notifications-${userId}-${retryCount}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const newNotification = payload.new as Notification;
+            
+            // Add to notifications list
+            setNotifications(prev => [newNotification, ...prev]);
+            
+            // Update unread count
+            setUnreadCount(prev => prev + 1);
+
+            // Show toast notification
+            toast.info(newNotification.title, {
+              description: newNotification.message,
+              duration: 5000,
+            });
+
+            // Trigger push notification
+            triggerPushNotification(newNotification);
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const updatedNotification = payload.new as Notification;
+            
+            // Update in notifications list
+            setNotifications(prev =>
+              prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+            );
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR') {
+            console.error('[Notifications] Realtime channel error');
+            
+            if (retryCount < maxRetries) {
+              retryCount++;
+              console.log(`[Notifications] Retrying connection (${retryCount}/${maxRetries})...`);
+              
+              // Remove old channel and retry
+              supabase.removeChannel(channel);
+              
+              // Wait before retrying
+              setTimeout(() => {
+                setupSubscription();
+              }, 2000 * retryCount); // Exponential backoff
+            } else {
+              toast.error('Real-time notifications disconnected. Please refresh the page.', {
+                duration: 10000,
+                action: {
+                  label: 'Refresh',
+                  onClick: () => window.location.reload()
+                }
+              });
+            }
+          }
+          if (status === 'TIMED_OUT') {
+            console.warn('[Notifications] Realtime connection timed out');
+            // Try to reconnect
+            if (retryCount < maxRetries) {
+              retryCount++;
+              setTimeout(() => setupSubscription(), 3000);
+            }
+          }
+          if (status === 'CLOSED') {
+            console.warn('[Notifications] Realtime connection closed');
+          }
+          if (status === 'SUBSCRIBED') {
+            console.log('[Notifications] Realtime connection established');
+            retryCount = 0; // Reset retry count on success
+          }
+        });
+    };
+
+    setupSubscription();
 
     // Cleanup subscription
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [userId, fetchNotifications]);
 
