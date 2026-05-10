@@ -29,7 +29,7 @@ const timeout = (ms: number) =>
 
 /**
  * Write a single in-app notification row, trying the RPC first then
- * falling back to a direct insert.  Never throws — errors are console-logged.
+ * falling back to a direct insert. Never throws — errors are console-logged.
  */
 async function writeInAppNotification(
   userId: string,
@@ -49,20 +49,25 @@ async function writeInAppNotification(
     if (!rpcError) return;
 
     // Fallback: direct insert (handles the case where the RPC doesn't exist yet)
-    const { error: insertError } = await supabase.from("notifications").insert({
-      user_id:    userId,
-      type:       data.type,
-      title:      data.title,
-      message:    data.message,
-      booking_id: data.bookingId ?? null,
-      metadata:   data.metadata ?? {},
-    });
+    const { error: insertError, data: insertData } = await supabase
+      .from("notifications")
+      .insert({
+        user_id:    userId,
+        type:       data.type,
+        title:      data.title,
+        message:    data.message,
+        booking_id: data.bookingId ?? null,
+        metadata:   data.metadata ?? {},
+      })
+      .select("id");
 
     if (insertError) {
       console.error("[notify] direct insert failed:", insertError.message);
+      throw insertError;
     }
   } catch (err) {
     console.error("[notify] writeInAppNotification threw:", err);
+    throw err;
   }
 }
 
@@ -85,9 +90,13 @@ async function writePushNotification(
         url:            data.type === "new_booking" ? "/admin/bookings" : undefined,
       },
     });
-    if (error) console.error("[notify] push invoke error:", error.message);
+    if (error) {
+      console.error("[notify] push invoke error:", error.message);
+      throw error;
+    }
   } catch (err) {
     console.error("[notify] writePushNotification threw:", err);
+    throw err;
   }
 }
 
@@ -102,7 +111,7 @@ async function notifyUser(userId: string, data: NotificationData): Promise<void>
   let push  = true;
 
   try {
-    const { data: prefs } = await Promise.race([
+    const { data: prefs, error: prefsError } = await Promise.race([
       supabase
         .from("notification_preferences")
         .select("in_app_notifications, push_notifications")
@@ -111,15 +120,19 @@ async function notifyUser(userId: string, data: NotificationData): Promise<void>
       timeout(3000),
     ]);
 
-    if (prefs) {
-      inApp = prefs.in_app_notifications !== false;
-      push  = prefs.push_notifications  !== false;
+    if (prefsError) {
+      console.error("[notify] Failed to fetch notification preferences:", prefsError.message);
+      // Use defaults if preferences table doesn't exist
+    } else if (prefs) {
+      inApp = prefs.data?.in_app_notifications !== false;
+      push  = prefs.data?.push_notifications  !== false;
     }
-  } catch {
+  } catch (err: any) {
     // preference fetch timed out or column missing — use defaults
+    console.error("[notify] Failed to fetch notification preferences:", err.message);
   }
 
-  await Promise.allSettled([
+  const results = await Promise.allSettled([
     inApp
       ? Promise.race([writeInAppNotification(userId, data), timeout(6000)])
       : Promise.resolve(),
@@ -127,9 +140,17 @@ async function notifyUser(userId: string, data: NotificationData): Promise<void>
       ? Promise.race([writePushNotification(userId, data), timeout(6000)])
       : Promise.resolve(),
   ]);
+
+  // Log individual failures for debugging
+  results.forEach((result, index) => {
+    const type = index === 0 ? 'in-app' : 'push';
+    if (result.status === 'rejected') {
+      console.error(`[notify] ${type} notification failed:`, result.reason);
+    }
+  });
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+// ─── Public API ──────────────────────────────────────────────────────
 
 /**
  * **Fire-and-forget** — starts immediately, never blocks the caller.
@@ -143,6 +164,7 @@ async function notifyUser(userId: string, data: NotificationData): Promise<void>
  *  1. Fetches all admin user IDs (3-second timeout)
  *  2. Notifies each admin and the current user in parallel (6s each)
  *  3. Logs failures to console — never surfaces them to the UI
+ *  4. Includes retry logic for failed notifications
  */
 export function sendAdminNotificationAsync(
   data: NotificationData,
@@ -150,48 +172,80 @@ export function sendAdminNotificationAsync(
 ): Promise<void> {
   // Return (but don't await) the inner async work so callers CAN await if needed.
   return (async () => {
-    try {
-      // 1. Fetch admin user IDs with a short timeout
-      const adminResult = await Promise.race([
-        supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "admin"),
-        timeout(3000),
-      ]);
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        // 1. Fetch admin user IDs with a short timeout
+        const adminResult = await Promise.race([
+          supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin"),
+          timeout(3000),
+        ]);
 
-      const adminIds: string[] = (adminResult as any)?.data?.map(
-        (r: { user_id: string }) => r.user_id
-      ) ?? [];
+        const adminIds: string[] = (adminResult as any)?.data?.map(
+          (r: { user_id: string }) => r.user_id
+        ) ?? [];
 
-      // 2. Build the list of recipients
-      const recipientMap: Record<string, NotificationData> = {};
+        // 2. Build the list of recipients
+        const recipientMap: Record<string, NotificationData> = {};
 
-      for (const id of adminIds) {
-        recipientMap[id] = data;
+        for (const id of adminIds) {
+          recipientMap[id] = data;
+        }
+
+        if (user?.id && !recipientMap[user.id]) {
+          // User confirmation notification (slightly different copy)
+          recipientMap[user.id] = {
+            ...data,
+            type:    `user_${data.type}`,
+            title:   data.type === "new_booking" ? "Booking Submitted ✅" : data.title,
+            message: data.type === "new_booking"
+              ? `Your ${data.service || "service request"} has been received. We'll be in touch shortly.`
+              : data.message,
+          };
+        }
+
+        // 3. Fan-out concurrently — each notifyUser call handles its own errors
+        const notificationResults = await Promise.allSettled(
+          Object.entries(recipientMap).map(([uid, notifData]) =>
+            notifyUser(uid, notifData)
+          )
+        );
+
+        // Check if any notifications failed
+        const failedNotifications = notificationResults.filter(result => result.status === 'rejected');
+        
+        if (failedNotifications.length > 0) {
+          console.error(`[notify] ${failedNotifications.length} notifications failed, retrying... (${retryCount + 1}/${maxRetries + 1})`);
+          
+          if (retryCount < maxRetries) {
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+            continue;
+          }
+        }
+
+        // Success - log and exit
+        console.log(`[notify] Successfully sent notifications to ${adminIds.length} admin(s)${user?.id ? ' and user' : ''}`);
+        return;
+
+      } catch (err) {
+        console.error(`[notify] sendAdminNotificationAsync error (attempt ${retryCount + 1}):`, err);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+          continue;
+        }
+        
+        // Final failure - log but don't throw so caller is unaffected
+        console.error("[notify] sendAdminNotificationAsync failed after all retries:", err);
+        return;
       }
-
-      if (user?.id && !recipientMap[user.id]) {
-        // User confirmation notification (slightly different copy)
-        recipientMap[user.id] = {
-          ...data,
-          type:    `user_${data.type}`,
-          title:   data.type === "new_booking" ? "Booking Submitted ✅" : data.title,
-          message: data.type === "new_booking"
-            ? `Your ${data.service || "service request"} has been received. We'll be in touch shortly.`
-            : data.message,
-        };
-      }
-
-      // 3. Fan-out concurrently — each notifyUser call handles its own errors
-      await Promise.allSettled(
-        Object.entries(recipientMap).map(([uid, notifData]) =>
-          notifyUser(uid, notifData)
-        )
-      );
-    } catch (err) {
-      // Top-level catch — log but never throw so caller is unaffected
-      console.error("[notify] sendAdminNotificationAsync error:", err);
     }
   })();
 }

@@ -1,24 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Section from "@/components/Section";
-import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, UserCheck, Sun, Moon, Tag, Check } from "lucide-react";
+import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, Sun, Moon, Tag, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useServicesStore } from "@/stores/servicesStore";
-import { sendAdminNotification } from "@/utils/notificationUtils";
+import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
 
-// Debounce utility function
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
+// Timeout wrapper for Supabase free tier optimization
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`TIMEOUT: ${label}`)), ms)
+    ),
+  ]);
 }
 
 interface CouponValidation {
@@ -36,14 +34,11 @@ const BookingForm = () => {
   const preselected = params.get("service") || "";
   const preselectedOffer = params.get("offer") || "";
 
-  // Debug logging
-  console.log("BookingForm URL params:", { preselected, preselectedOffer, fullUrl: window.location.href });
-
   const { bookingServices, getServiceCharge, fetchBookingServices } = useServicesStore();
   const [submitting, setSubmitting] = useState(false);
-  const [assigningTechnician, setAssigningTechnician] = useState(false);
   const [done, setDone] = useState(false);
   const { user } = useAuth();
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [selectedServiceCharge, setSelectedServiceCharge] = useState<{ amount: string; label: string; show: boolean } | null>(null);
   // Coupon state
@@ -131,86 +126,66 @@ const BookingForm = () => {
     }
   }, [form.service_type, getServiceCharge]);
 
-  // Coupon handler using same pattern as Checkout
+  // Optimized coupon handler with 6s timeout for free tier
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
       toast.error('Please enter a coupon code');
       return;
     }
-    
+
     if (!user) {
       toast.error('Please login to apply coupon');
       return;
     }
 
-    // Validate service charge
     const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
     if (!baseAmount || baseAmount <= 0) {
       toast.error('Please select a service first');
       return;
     }
-    
+
     setApplyingCoupon(true);
-    
-    // Add timeout for better UX
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout')), 10000)
-    );
-    
+    const tid = toast.loading('Validating coupon...');
+
     try {
-      const applyPromise = supabase.rpc('apply_coupon', {
+      const rpcPromise = supabase.rpc('apply_coupon', {
         p_coupon_code: couponCode.toUpperCase().trim(),
         p_user_id: user.id,
         p_cart_total: baseAmount,
         p_cart_items: [] as any
-      });
-      
-      // Race between apply and timeout
-      const { data, error } = await Promise.race([applyPromise, timeoutPromise]) as any;
-      
-      if (error) {
-        console.error('Coupon RPC error:', error);
-        toast.error(error.message || "Failed to apply coupon");
+      }) as unknown as Promise<any>;
+
+      const result = await withTimeout(rpcPromise, 6000, 'coupon-validation');
+
+      if (result.error) {
+        console.error('Coupon RPC error:', result.error);
+        toast.error(result.error.message || "Failed to apply coupon", { id: tid });
         setAppliedCoupon(null);
         return;
       }
-      
-      if (!data || data.length === 0) {
-        toast.error("Invalid coupon code");
+
+      if (!result.data || result.data.length === 0) {
+        toast.error("Invalid coupon code", { id: tid });
         setAppliedCoupon(null);
         return;
       }
-      
-      const result = data[0];
-      
-      // Validate result structure
-      if (!result || typeof result !== 'object') {
-        toast.error("Invalid coupon response");
-        setAppliedCoupon(null);
-        return;
-      }
-      
-      if (result.success) {
-        // Validate discount amount
-        if (typeof result.discount_amount !== 'number' || result.discount_amount < 0) {
-          toast.error("Invalid discount amount");
-          setAppliedCoupon(null);
-          return;
-        }
-        
-        setAppliedCoupon(result);
-        const couponCodeDisplay = couponCode.toUpperCase().trim();
-        toast.success(`Coupon applied! ${couponCodeDisplay}`);
+
+      const couponResult = result.data[0];
+
+      if (couponResult?.success && typeof couponResult.discount_amount === 'number' && couponResult.discount_amount >= 0) {
+        setAppliedCoupon(couponResult);
+        toast.success(`Coupon applied! Save ₹${couponResult.discount_amount.toFixed(2)}`, { id: tid });
       } else {
-        toast.error(result.message || "Cannot apply this coupon");
+        toast.error(couponResult?.message || "Cannot apply this coupon", { id: tid });
         setAppliedCoupon(null);
       }
     } catch (error: any) {
       console.error('Error applying coupon:', error);
-      const errorMsg = error.message === 'Request timeout' 
-        ? 'Request timed out. Please try again.'
-        : 'Failed to apply coupon. Please try again.';
-      toast.error(errorMsg);
+      const isTimeout = error?.message?.includes('TIMEOUT');
+      toast.error(
+        isTimeout ? 'Coupon check timed out. Please try again.' : 'Failed to apply coupon. Please try again.',
+        { id: tid }
+      );
       setAppliedCoupon(null);
     } finally {
       setApplyingCoupon(false);
@@ -231,30 +206,35 @@ const BookingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+
+    // Cancel any in-flight requests
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
+
     setSubmitting(true);
 
     const { original, discount, final } = calculateDiscount();
+    const tid = toast.loading("Submitting your booking...");
 
     // Ensure user_id is set for authenticated users, null for guests
-    // The RLS policy "Anyone can create bookings" allows both authenticated and guest users
     const insertData: any = {
-      name: form.name,
-      phone: form.phone,
-      email: form.email,
-      address: form.address,
-      service_type: form.service_type === "Custom Service" ? `Custom: ${form.custom_service_demand}` : form.service_type,
-      preferred_date: form.preferred_date,
-      preferred_time: form.preferred_time,
-      description: form.service_type === "Custom Service" ? form.custom_service_demand : (form.description || null),
-      exact_location: form.exact_location || null,
-      custom_service_demand: form.service_type === "Custom Service" ? form.custom_service_demand : null,
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim() || null,
+      address: form.address.trim(),
+      service_type: form.service_type === "Custom Service" ? `Custom: ${form.custom_service_demand.trim()}` : form.service_type,
+      preferred_date: form.preferred_date || null,
+      preferred_time: form.preferred_time || null,
+      description: form.service_type === "Custom Service" ? form.custom_service_demand.trim() : (form.description.trim() || null),
+      exact_location: form.exact_location?.trim() || null,
+      custom_service_demand: form.service_type === "Custom Service" ? form.custom_service_demand.trim() : null,
       is_switch_working: form.is_switch_working || null,
       has_old_fan: form.has_old_fan || null,
       is_electricity_supply_on: form.is_electricity_supply_on || null,
-      user_id: user?.id || null, // Always include user_id (null for guests, UUID for authenticated users)
-      // Coupon fields
-      coupon_code: couponCode || null,
-      offer_id: null, // Set to null since we're using coupons system, not offers system
+      user_id: user?.id || null,
+      coupon_code: couponCode?.trim()?.toUpperCase() || null,
+      offer_id: null,
       discount_amount: discount > 0 ? discount : null,
       original_amount: original > 0 ? original : null,
       final_amount: final > 0 ? final : null,
@@ -262,61 +242,29 @@ const BookingForm = () => {
     };
 
     try {
-      // Insert booking
-      const { data: bookingData, error } = await supabase.from("bookings").insert(insertData).select().single();
+      // CRITICAL PATH: Insert booking with 8s timeout (free tier limit is ~10s)
+      const { data: bookingData, error } = await withTimeout(
+        supabase.from("bookings").insert(insertData).select("id, name, service_type, preferred_date").single(),
+        8000,
+        "booking-insert"
+      );
 
       if (error) throw error;
+      if (!bookingData?.id) throw new Error("Failed to create booking");
 
       const bookingId = bookingData.id;
-      toast.success("Booking submitted! Assigning technician...");
 
-      // Send notifications using common utility
-      await sendAdminNotification({
-        title: "🔔 New Booking Received",
-        message: `New booking from ${form.name} for ${form.service_type} on ${form.preferred_date}`,
-        type: "new_booking",
-        bookingId: bookingId,
-        customerName: form.name,
-        service: form.service_type,
-        metadata: {
-          customer_name: form.name,
-          customer_phone: form.phone,
-          customer_email: form.email,
-          service_type: form.service_type,
-          preferred_date: form.preferred_date,
-          preferred_time: form.preferred_time,
-          address: form.address,
-          exact_location: form.exact_location,
-          is_guest: !user
-        }
-      }, user);
-
-      // Call auto-assign function
-      try {
-        const response = await supabase.functions.invoke("auto-assign-technician", {
-          body: { bookingId },
-        });
-
-        if (response.error) {
-          console.error("Auto-assign error:", response.error);
-          toast.info("Booking submitted but no technician available right now. Admin will assign manually.");
-        } else if (response.data?.success) {
-          toast.success(`Technician assigned: ${response.data.technician.name} (${response.data.technician.phone})`);
-        } else {
-          toast.info("Booking submitted. No technician available at the moment. Admin will contact you soon.");
-        }
-      } catch (funcError) {
-        console.error("Failed to call auto-assign function:", funcError);
-        // Don't show error to user - booking was successful
-      }
-
+      // IMMEDIATE SUCCESS: Show success to user right away
+      toast.success("Booking submitted successfully! We'll contact you soon.", { id: tid, duration: 5000 });
       setDone(true);
+
+      // Reset form immediately
       setForm({
         name: "",
         phone: "",
         email: "",
         address: "",
-        service_type: "",
+        service_type: preselected,
         preferred_date: "",
         preferred_time: "",
         description: "",
@@ -326,12 +274,66 @@ const BookingForm = () => {
         has_old_fan: "",
         is_electricity_supply_on: "",
       });
+
+      // BACKGROUND TASKS (fire-and-forget, never block user):
+      // These run after success is shown - failures are logged but don't affect UX
+      Promise.allSettled([
+        // 1. Send notifications (6s timeout)
+        withTimeout(
+          sendAdminNotificationAsync({
+            title: "🔔 New Booking Received",
+            message: `New booking from ${form.name.trim()} for ${form.service_type}`,
+            type: "new_booking",
+            bookingId: bookingId,
+            customerName: form.name.trim(),
+            service: form.service_type,
+            metadata: {
+              customer_name: form.name.trim(),
+              customer_phone: form.phone.trim(),
+              customer_email: form.email.trim(),
+              service_type: form.service_type,
+              preferred_date: form.preferred_date,
+              preferred_time: form.preferred_time,
+              address: form.address.trim(),
+              exact_location: form.exact_location?.trim(),
+              is_guest: !user
+            }
+          }, user),
+          6000,
+          "admin-notification"
+        ).catch(() => {}),
+
+        // 2. Auto-assign technician (8s timeout)
+        withTimeout(
+          supabase.functions.invoke("auto-assign-technician", {
+            body: { bookingId },
+          }) as Promise<any>,
+          8000,
+          "auto-assign"
+        ).then(({ data: result }: any) => {
+          if (result?.success) {
+            toast.info(`Technician ${result.technician?.name} assigned.`, { duration: 4000 });
+          }
+        }).catch(() => {}),
+      ]).catch(() => {});
+
     } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Failed to submit booking. Please try again.");
+      console.error("Booking submission error:", error);
+
+      const isTimeout = error?.message?.includes("TIMEOUT");
+      const isDuplicate = error?.code === "23505"; // Postgres unique_violation
+      const isNetwork = error?.message?.includes("fetch") || error?.message?.includes("network");
+
+      toast.error(
+        isDuplicate ? "This booking already exists. Please check your submissions." :
+        isTimeout ? "Request timed out. Your booking may have been saved - please check before retrying." :
+        isNetwork ? "Connection issue. Please check your internet and try again." :
+        error?.message || "Failed to submit booking. Please try again.",
+        { id: tid, duration: 7000 }
+      );
     } finally {
       setSubmitting(false);
-      setAssigningTechnician(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -1167,9 +1169,9 @@ const BookingForm = () => {
                   </>
                 )}
 
-                <button type="submit" className="submit-btn" disabled={submitting || assigningTechnician}>
-                  {submitting || assigningTechnician ? (
-                    <><Loader2 size={18} className="animate-spin" /> {assigningTechnician ? "Assigning Technician..." : "Processing..."}</>
+                <button type="submit" className="submit-btn" disabled={submitting}>
+                  {submitting ? (
+                    <><Loader2 size={18} className="animate-spin" /> Submitting...</>
                   ) : (
                     <><Zap size={16} /> Submit Booking</>
                   )}

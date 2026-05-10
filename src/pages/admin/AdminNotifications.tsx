@@ -3,7 +3,7 @@ import { Bell, Search, Filter, CheckCheck, X, Trash2, Mail, Send, Loader2, Eye, 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface Notification {
+interface AdminNotification {
   id: string;
   user_id: string;
   type: string;
@@ -17,44 +17,58 @@ interface Notification {
   email_sent_at: string | null;
   created_at: string;
   metadata: any;
-  user?: {
-    email: string;
-    raw_user_meta_data?: any;
-  };
 }
 
 const AdminNotifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "unread" | "read" | "email_sent" | "email_not_sent">("all");
+  const [filterType, setFilterType] = useState<"all" | "unread" | "read">("all");
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(50);
 
-  // Fetch notifications
-// Final corrected AdminNotifications.tsx - Replace the broken fetchNotifications function
+  // Fetch notifications with pagination and server-side filtering
+  const fetchNotifications = async (page = 1, limit = 50) => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from("notifications")
+        .select("*", { count: 'exact' })
+        .order("created_at", { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
 
-const fetchNotifications = async () => {
-  setLoading(true);
-  try {
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100);
+      // Apply server-side filtering
+      if (filterType === "unread") {
+        query = query.eq("is_read", false);
+      } else if (filterType === "read") {
+        query = query.eq("is_read", true);
+      }
 
-    if (error) throw error;
-    setNotifications(data || []);
-  } catch (error: any) {
-    console.error("Error fetching notifications:", error);
-    toast.error("Failed to load notifications");
-  } finally {
-    setLoading(false);
-  }
-};
+      // Apply server-side search if search term is substantial
+      if (searchTerm.trim().length > 2) {
+        query = query.or(`title.ilike.%${searchTerm}%,message.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+      
+      setNotifications(data || []);
+      // Store total count for pagination
+      setTotalCount(count || 0);
+    } catch (error: any) {
+      console.error("Error fetching notifications:", error);
+      toast.error("Failed to load notifications");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(currentPage, pageSize);
   }, []);
 
   // Filter notifications
@@ -62,14 +76,12 @@ const fetchNotifications = async () => {
     const matchesSearch = 
       notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       notification.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      notification.user_id.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesFilter = 
       filterType === "all" ||
       (filterType === "unread" && !notification.is_read) ||
-      (filterType === "read" && notification.is_read) ||
-      (filterType === "email_sent" && notification.email_sent) ||
-      (filterType === "email_not_sent" && !notification.email_sent);
+      (filterType === "read" && notification.is_read);
 
     return matchesSearch && matchesFilter;
   });
@@ -79,8 +91,6 @@ const fetchNotifications = async () => {
     total: notifications.length,
     unread: notifications.filter(n => !n.is_read).length,
     read: notifications.filter(n => n.is_read).length,
-    emailSent: notifications.filter(n => n.email_sent).length,
-    emailNotSent: notifications.filter(n => !n.email_sent).length,
   };
 
   // Handle selection
@@ -104,15 +114,15 @@ const fetchNotifications = async () => {
   const handleMarkAsRead = async (ids: string[]) => {
     setActionLoading(true);
     try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ 
-          is_read: true, 
-          read_at: new Date().toISOString() 
+      // Use the database function for consistency
+      const promises = ids.map(id => 
+        supabase.rpc('mark_notification_read', {
+          p_notification_id: id,
+          p_user_id: null // Admin can mark any notification as read
         })
-        .in("id", ids);
-
-      if (error) throw error;
+      );
+      
+      await Promise.all(promises);
 
       setNotifications(prev =>
         prev.map(n =>
@@ -158,41 +168,27 @@ const fetchNotifications = async () => {
     }
   };
 
-  // Resend email
-  const handleResendEmail = async (notification: Notification) => {
+  // Resend push notification
+  const handleResendPush = async (notification: AdminNotification) => {
     setActionLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('send-notification-email', {
+      const { error } = await supabase.functions.invoke('send-push-notification', {
         body: {
-          to: notification.user?.email,
+          userId: notification.user_id,
+          title: notification.title,
+          body: notification.message,
           type: notification.type,
-          booking: notification.metadata
+          url: notification.booking_id ? `/admin/bookings/${notification.booking_id}` : '/admin/notifications',
+          notificationId: notification.id
         }
       });
 
       if (error) throw error;
 
-      // Update notification status
-      await supabase
-        .from("notifications")
-        .update({ 
-          email_sent: true, 
-          email_sent_at: new Date().toISOString() 
-        })
-        .eq("id", notification.id);
-
-      setNotifications(prev =>
-        prev.map(n =>
-          n.id === notification.id
-            ? { ...n, email_sent: true, email_sent_at: new Date().toISOString() }
-            : n
-        )
-      );
-
-      toast.success("Email resent successfully");
+      toast.success("Push notification resent successfully");
     } catch (error: any) {
-      console.error("Error resending email:", error);
-      toast.error("Failed to resend email");
+      console.error("Error resending push notification:", error);
+      toast.error("Failed to resend push notification");
     } finally {
       setActionLoading(false);
     }
@@ -245,7 +241,7 @@ const fetchNotifications = async () => {
             </div>
           </div>
           <button
-            onClick={fetchNotifications}
+            onClick={() => fetchNotifications(currentPage, pageSize)}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-colors disabled:opacity-50"
           >
@@ -255,7 +251,7 @@ const fetchNotifications = async () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="bg-zinc-50 dark:bg-zinc-800 rounded-xl p-4">
             <p className="text-2xl font-bold text-zinc-900 dark:text-white">{stats.total}</p>
             <p className="text-sm text-zinc-500">Total</p>
@@ -267,14 +263,6 @@ const fetchNotifications = async () => {
           <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-4">
             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.read}</p>
             <p className="text-sm text-zinc-500">Read</p>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-4">
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.emailSent}</p>
-            <p className="text-sm text-zinc-500">Email Sent</p>
-          </div>
-          <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-4">
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.emailNotSent}</p>
-            <p className="text-sm text-zinc-500">Email Not Sent</p>
           </div>
         </div>
       </div>
@@ -307,8 +295,6 @@ const fetchNotifications = async () => {
               <option value="all">All Notifications</option>
               <option value="unread">Unread</option>
               <option value="read">Read</option>
-              <option value="email_sent">Email Sent</option>
-              <option value="email_not_sent">Email Not Sent</option>
             </select>
           </div>
         </div>
@@ -402,13 +388,7 @@ const fetchNotifications = async () => {
                           </p>
                           <div className="flex items-center gap-4 mt-2 text-xs text-zinc-500">
                             <span>{formatDate(notification.created_at)}</span>
-                            <span>User: {notification.user?.email || "Unknown"}</span>
-                            {notification.email_sent && (
-                              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                                <Mail className="w-3 h-3" />
-                                Email sent
-                              </span>
-                            )}
+                            <span>User: {notification.user_id}</span>
                             {notification.booking_id && (
                               <span className="text-blue-600 dark:text-blue-400">
                                 Booking ID: {notification.booking_id}
@@ -434,16 +414,14 @@ const fetchNotifications = async () => {
                               <Eye className="w-4 h-4 text-blue-600" />
                             </button>
                           )}
-                          {!notification.email_sent && (
-                            <button
-                              onClick={() => handleResendEmail(notification)}
-                              disabled={actionLoading}
-                              className="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
-                              title="Resend email"
-                            >
-                              <Send className="w-4 h-4 text-emerald-600" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleResendPush(notification)}
+                            disabled={actionLoading}
+                            className="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                            title="Resend push notification"
+                          >
+                            <Send className="w-4 h-4 text-emerald-600" />
+                          </button>
                           <button
                             onClick={() => handleDelete([notification.id])}
                             disabled={actionLoading}

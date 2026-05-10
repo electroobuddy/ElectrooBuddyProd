@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,74 +8,80 @@ import { AnimatePresence } from "framer-motion";
 import { HelmetProvider } from 'react-helmet-async';
 import PageTransition from "@/components/PageTransition";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { CartProvider } from "@/contexts/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import BookingModal from "@/components/BookingModal";
-import Index from "./pages/Index";
-import About from "./pages/About";
-import Services from "./pages/Services";
-import Projects from "./pages/Projects";
-import Contact from "./pages/Contact";
-import BookingForm from "./pages/BookingForm";
-import BookingTracking from "./pages/BookingTracking";
-import Review from "./pages/Review";
-import FAQ from "./pages/FAQ";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import NotFound from "./pages/NotFound";
-import Products from "./pages/Products";
-import ProductDetails from "./pages/ProductDetails";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import OrderSuccess from "./pages/OrderSuccess";
-import OrderTracking from "./pages/OrderTracking";
-import Tips from "./pages/Tips";
-import UserAuth from "./pages/user/UserAuth";
-import UserLayout from "./pages/user/UserLayout";
-import UserDashboard from "./pages/user/UserDashboard";
-import UserBookings from "./pages/user/UserBookings";
-import UserProfile from "./pages/user/UserProfile";
-import UserOrders from "./pages/user/UserOrders";
-import UserSubscriptions from "./pages/user/UserSubscriptions";
-import UserProducts from "./pages/user/UserProducts";
-import UserServices from "./pages/user/UserServices";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminServices from "./pages/admin/AdminServices";
-import AdminBookings from "./pages/admin/AdminBookings";
-import AdminTeam from "./pages/admin/AdminTeam";
-import AdminTestimonials from "./pages/admin/AdminTestimonials";
-import AdminProjects from "./pages/admin/AdminProjects";
-import AdminMessages from "./pages/admin/AdminMessages";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminProducts from "@/pages/admin/AdminProducts";
-import AdminCouponsCategories from "@/pages/admin/AdminCouponsCategories";
-import AdminOrders from "@/pages/admin/AdminOrders";
-import AdminPayments from "./pages/admin/AdminPayments";
-import AdminShippingSettings from "./pages/admin/AdminShippingSettings";
-import AdminTechnicians from "./pages/admin/AdminTechnicians";
-import AdminOffers from "./pages/admin/AdminOffers";
-import AdminNotifications from "./pages/admin/AdminNotifications";
-import TechnicianLogin from "./pages/technician/TechnicianLogin";
-import TechnicianLayout from "./pages/technician/TechnicianLayout";
-import TechnicianDashboard from "./pages/technician/TechnicianDashboard";
-import TechnicianBookings from "./pages/technician/TechnicianBookings";
-import TechnicianProfile from "./pages/technician/TechnicianProfile";
-import TechnicianSettings from "./pages/technician/TechnicianSettings";
-import TechnicianSignUp from "./pages/technician/TechnicianSignUp";
-import Subscriptions from "@/components/Subscriptions";
-import AdminSubscriptions from "@/components/AdminSubscriptions";
-import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import AsyncErrorBoundary from "@/components/AsyncErrorBoundary";
+
+// Lazy load heavy components
+const Index = lazy(() => import("./pages/Index"));
+const About = lazy(() => import("./pages/About"));
+const Services = lazy(() => import("./pages/Services"));
+const Projects = lazy(() => import("./pages/Projects"));
+const Contact = lazy(() => import("./pages/Contact"));
+const BookingForm = lazy(() => import("./pages/BookingForm"));
+const BookingTracking = lazy(() => import("./pages/BookingTracking"));
+const Review = lazy(() => import("./pages/Review"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Products = lazy(() => import("./pages/Products"));
+const ProductDetails = lazy(() => import("./pages/ProductDetails"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
+const OrderTracking = lazy(() => import("./pages/OrderTracking"));
+const Tips = lazy(() => import("./pages/Tips"));
+const UserAuth = lazy(() => import("./pages/user/UserAuth"));
+const UserLayout = lazy(() => import("./pages/user/UserLayout"));
+const UserDashboard = lazy(() => import("./pages/user/UserDashboard"));
+const UserBookings = lazy(() => import("./pages/user/UserBookings"));
+const UserProfile = lazy(() => import("./pages/user/UserProfile"));
+const UserOrders = lazy(() => import("./pages/user/UserOrders"));
+const UserSubscriptions = lazy(() => import("./pages/user/UserSubscriptions"));
+const UserProducts = lazy(() => import("./pages/user/UserProducts"));
+const UserServices = lazy(() => import("./pages/user/UserServices"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminServices = lazy(() => import("./pages/admin/AdminServices"));
+const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
+const AdminTeam = lazy(() => import("./pages/admin/AdminTeam"));
+const AdminTestimonials = lazy(() => import("./pages/admin/AdminTestimonials"));
+const AdminProjects = lazy(() => import("./pages/admin/AdminProjects"));
+const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminProducts = lazy(() => import("@/pages/admin/AdminProducts"));
+const AdminCouponsCategories = lazy(() => import("@/pages/admin/AdminCouponsCategories"));
+const AdminOrders = lazy(() => import("@/pages/admin/AdminOrders"));
+const AdminPayments = lazy(() => import("./pages/admin/AdminPayments"));
+const AdminShippingSettings = lazy(() => import("./pages/admin/AdminShippingSettings"));
+const AdminTechnicians = lazy(() => import("./pages/admin/AdminTechnicians"));
+const AdminOffers = lazy(() => import("./pages/admin/AdminOffers"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const TechnicianLogin = lazy(() => import("./pages/technician/TechnicianLogin"));
+const TechnicianLayout = lazy(() => import("./pages/technician/TechnicianLayout"));
+const TechnicianDashboard = lazy(() => import("./pages/technician/TechnicianDashboard"));
+const TechnicianBookings = lazy(() => import("./pages/technician/TechnicianBookings"));
+const TechnicianProfile = lazy(() => import("./pages/technician/TechnicianProfile"));
+const TechnicianSettings = lazy(() => import("./pages/technician/TechnicianSettings"));
+const TechnicianSignUp = lazy(() => import("./pages/technician/TechnicianSignUp"));
+const Subscriptions = lazy(() => import("@/components/Subscriptions"));
+const AdminSubscriptions = lazy(() => import("@/components/AdminSubscriptions"));
+const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const location = useLocation();
+  const { user } = useAuth();
   const isAdmin = location.pathname.startsWith("/admin");
   const isUserPanel = location.pathname.startsWith("/dashboard") || location.pathname === "/login";
   const isTechnicianPanel = location.pathname.startsWith("/technician") && !location.pathname.startsWith("/technician/login") && !location.pathname.startsWith("/technician/signup");
@@ -143,27 +149,27 @@ const AppContent = () => {
       <main className={isAdmin || isUserPanel || isTechnicianPanel ? "" : "min-h-screen"}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-            <Route path="/about" element={<PageTransition><About /></PageTransition>} />
-            <Route path="/services" element={<PageTransition><Services /></PageTransition>} />
-            <Route path="/projects" element={<PageTransition><Projects /></PageTransition>} />
-            <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
-            <Route path="/booking" element={<PageTransition><BookingForm /></PageTransition>} />
-            <Route path="/track-booking" element={<PageTransition><BookingTracking /></PageTransition>} />
-            <Route path="/review" element={<PageTransition><Review /></PageTransition>} />
-            <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
-            <Route path="/tips" element={<PageTransition><Tips /></PageTransition>} />
-            <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
-            <Route path="/subscriptions" element={<PageTransition><Subscriptions /></PageTransition>} />
-            <Route path="/subscription-success" element={<PageTransition><SubscriptionSuccess /></PageTransition>} />
-            <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
-            <Route path="/products" element={<PageTransition><Products /></PageTransition>} />
-            <Route path="/products/:slug" element={<PageTransition><ProductDetails /></PageTransition>} />
-            <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
-            <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
-            <Route path="/order-success" element={<PageTransition><OrderSuccess /></PageTransition>} />
-            <Route path="/track-order/:orderNumber" element={<PageTransition><OrderTracking /></PageTransition>} />
-            <Route path="/login" element={<PageTransition><UserAuth /></PageTransition>} />
+            <Route path="/" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Index /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/about" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><About /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/services" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Services /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/projects" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Projects /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/contact" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Contact /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/booking" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><BookingForm /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/track-booking" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><BookingTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/review" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Review /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/faq" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><FAQ /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/tips" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Tips /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/privacy" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Privacy /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/subscriptions" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Subscriptions /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/subscription-success" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><SubscriptionSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/terms" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Terms /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/products" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Products /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/products/:slug" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><ProductDetails /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/cart" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Cart /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/checkout" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Checkout /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/order-success" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><OrderSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/track-order/:orderNumber" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><OrderTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/login" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><UserAuth /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route element={<UserLayout />}>
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
@@ -230,28 +236,42 @@ const AppContent = () => {
           )}
         </AnimatePresence>
       )}
+      
+      {/* Push Notification Prompt */}
+      <PushNotificationPrompt userId={user?.id} />
     </>
   );
 };
 
 const App = () => (
-  <HelmetProvider>
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AuthProvider>
-            <CartProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppContent />
-              </BrowserRouter>
-            </CartProvider>
-          </AuthProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  </HelmetProvider>
+  <ErrorBoundary
+    onError={(error, errorInfo) => {
+      console.error('Global App Error:', error, errorInfo);
+      // TODO: Add error reporting service here
+    }}
+  >
+    <HelmetProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <QueryClientProvider client={queryClient}>
+          <ErrorBoundary>
+            <TooltipProvider>
+              <AuthProvider>
+                <ErrorBoundary>
+                  <CartProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrowserRouter>
+                      <AppContent />
+                    </BrowserRouter>
+                  </CartProvider>
+                </ErrorBoundary>
+              </AuthProvider>
+            </TooltipProvider>
+          </ErrorBoundary>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </HelmetProvider>
+  </ErrorBoundary>
 );
 
 export default App;

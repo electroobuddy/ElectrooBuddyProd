@@ -1,27 +1,36 @@
-/* Global Styles */
+/* Optimized Global Styles */
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     scroll-behavior: smooth;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Import Poppins Font */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+/* Optimized Font Loading - Preload Critical Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-:root { --primary-color: #3b82f6; }
+/* CSS Variables for Performance */
+:root { 
+    --primary-color: #3b82f6;
+    --transition-fast: 0.2s ease;
+    --transition-base: 0.3s ease;
+}
+
+/* Remove unused styles */
 .element { color: var(--primary-color); }
 
-/* Hero Gradient */
+/* Optimized Hero Gradient */
 .hero-gradient { 
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); 
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    will-change: transform;
 }
 .dark .hero-gradient { 
-    background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); 
+    background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%);
 }
 
-/* Animations */
+/* Optimized Animations - Use GPU Acceleration */
 .service-card { 
-    transition: all 0.3s ease; 
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    will-change: transform, box-shadow;
 }
 .service-card:hover { 
     transform: translateY(-5px); 
@@ -30,27 +39,31 @@ body {
 
 .team-member:hover img { 
     transform: scale(1.05); 
+    will-change: transform;
 }
 
+/* Optimized Floating Animation */
 .floating-button { 
-    animation: float 3s ease-in-out infinite; 
+    animation: float 3s ease-in-out infinite;
+    will-change: transform;
 }
 @keyframes float {
-    0% { transform: translateY(0px); }
+    0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
 }
 
+/* Optimized Fade Animation */
 .fade-in { 
-    animation: fadeIn 0.5s ease-in; 
+    animation: fadeIn 0.3s ease-out;
 }
 @keyframes fadeIn { 
-    from { opacity: 0; } 
-    to { opacity: 1; } 
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
+/* Optimized Slide Animation */
 .slide-up { 
-    animation: slideUp 0.5s ease-out; 
+    animation: slideUp 0.3s ease-out;
 }
 @keyframes slideUp {
     from { transform: translateY(20px); opacity: 0; }

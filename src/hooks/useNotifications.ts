@@ -23,6 +23,10 @@ const MAX_RETRIES     = 3;
 const RETRY_BASE_MS   = 2_000;
 const FETCH_LIMIT     = 50;
 
+// Disable real-time on free tier if experiencing CHANNEL_ERROR spam
+// Set VITE_DISABLE_REALTIME=true in .env to use polling only
+const DISABLE_REALTIME = import.meta.env.VITE_DISABLE_REALTIME === "true";
+
 export const useNotifications = (userId: string | null) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount]     = useState(0);
@@ -188,6 +192,12 @@ export const useNotifications = (userId: string | null) => {
     };
 
     const subscribe = () => {
+      // Skip real-time if disabled (free tier optimization)
+      if (DISABLE_REALTIME) {
+        console.log("[useNotifications] Real-time disabled, using polling only");
+        return;
+      }
+
       // Always tear down before creating a new channel (prevents leaks on retry)
       teardown();
 

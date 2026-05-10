@@ -1,1446 +1,7 @@
-// // import { useState, useEffect, useMemo, useCallback } from "react";
-// // import { Check, Phone, CheckCircle, Loader2, CalendarDays, Tag } from "lucide-react";
-// // import { supabase } from "@/integrations/supabase/client";
-// // import { useAuth } from "@/hooks/useAuth";
-// // import { toast } from "sonner";
-// // import { PHONE_NUMBER } from "@/data/services";
-// // import { useServicesStore } from "@/stores/servicesStore";
-
-// // // Debounce utility function
-// // function debounce<T extends (...args: any[]) => any>(
-// //   func: T,
-// //   delay: number
-// // ): (...args: Parameters<T>) => void {
-// //   let timeoutId: NodeJS.Timeout;
-// //   return (...args: Parameters<T>) => {
-// //     clearTimeout(timeoutId);
-// //     timeoutId = setTimeout(() => func(...args), delay);
-// //   };
-// // }
-
-// // interface CouponValidation {
-// //   is_valid: boolean;
-// //   offer_id: string | null;
-// //   title: string | null;
-// //   type: string | null;
-// //   value: number | null;
-// //   message: string;
-// // }
-
-
-// // export default function RequestServiceSection({ preselectedService, preselectedOffer }: { preselectedService?: string; preselectedOffer?: string }) {
-// //   const [serviceFormDone, setServiceFormDone] = useState(false);
-// //   const [serviceFormSubmitting, setServiceFormSubmitting] = useState(false);
-// //   const { user } = useAuth();
-// //   const { bookingServices, getServiceCharge, fetchBookingServices } = useServicesStore();
-// //   const [serviceForm, setServiceForm] = useState({
-// //     name: "", phone: "", email: "", address: "",
-// //     exact_location: "", service_type: preselectedService || "", preferred_date: "",
-// //     preferred_time: "", description: "",
-// //   });
-
-// //   // Coupon state
-// //   const [couponCode, setCouponCode] = useState(preselectedOffer || "");
-// //   const [applyingCoupon, setApplyingCoupon] = useState(false);
-// //   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
-// //   const counters = useMemo(() => ({
-// //     experience: new Date().getFullYear() - 1992,
-// //     clients: 5000,
-// //     projects: 8000
-// //   }), []);
-
-// //   // Fetch services on mount
-// //   useEffect(() => {
-// //     fetchBookingServices();
-// //   }, [fetchBookingServices]);
-
-// //   // Add Custom Service option to services list
-// //   const servicesWithOptions = [
-// //     ...bookingServices,
-// //     { title: "Custom Service" }
-// //   ];
-
-// //   // Update service_type when preselectedService prop changes
-// //   useEffect(() => {
-// //     if (preselectedService) {
-// //       setServiceForm(prev => ({ ...prev, service_type: preselectedService }));
-// //     }
-// //   }, [preselectedService]);
-
-// //   // Get service charge using store helper
-// //   const selectedServiceCharge = serviceForm.service_type ? getServiceCharge(serviceForm.service_type) : null;
-
-// //   // Coupon handler using same pattern as Checkout
-// //   const handleApplyCoupon = async () => {
-// //     if (!couponCode.trim()) {
-// //       toast.error('Please enter a coupon code');
-// //       return;
-// //     }
-    
-// //     if (!user) {
-// //       toast.error('Please login to apply coupon');
-// //       return;
-// //     }
-
-// //     // Validate service charge
-// //     const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
-// //     if (!baseAmount || baseAmount <= 0) {
-// //       toast.error('Please select a service first');
-// //       return;
-// //     }
-    
-// //     setApplyingCoupon(true);
-    
-// //     // Add timeout for better UX
-// //     const timeoutPromise = new Promise((_, reject) => 
-// //       setTimeout(() => reject(new Error('Request timeout')), 10000)
-// //     );
-    
-// //     try {
-// //       const applyPromise = supabase.rpc('apply_coupon', {
-// //         p_coupon_code: couponCode.toUpperCase().trim(),
-// //         p_user_id: user.id,
-// //         p_cart_total: baseAmount,
-// //         p_cart_items: [] as any
-// //       });
-      
-// //       // Race between apply and timeout
-// //       const { data, error } = await Promise.race([applyPromise, timeoutPromise]) as any;
-      
-// //       if (error) {
-// //         console.error('Coupon RPC error:', error);
-// //         toast.error(error.message || "Failed to apply coupon");
-// //         setAppliedCoupon(null);
-// //         return;
-// //       }
-      
-// //       if (!data || data.length === 0) {
-// //         toast.error("Invalid coupon code");
-// //         setAppliedCoupon(null);
-// //         return;
-// //       }
-      
-// //       const result = data[0];
-      
-// //       // Validate result structure
-// //       if (!result || typeof result !== 'object') {
-// //         toast.error("Invalid coupon response");
-// //         setAppliedCoupon(null);
-// //         return;
-// //       }
-      
-// //       if (result.success) {
-// //         // Validate discount amount
-// //         if (typeof result.discount_amount !== 'number' || result.discount_amount < 0) {
-// //           toast.error("Invalid discount amount");
-// //           setAppliedCoupon(null);
-// //           return;
-// //         }
-        
-// //         setAppliedCoupon(result);
-// //         const couponCodeDisplay = couponCode.toUpperCase().trim();
-// //         toast.success(`Coupon applied! ${couponCodeDisplay}`);
-// //       } else {
-// //         toast.error(result.message || "Cannot apply this coupon");
-// //         setAppliedCoupon(null);
-// //       }
-// //     } catch (error: any) {
-// //       console.error('Error applying coupon:', error);
-// //       const errorMsg = error.message === 'Request timeout' 
-// //         ? 'Request timed out. Please try again.'
-// //         : 'Failed to apply coupon. Please try again.';
-// //       toast.error(errorMsg);
-// //       setAppliedCoupon(null);
-// //     } finally {
-// //       setApplyingCoupon(false);
-// //     }
-// //   };
-
-// //   // Calculate amounts
-// //   const calculateAmounts = () => {
-// //     const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
-
-// //     if (!appliedCoupon?.success || !baseAmount) {
-// //       return { original: baseAmount, discount: 0, final: baseAmount };
-// //     }
-
-// //     // Use the discount_amount directly from the applied coupon response
-// //     const discount = appliedCoupon?.discount_amount || 0;
-
-// //     // Ensure discount doesn't exceed base amount
-// //     const finalDiscount = Math.min(discount, baseAmount);
-
-// //     return {
-// //       original: baseAmount,
-// //       discount: finalDiscount,
-// //       final: baseAmount - finalDiscount
-// //     };
-// //   };
-
-// //   const { original, discount, final } = calculateAmounts();
-
-// //   const handleServiceFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-// //     e.preventDefault();
-// //     setServiceFormSubmitting(true);
-
-// //     const { original, discount, final } = calculateAmounts();
-
-// //     try {
-// //       const insertData: any = {
-// //         name: serviceForm.name,
-// //         phone: serviceForm.phone,
-// //         email: serviceForm.email,
-// //         address: serviceForm.address,
-// //         service_type: serviceForm.service_type === "Custom Service" ? `Custom: ${serviceForm.description}` : serviceForm.service_type,
-// //         preferred_date: serviceForm.preferred_date || null,
-// //         preferred_time: serviceForm.preferred_time || null,
-// //         description: serviceForm.service_type === "Custom Service" ? serviceForm.description : (serviceForm.description || null),
-// //         exact_location: serviceForm.exact_location || null,
-// //         // Coupon fields
-// //         coupon_code: couponCode || null,
-// //         offer_id: null, // Set to null since we're using coupons system, not offers system
-// //         discount_amount: discount > 0 ? discount : null,
-// //         original_amount: original > 0 ? original : null,
-// //         final_amount: final > 0 ? final : null,
-// //         offer_applied: appliedCoupon?.success || false,
-// //       };
-
-// //       if (user) {
-// //         insertData.user_id = user.id;
-// //       }
-      
-// //       const { data: bookingData, error } = await supabase.from('bookings').insert(insertData).select().single();
-      
-// //       if (error) throw error;
-      
-// //       const bookingId = bookingData.id;
-      
-// //       // Try to auto-assign technician
-// //       try {
-// //         const response = await supabase.functions.invoke('auto-assign-technician', {
-// //           body: { bookingId },
-// //         });
-        
-// //         if (response.error) {
-// //           console.error('Auto-assign error:', response.error);
-// //           toast.info('Service request submitted! We\'ll contact you soon.');
-// //         } else if (response.data?.success) {
-// //           toast.success(`Service request submitted! Technician ${response.data.technician.name} will contact you.`);
-// //         } else {
-// //           toast.success('Service request submitted! We\'ll contact you soon.');
-// //         }
-// //       } catch (funcError) {
-// //         console.error('Failed to call auto-assign function:', funcError);
-// //         toast.success('Service request submitted! We\'ll contact you soon.');
-// //       }
-      
-// //       setServiceFormDone(true);
-// //       setServiceForm({ 
-// //         name: '', 
-// //         phone: '', 
-// //         email: '', 
-// //         address: '', 
-// //         service_type: '', 
-// //         preferred_date: '', 
-// //         preferred_time: '', 
-// //         description: '', 
-// //         exact_location: '' 
-// //       });
-// //     } catch (error: any) {
-// //       console.error(error);
-// //       toast.error(error.message || 'Failed to submit service request. Please try again.');
-// //     } finally {
-// //       setServiceFormSubmitting(false);
-// //     }
-// //   };
-
-// //   return (    <section
-// //       id="request-service"
-// //       style={{
-// //         fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-// //         background: "linear-gradient(135deg, #1a56db 0%, #1e40af 60%, #1e3a8a 100%)",
-// //         padding: "80px 0",
-// //         width: "100%",
-// //         boxSizing: "border-box",
-// //       }}
-// //       className="dark:bg-gradient-to-br dark:from-blue-900 dark:via-blue-800 dark:to-gray-900"
-// //     >
-// //       <style>{`
-// //         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@600;700;800&display=swap');
-
-// //         .rs-container {
-// //           max-width: 1400px;
-// //           width: 100%;
-// //           margin: 0 auto;
-// //           padding: 0 24px;
-// //           box-sizing: border-box;
-// //         }
-
-// //         .rs-header {
-// //           text-align: center;
-// //           margin-bottom: 56px;
-// //         }
-
-// //         .rs-header h2 {
-// //           // font-family: 'Syne', sans-serif;
-// //           font-size: clamp(2rem, 4vw, 3.25rem);
-// //           font-weight: 800;
-// //           color: #fff;
-// //           margin: 0 0 16px;
-// //           letter-spacing: -0.02em;
-// //         }
-
-// //         .rs-header .divider {
-// //           width: 64px;
-// //           height: 4px;
-// //           background: rgba(255,255,255,0.6);
-// //           border-radius: 2px;
-// //           margin: 0 auto 20px;
-// //         }
-
-// //         .rs-header p {
-// //           font-size: clamp(1rem, 1.5vw, 1.125rem);
-// //           color: rgba(255,255,255,0.82);
-// //           max-width: 560px;
-// //           margin: 0 auto;
-// //           line-height: 1.7;
-// //         }
-
-// //         .rs-card {
-// //           background: #fff;
-// //           border-radius: 20px;
-// //           overflow: hidden;
-// //           box-shadow: 0 32px 80px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.12);
-// //           display: grid;
-// //           grid-template-columns: 1fr 2fr;
-// //           width: 100%;
-// //           max-width: 1200px;
-// //           margin: 0 auto;
-// //           transition: background-color 0.3s ease, box-shadow 0.3s ease;
-// //         }
-
-// //         .dark .rs-card {
-// //           background: #1f2937;
-// //           box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
-// //         }
-
-// //         .rs-sidebar {
-// //           background: linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 100%);
-// //           padding: clamp(32px, 4vw, 56px) clamp(28px, 3.5vw, 48px);
-// //           display: flex;
-// //           flex-direction: column;
-// //           justify-content: center;
-// //           position: relative;
-// //           overflow: hidden;
-// //           transition: background 0.3s ease;
-// //         }
-
-// //         .dark .rs-sidebar {
-// //           background: linear-gradient(160deg, #1e3a8a 0%, #1e40af 100%);
-// //         }
-
-// //         .rs-sidebar::before {
-// //           content: '';
-// //           position: absolute;
-// //           top: -60px;
-// //           right: -60px;
-// //           width: 200px;
-// //           height: 200px;
-// //           border-radius: 50%;
-// //           background: rgba(255,255,255,0.05);
-// //         }
-
-// //         .rs-sidebar::after {
-// //           content: '';
-// //           position: absolute;
-// //           bottom: -40px;
-// //           left: -40px;
-// //           width: 160px;
-// //           height: 160px;
-// //           border-radius: 50%;
-// //           background: rgba(255,255,255,0.04);
-// //         }
-
-// //         .rs-sidebar h3 {
-// //           font-family: 'Syne', sans-serif;
-// //           font-size: clamp(1.25rem, 2.2vw, 1.75rem);
-// //           font-weight: 700;
-// //           color: #fff;
-// //           margin: 0 0 28px;
-// //           line-height: 1.3;
-// //           position: relative;
-// //           z-index: 1;
-// //         }
-
-// //         .rs-features {
-// //           list-style: none;
-// //           padding: 0;
-// //           margin: 0 0 36px;
-// //           display: flex;
-// //           flex-direction: column;
-// //           gap: 16px;
-// //           position: relative;
-// //           z-index: 1;
-// //         }
-
-// //         .rs-feature-item {
-// //           display: flex;
-// //           align-items: flex-start;
-// //           gap: 12px;
-// //         }
-
-// //         .rs-check-icon {
-// //           flex-shrink: 0;
-// //           width: 24px;
-// //           height: 24px;
-// //           border-radius: 50%;
-// //           background: rgba(255,255,255,0.15);
-// //           border: 1.5px solid rgba(255,255,255,0.3);
-// //           display: flex;
-// //           align-items: center;
-// //           justify-content: center;
-// //           margin-top: 1px;
-// //         }
-
-// //         .rs-feature-item p {
-// //           color: rgba(255,255,255,0.88);
-// //           font-size: clamp(0.875rem, 1.2vw, 1rem);
-// //           line-height: 1.5;
-// //           margin: 0;
-// //         }
-
-// //         .rs-phone-link {
-// //           display: inline-flex;
-// //           align-items: center;
-// //           gap: 10px;
-// //           background: rgba(255,255,255,0.12);
-// //           border: 1.5px solid rgba(255,255,255,0.25);
-// //           border-radius: 12px;
-// //           padding: 14px 20px;
-// //           color: #fff;
-// //           text-decoration: none;
-// //           transition: background 0.2s;
-// //           position: relative;
-// //           z-index: 1;
-// //         }
-
-// //         .rs-phone-link:hover {
-// //           background: rgba(255,255,255,0.2);
-// //         }
-
-// //         .rs-phone-link span {
-// //           font-weight: 600;
-// //           font-size: clamp(0.875rem, 1.1vw, 1rem);
-// //           letter-spacing: 0.01em;
-// //         }
-
-// //         .rs-form-panel {
-// //           padding: clamp(28px, 4vw, 52px) clamp(24px, 4vw, 52px);
-// //           background: #fff;
-// //           overflow-y: auto;
-// //           transition: background-color 0.3s ease;
-// //         }
-
-// //         .dark .rs-form-panel {
-// //           background: #1f2937;
-// //         }
-
-// //         .rs-success {
-// //           display: flex;
-// //           flex-direction: column;
-// //           align-items: center;
-// //           justify-content: center;
-// //           text-align: center;
-// //           padding: 40px 20px;
-// //           min-height: 400px;
-// //         }
-
-// //         .rs-success-icon {
-// //           width: 80px;
-// //           height: 80px;
-// //           border-radius: 50%;
-// //           background: #dcfce7;
-// //           display: flex;
-// //           align-items: center;
-// //           justify-content: center;
-// //           margin-bottom: 24px;
-// //         }
-
-// //         .rs-success h3 {
-// //           font-family: 'Syne', sans-serif;
-// //           font-size: 1.75rem;
-// //           font-weight: 700;
-// //           color: #111827;
-// //           margin: 0 0 12px;
-// //         }
-
-// //         .dark .rs-success h3 {
-// //           color: #f9fafb;
-// //         }
-
-// //         .rs-success p {
-// //           color: #6b7280;
-// //           font-size: 1rem;
-// //           margin: 0 0 28px;
-// //           line-height: 1.6;
-// //         }
-
-// //         .dark .rs-success p {
-// //           color: #9ca3af;
-// //         }
-
-// //         .rs-success button {
-// //           padding: 12px 28px;
-// //           background: #1d4ed8;
-// //           color: #fff;
-// //           border: none;
-// //           border-radius: 10px;
-// //           font-size: 0.95rem;
-// //           font-weight: 600;
-// //           cursor: pointer;
-// //           transition: background 0.2s, transform 0.15s;
-// //           font-family: 'DM Sans', sans-serif;
-// //         }
-
-// //         .rs-success button:hover {
-// //           background: #1e40af;
-// //           transform: translateY(-1px);
-// //         }
-
-// //         .rs-form {
-// //           display: flex;
-// //           flex-direction: column;
-// //           gap: 0;
-// //         }
-
-// //         .rs-form-grid {
-// //           display: grid;
-// //           grid-template-columns: 1fr 1fr;
-// //           gap: 20px;
-// //           margin-bottom: 20px;
-// //         }
-
-// //         .rs-field {
-// //           display: flex;
-// //           flex-direction: column;
-// //           gap: 6px;
-// //           margin-bottom: 20px;
-// //         }
-
-// //         .rs-field:last-of-type { margin-bottom: 0; }
-
-// //         .rs-label {
-// //           font-size: 0.8125rem;
-// //           font-weight: 600;
-// //           color: #374151;
-// //           letter-spacing: 0.03em;
-// //           text-transform: uppercase;
-// //         }
-
-// //         .dark .rs-label {
-// //           color: #d1d5db;
-// //         }
-
-// //         .rs-required { color: #ef4444; margin-left: 2px; }
-
-// //         .rs-input, .rs-select, .rs-textarea {
-// //           width: 100%;
-// //           border: 1.5px solid #e5e7eb;
-// //           border-radius: 10px;
-// //           padding: 11px 14px;
-// //           font-size: 0.9375rem;
-// //           color: #111827;
-// //           background: #f9fafb;
-// //           transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
-// //           outline: none;
-// //           font-family: 'DM Sans', sans-serif;
-// //           box-sizing: border-box;
-// //         }
-
-// //         .dark .rs-input, .dark .rs-select, .dark .rs-textarea {
-// //           background: #374151;
-// //           border-color: #4b5563;
-// //           color: #f9fafb;
-// //         }
-
-// //         .dark .rs-input::placeholder, .dark .rs-textarea::placeholder {
-// //           color: #9ca3af;
-// //         }
-
-// //         .rs-input:focus, .rs-select:focus, .rs-textarea:focus {
-// //           border-color: #1d4ed8;
-// //           background: #fff;
-// //           box-shadow: 0 0 0 3px rgba(29,78,216,0.1);
-// //         }
-
-// //         .dark .rs-input:focus, .dark .rs-select:focus, .dark .rs-textarea:focus {
-// //           background: #4b5563;
-// //           border-color: #60a5fa;
-// //           box-shadow: 0 0 0 3px rgba(96,165,250,0.2);
-// //         }
-
-// //         .rs-textarea {
-// //           resize: vertical;
-// //           min-height: 88px;
-// //         }
-
-// //         .rs-submit-btn {
-// //           margin-top: 24px;
-// //           width: 100%;
-// //           padding: 14px;
-// //           background: linear-gradient(90deg, #1d4ed8, #2563eb);
-// //           color: #fff;
-// //           border: none;
-// //           border-radius: 12px;
-// //           font-size: 1rem;
-// //           font-weight: 600;
-// //           cursor: pointer;
-// //           display: flex;
-// //           align-items: center;
-// //           justify-content: center;
-// //           gap: 8px;
-// //           transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-// //           box-shadow: 0 4px 16px rgba(29,78,216,0.35);
-// //           font-family: 'DM Sans', sans-serif;
-// //           letter-spacing: 0.01em;
-// //         }
-
-// //         .rs-submit-btn:hover:not(:disabled) {
-// //           opacity: 0.93;
-// //           transform: translateY(-1px);
-// //           box-shadow: 0 6px 20px rgba(29,78,216,0.45);
-// //         }
-
-// //         .rs-submit-btn:disabled {
-// //           opacity: 0.6;
-// //           cursor: not-allowed;
-// //         }
-
-// //         .rs-service-charge-box {
-// //           margin-top: 16px;
-// //           padding: 14px 18px;
-// //           background: linear-gradient(135deg, #fef3c7, #fde68a);
-// //           border: 2px solid #fbbf24;
-// //           border-radius: 10px;
-// //           display: flex;
-// //           align-items: center;
-// //           justify-content: space-between;
-// //           animation: rsSlideDown 0.3s ease;
-// //         }
-
-// //         .dark .rs-service-charge-box {
-// //           background: linear-gradient(135deg, #78350f, #92400e);
-// //           border-color: #b45309;
-// //         }
-
-// //         @keyframes rsSlideDown {
-// //           from { opacity: 0; transform: translateY(-10px); }
-// //           to { opacity: 1; transform: translateY(0); }
-// //         }
-
-// //         .rs-service-charge-label {
-// //           font-size: 13px;
-// //           font-weight: 600;
-// //           color: #92400e;
-// //           font-family: 'DM Sans', sans-serif;
-// //         }
-
-// //         .dark .rs-service-charge-label {
-// //           color: #fde68a;
-// //         }
-
-// //         .rs-service-charge-amount {
-// //           font-size: 18px;
-// //           font-weight: 700;
-// //           color: #78350f;
-// //           font-family: 'DM Sans', sans-serif;
-// //         }
-
-// //         .dark .rs-service-charge-amount {
-// //           color: #fef3c7;
-// //         }
-
-// //         @media (max-width: 1024px) {
-// //           .rs-card {
-// //             grid-template-columns: 5fr 7fr;
-// //           }
-// //         }
-
-// //         @media (max-width: 768px) {
-// //           .rs-card {
-// //             grid-template-columns: 1fr;
-// //           }
-
-// //           .rs-form-grid {
-// //             grid-template-columns: 1fr;
-// //           }
-
-// //           .rs-sidebar {
-// //             padding: 36px 28px;
-// //           }
-// //         }
-
-// //         @media (max-width: 480px) {
-// //           .rs-container {
-// //             padding: 0 16px;
-// //           }
-
-// //           .rs-form-panel {
-// //             padding: 24px 20px;
-// //           }
-// //         }
-// //       `}</style>
-
-// //       <div className="rs-container">
-// //         {/* Header */}
-// //         <div className="rs-header">
-// //           <h2>Request a Service</h2>
-// //           <div className="divider" />
-// //           <p>Fill out the form below and we'll contact you shortly to schedule your service.</p>
-// //         </div>
-
-// //         {/* Card */}
-// //         <div className="rs-card">
-// //           {/* Sidebar */}
-// //           <div className="rs-sidebar">
-// //             <h3>Why Choose ElectrooBuddy?</h3>
-// //             <ul className="rs-features">
-// //               {[
-// //                 `${counters.experience}+ years of trusted service`,
-// //                 `Certified and experienced technicians`,
-// //                 `Quick response (avg. 45 minutes)`,
-// //                 `Affordable pricing, no hidden charges`,
-// //               ].map((text, i) => (
-// //                 <li key={i} className="rs-feature-item">
-// //                   <div className="rs-check-icon">
-// //                     <Check size={13} color="#fff" strokeWidth={3} />
-// //                   </div>
-// //                   <p>{text}</p>
-// //                 </li>
-// //               ))}
-// //             </ul>
-// //             <a href={`tel:${PHONE_NUMBER}`} className="rs-phone-link">
-// //               <Phone size={18} />
-// //               <span>Emergency: {PHONE_NUMBER}</span>
-// //             </a>
-// //           </div>
-
-// //           {/* Form Panel */}
-// //           <div className="rs-form-panel">
-// //             {serviceFormDone ? (
-// //               <div className="rs-success">
-// //                 <div className="rs-success-icon">
-// //                   <CheckCircle size={40} color="#16a34a" />
-// //                 </div>
-// //                 <h3>Request Submitted!</h3>
-// //                 <p>We'll contact you shortly to confirm your service appointment.</p>
-// //                 <button onClick={() => setServiceFormDone(false)}>Submit Another Request</button>
-// //               </div>
-// //             ) : (
-// //               <form onSubmit={handleServiceFormSubmit} className="rs-form">
-// //                 {/* Row 1: Name + Phone */}
-// //                 <div className="rs-form-grid">
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label">Full Name<span className="rs-required">*</span></label>
-// //                     <input className="rs-input" type="text" required placeholder="Rahul Sharma"
-// //                       value={serviceForm.name}
-// //                       onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })} />
-// //                   </div>
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label">Phone Number<span className="rs-required">*</span></label>
-// //                     <input className="rs-input" type="tel" required placeholder="9876543210"
-// //                       value={serviceForm.phone}
-// //                       onChange={(e) => setServiceForm({ ...serviceForm, phone: e.target.value })} />
-// //                   </div>
-// //                 </div>
-
-// //                 {/* Row 2: Email + Service Type */}
-// //                 <div className="rs-form-grid" style={{ marginTop: 20 }}>
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label">Email Address</label>
-// //                     <input className="rs-input" type="email" placeholder="your@email.com"
-// //                       value={serviceForm.email}
-// //                       onChange={(e) => setServiceForm({ ...serviceForm, email: e.target.value })} />
-// //                   </div>
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label">Service Needed<span className="rs-required">*</span></label>
-// //                     <select className="rs-select" required
-// //                       value={serviceForm.service_type}
-// //                       onChange={(e) => setServiceForm({ ...serviceForm, service_type: e.target.value })}>
-// //                       <option value="">Select a service</option>
-// //                       {servicesWithOptions.map((s) => (
-// //                         <option key={s.title} value={s.title}>{s.title}</option>
-// //                       ))}
-// //                     </select>
-
-// //                     {/* Service Charge Display */}
-// //                     {selectedServiceCharge && (
-// //                       <div className="rs-service-charge-box">
-// //                         <span className="rs-service-charge-label">{selectedServiceCharge.label}</span>
-// //                         <span className="rs-service-charge-amount">₹{selectedServiceCharge.amount}</span>
-// //                       </div>
-// //                     )}
-// //                   </div>
-// //                 </div>
-
-// //                 {/* Coupon Code Row */}
-// //                 <div className="rs-form-grid" style={{ marginTop: 20 }}>
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label flex items-center gap-2">
-// //                       <Tag size={14} />
-// //                       Coupon Code
-// //                     </label>
-// //                     <div className="flex gap-2">
-// //                       <input
-// //                         className="rs-input flex-1"
-// //                         type="text"
-// //                         placeholder="Enter offer code"
-// //                         value={couponCode}
-// //                         onChange={(e) => {
-// //                           setCouponCode(e.target.value.toUpperCase());
-// //                           setAppliedCoupon(null);
-// //                         }}
-// //                       />
-// //                       <button
-// //                         type="button"
-// //                         onClick={handleApplyCoupon}
-// //                         disabled={applyingCoupon || !couponCode.trim()}
-// //                         className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
-// //                       >
-// //                         {applyingCoupon ? (
-// //                           <Loader2 size={14} className="animate-spin" />
-// //                         ) : appliedCoupon?.success ? (
-// //                           <Check size={14} />
-// //                         ) : null}
-// //                         {appliedCoupon?.success ? 'Applied' : 'Apply'}
-// //                       </button>
-// //                     </div>
-// //                     {appliedCoupon?.success && (
-// //                       <div className="mt-2 text-sm text-green-600 flex items-center gap-1">
-// //                         <Check size={14} />
-// //                         Coupon applied! ₹{appliedCoupon.discount_amount?.toFixed(2) || '0.00'} off
-// //                       </div>
-// //                     )}
-// //                   </div>
-
-// //                   {/* Discount Summary */}
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     {appliedCoupon?.success && discount > 0 && (
-// //                       <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
-// //                         <div className="flex justify-between text-xs mb-1">
-// //                           <span className="text-gray-600">Original</span>
-// //                           <span className="line-through">₹{original.toFixed(2)}</span>
-// //                         </div>
-// //                         <div className="flex justify-between text-xs mb-1">
-// //                           <span className="text-green-600">Discount</span>
-// //                           <span className="text-green-600 font-bold">-₹{discount.toFixed(2)}</span>
-// //                         </div>
-// //                         <div className="h-px bg-green-200 my-1" />
-// //                         <div className="flex justify-between">
-// //                           <span className="font-semibold">Final</span>
-// //                           <span className="font-bold text-green-700">₹{final.toFixed(2)}</span>
-// //                         </div>
-// //                       </div>
-// //                     )}
-// //                   </div>
-// //                 </div>
-
-// //                 {/* Row 3: Address + Landmark */}
-// //                 <div className="rs-form-grid" style={{ marginTop: 20 }}>
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label">Service Address<span className="rs-required">*</span></label>
-// //                     <input className="rs-input" type="text" required placeholder="123 Main St, City"
-// //                       value={serviceForm.address}
-// //                       onChange={(e) => setServiceForm({ ...serviceForm, address: e.target.value })} />
-// //                   </div>
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label">Landmark / Location</label>
-// //                     <input className="rs-input" type="text" placeholder="Near temple, Behind mall…"
-// //                       value={serviceForm.exact_location}
-// //                       onChange={(e) => setServiceForm({ ...serviceForm, exact_location: e.target.value })} />
-// //                   </div>
-// //                 </div>
-
-// //                 {/* Row 4: Date + Time */}
-// //                 <div className="rs-form-grid" style={{ marginTop: 20 }}>
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label">Preferred Date</label>
-// //                     <input className="rs-input" type="date"
-// //                       value={serviceForm.preferred_date}
-// //                       onChange={(e) => setServiceForm({ ...serviceForm, preferred_date: e.target.value })} />
-// //                   </div>
-// //                   <div className="rs-field" style={{ marginBottom: 0 }}>
-// //                     <label className="rs-label">Preferred Time</label>
-// //                     <input className="rs-input" type="time"
-// //                       value={serviceForm.preferred_time}
-// //                       onChange={(e) => setServiceForm({ ...serviceForm, preferred_time: e.target.value })} />
-// //                   </div>
-// //                 </div>
-
-// //                 {/* Description */}
-// //                 <div className="rs-field" style={{ marginTop: 20 }}>
-// //                   <label className="rs-label">{serviceForm.service_type === "Custom Service" ? "Describe Your Custom Service Requirement *" : "Additional Details"}</label>
-// //                   <textarea className="rs-textarea" rows={3} placeholder={serviceForm.service_type === "Custom Service" ? "Please describe the specific electrical work you need done..." : "Describe the issue briefly..."}
-// //                     required={serviceForm.service_type === "Custom Service"}
-// //                     value={serviceForm.description}
-// //                     onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })} />
-// //                 </div>
-
-// //                 <button type="submit" className="rs-submit-btn" disabled={serviceFormSubmitting}>
-// //                   {serviceFormSubmitting ? (
-// //                     <><Loader2 size={17} className="animate-spin" style={{ animation: "spin 1s linear infinite" }} /> Submitting...</>
-// //                   ) : (
-// //                     <><CalendarDays size={17} /> Request Service</>
-// //                   )}
-// //                 </button>
-// //               </form>
-// //             )}
-// //           </div>
-// //         </div>
-// //       </div>
-
-// //       <style>{`
-// //         @keyframes spin { to { transform: rotate(360deg); } }
-// //       `}</style>
-// //     </section>
-// //   );
-// // }
-
-
-// import { useState, useEffect, useMemo } from "react";
-// import {
-//   Check, Phone, CheckCircle, Loader2, CalendarDays,
-//   Tag, X, Award, Smile, Wrench, ChevronDown,
-// } from "lucide-react";
-// import { supabase } from "@/integrations/supabase/client";
-// import { useAuth } from "@/hooks/useAuth";
-// import { toast } from "sonner";
-// import { PHONE_NUMBER } from "@/data/services";
-// import { useServicesStore } from "@/stores/servicesStore";
-// import { sendAdminNotification } from "@/utils/notificationUtils";
-
-// // ─── Debounce ────────────────────────────────────────────────────────────────
-// function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
-//   let t: NodeJS.Timeout;
-//   return (...args: Parameters<T>) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
-// }
-
-// // ─── Types ───────────────────────────────────────────────────────────────────
-// interface Props {
-//   preselectedService?: string;
-//   preselectedOffer?: string;
-// }
-
-// // ─── Component ───────────────────────────────────────────────────────────────
-// export default function RequestServiceSection({ preselectedService, preselectedOffer }: Props) {
-//   const { user } = useAuth();
-//   const { bookingServices, getServiceCharge, fetchBookingServices } = useServicesStore();
-
-//   const [done, setDone]           = useState(false);
-//   const [submitting, setSubmitting] = useState(false);
-//   const [couponCode, setCouponCode] = useState(preselectedOffer || "");
-//   const [applying, setApplying]   = useState(false);
-//   const [applied, setApplied]     = useState<any>(null);
-
-//   const [form, setForm] = useState({
-//     name: "", phone: "", email: "", address: "",
-//     exact_location: "", service_type: preselectedService || "",
-//     preferred_date: "", preferred_time: "", description: "",
-//   });
-
-//   const counters = useMemo(() => ({
-//     experience: new Date().getFullYear() - 1992,
-//     clients: 5000,
-//     projects: 8000,
-//   }), []);
-
-//   useEffect(() => { fetchBookingServices(); }, [fetchBookingServices]);
-
-//   useEffect(() => {
-//     if (preselectedService) setForm(p => ({ ...p, service_type: preselectedService }));
-//   }, [preselectedService]);
-
-//   const services = [...bookingServices, { title: "Custom Service" }];
-//   const charge   = form.service_type ? getServiceCharge(form.service_type) : null;
-
-//   // ── Coupon ──
-//   const applyCoupon = async () => {
-//     if (!couponCode.trim()) { toast.error("Enter a coupon code"); return; }
-//     if (!user)              { toast.error("Please login to apply coupon"); return; }
-//     const base = charge ? parseFloat(charge.amount) : 0;
-//     if (!base)              { toast.error("Select a service first"); return; }
-
-//     setApplying(true);
-//     try {
-//       const { data, error } = await supabase.rpc("apply_coupon", {
-//         p_coupon_code: couponCode.toUpperCase().trim(),
-//         p_user_id:     user.id,
-//         p_cart_total:  base,
-//         p_cart_items:  [] as any,
-//       });
-//       if (error) { toast.error(error.message || "Failed to apply coupon"); setApplied(null); return; }
-//       const r = data?.[0];
-//       if (r?.success) {
-//         setApplied(r);
-//         toast.success(`Coupon applied! ₹${r.discount_amount?.toFixed(2)} off`);
-//       } else {
-//         toast.error(r?.message || "Invalid coupon");
-//         setApplied(null);
-//       }
-//     } catch { toast.error("Failed to apply coupon"); setApplied(null); }
-//     finally  { setApplying(false); }
-//   };
-
-//   // ── Amounts ──
-//   const base     = charge ? parseFloat(charge.amount) : 0;
-//   const discount = applied?.success ? Math.min(applied.discount_amount || 0, base) : 0;
-//   const final    = base - discount;
-
-//   // ── Submit ──
-//   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-//     e.preventDefault();
-//     setSubmitting(true);
-//     try {
-//       const payload: any = {
-//         name:           form.name,
-//         phone:          form.phone,
-//         email:          form.email,
-//         address:        form.address,
-//         service_type:   form.service_type === "Custom Service"
-//                           ? `Custom: ${form.description}`
-//                           : form.service_type,
-//         preferred_date: form.preferred_date || null,
-//         preferred_time: form.preferred_time || null,
-//         description:    form.description || null,
-//         exact_location: form.exact_location || null,
-//         coupon_code:    couponCode || null,
-//         offer_id:       null,
-//         discount_amount: discount > 0 ? discount : null,
-//         original_amount: base > 0 ? base : null,
-//         final_amount:    final > 0 ? final : null,
-//         offer_applied:   applied?.success || false,
-//       };
-//       if (user) payload.user_id = user.id;
-
-//       const { data: booking, error } = await supabase.from("bookings").insert(payload).select().single();
-//       if (error) throw error;
-
-//       try {
-//         const r = await supabase.functions.invoke("auto-assign-technician", { body: { bookingId: booking.id } });
-//         if (r.data?.success) toast.success(`Submitted! Technician ${r.data.technician.name} will contact you.`);
-//         else                 toast.success("Request submitted! We'll contact you soon.");
-//       } catch { toast.success("Request submitted! We'll contact you soon."); }
-
-//       // Send notification to admin about new booking (with error handling)
-//       try {
-//         await sendAdminNotification({
-//           title: "🔔 New Service Request",
-//           message: `New service request from ${form.name} for ${form.service_type} on ${form.preferred_date}`,
-//           type: "new_booking",
-//           bookingId: booking.id,
-//           customerName: form.name,
-//           service: form.service_type,
-//           metadata: {
-//             customer_name: form.name,
-//             customer_phone: form.phone,
-//             customer_email: form.email,
-//             service_type: form.service_type,
-//             preferred_date: form.preferred_date,
-//             preferred_time: form.preferred_time,
-//             address: form.address,
-//             exact_location: form.exact_location,
-//             is_guest: !user
-//           }
-//         }, user);
-//       } catch (notifError) {
-//         console.error("Notification failed but booking continues:", notifError);
-//         // Don't block booking submission due to notification failure
-//         toast.success("Request submitted! We'll contact you soon.");
-//       }
-
-//       setDone(true);
-//       setForm({ name:"", phone:"", email:"", address:"", service_type:"", preferred_date:"", preferred_time:"", description:"", exact_location:"" });
-//     } catch (err: any) {
-//       toast.error(err.message || "Failed to submit. Please try again.");
-//     } finally { setSubmitting(false); }
-//   };
-
-//   // ── Sidebar stats ──
-//   const sideStats = [
-//     { label: "Years Experience", value: `${counters.experience}+`, icon: Award },
-//     { label: "Happy Clients",    value: `${counters.clients.toLocaleString()}+`, icon: Smile },
-//     { label: "Jobs Completed",   value: `${counters.projects.toLocaleString()}+`, icon: Wrench },
-//   ];
-
-//   const features = [
-//     `${counters.experience}+ years of trusted service`,
-//     "Certified & experienced technicians",
-//     "Quick response — avg. 45 minutes",
-//     "Affordable pricing, no hidden charges",
-//   ];
-
-//   return (
-//     <section
-//       id="request-service"
-//       className="py-16 md:py-20 bg-white dark:bg-gray-800"
-//       style={{ fontFamily: "'Poppins', 'Segoe UI', sans-serif" }}
-//     >
-//       {/* ── Section header — matches rest of page ── */}
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//         <div className="text-center mb-12 md:mb-16">
-//           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-//             Request a Service
-//           </h2>
-//           <div className="w-20 h-1 bg-blue-600 mx-auto mb-6" />
-//           <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-//             Fill out the form below and we'll contact you shortly to schedule your appointment.
-//           </p>
-//         </div>
-
-//         {/* ── Main card — two-column like the rest ── */}
-//         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
-//           <div className="grid grid-cols-1 lg:grid-cols-3">
-
-//             {/* ── LEFT SIDEBAR ── */}
-//             <div className="bg-blue-600 dark:bg-blue-700 p-8 lg:p-10 flex flex-col justify-between gap-8">
-
-//               {/* Why us */}
-//               <div>
-//                 <h3 className="text-xl md:text-2xl font-bold text-white mb-6 leading-snug">
-//                   Why Choose<br />ElectrooBuddy?
-//                 </h3>
-//                 <ul className="space-y-4">
-//                   {features.map((f, i) => (
-//                     <li key={i} className="flex items-start gap-3">
-//                       <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-//                         <Check size={11} color="#fff" strokeWidth={3} />
-//                       </span>
-//                       <span className="text-sm text-white/90 leading-relaxed">{f}</span>
-//                     </li>
-//                   ))}
-//                 </ul>
-//               </div>
-
-//               {/* Stats — mirrors the home stats section style */}
-//               <div className="grid grid-cols-3 gap-3">
-//                 {sideStats.map(({ label, value, icon: Icon }) => (
-//                   <div
-//                     key={label}
-//                     className="bg-white/10 rounded-xl p-3 text-center border border-white/15"
-//                   >
-//                     <div className="text-xl font-bold text-white">{value}</div>
-//                     <Icon size={14} className="mx-auto mt-1 text-white/70" />
-//                     <div className="text-[10px] text-white/70 mt-1 leading-tight">{label}</div>
-//                   </div>
-//                 ))}
-//               </div>
-
-//               {/* Emergency call */}
-//               <a
-//                 href={`tel:${PHONE_NUMBER}`}
-//                 className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition border border-white/25 rounded-xl px-4 py-3 group"
-//               >
-//                 <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white/30 transition">
-//                   <Phone size={16} color="#fff" />
-//                 </div>
-//                 <div>
-//                   <div className="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Emergency</div>
-//                   <div className="text-sm font-semibold text-white">{PHONE_NUMBER}</div>
-//                 </div>
-//               </a>
-//             </div>
-
-//             {/* ── RIGHT FORM PANEL ── */}
-//             <div className="lg:col-span-2 p-6 sm:p-8 lg:p-10 bg-white dark:bg-gray-900">
-
-//               {done ? (
-//                 /* Success state — same visual language as home's success blocks */
-//                 <div className="h-full flex flex-col items-center justify-center text-center py-10 gap-5">
-//                   <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-//                     <CheckCircle size={40} className="text-green-600 dark:text-green-400" />
-//                   </div>
-//                   <div>
-//                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Request Submitted!</h3>
-//                     <p className="text-gray-600 dark:text-gray-300 max-w-sm mx-auto leading-relaxed">
-//                       We'll contact you shortly to confirm your service appointment.
-//                     </p>
-//                   </div>
-//                   <button
-//                     onClick={() => setDone(false)}
-//                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
-//                   >
-//                     Submit Another Request
-//                   </button>
-//                 </div>
-
-//               ) : (
-//                 <form onSubmit={handleSubmit} className="space-y-5">
-
-//                   {/* Row 1 — Name + Phone */}
-//                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                     <Field label="Full Name" required>
-//                       <input
-//                         className={inp}
-//                         type="text"
-//                         required
-//                         placeholder="Rahul Sharma"
-//                         value={form.name}
-//                         onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-//                       />
-//                     </Field>
-//                     <Field label="Phone Number" required>
-//                       <input
-//                         className={inp}
-//                         type="tel"
-//                         required
-//                         placeholder="9876543210"
-//                         value={form.phone}
-//                         onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
-//                       />
-//                     </Field>
-//                   </div>
-
-//                   {/* Row 2 — Email + Service */}
-//                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                     <Field label="Email Address">
-//                       <input
-//                         className={inp}
-//                         type="email"
-//                         placeholder="rahul@email.com"
-//                         value={form.email}
-//                         onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-//                       />
-//                     </Field>
-//                     <Field label="Service Needed" required>
-//                       <div className="relative">
-//                         <select
-//                           className={inp + " appearance-none pr-9"}
-//                           required
-//                           value={form.service_type}
-//                           onChange={e => setForm(p => ({ ...p, service_type: e.target.value }))}
-//                         >
-//                           <option value="">Select a service</option>
-//                           {services.map(s => (
-//                             <option key={s.title} value={s.title}>{s.title}</option>
-//                           ))}
-//                         </select>
-//                         <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-//                       </div>
-//                       {/* Service charge badge — same amber style */}
-//                       {charge && (
-//                         <div className="mt-2 flex items-center justify-between bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2 animate-[fadeIn_.25s_ease]">
-//                           <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">{charge.label}</span>
-//                           <span className="text-sm font-bold text-amber-900 dark:text-amber-200">₹{charge.amount}</span>
-//                         </div>
-//                       )}
-//                     </Field>
-//                   </div>
-
-//                   {/* Row 3 — Coupon + Discount summary */}
-//                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                     <Field label="Coupon Code">
-//                       <div className="flex gap-2">
-//                         <div className="relative flex-1">
-//                           <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-//                           <input
-//                             className={inp + " pl-8"}
-//                             type="text"
-//                             placeholder="OFFER CODE"
-//                             value={couponCode}
-//                             onChange={e => { setCouponCode(e.target.value.toUpperCase()); setApplied(null); }}
-//                           />
-//                         </div>
-//                         <button
-//                           type="button"
-//                           onClick={applyCoupon}
-//                           disabled={applying || !couponCode.trim()}
-//                           className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-md transition"
-//                         >
-//                           {applying
-//                             ? <Loader2 size={13} className="animate-spin" />
-//                             : applied?.success
-//                               ? <Check size={13} />
-//                               : null
-//                           }
-//                           {applied?.success ? "Applied" : "Apply"}
-//                         </button>
-//                       </div>
-//                       {applied?.success && (
-//                         <p className="mt-1.5 flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-medium">
-//                           <Check size={12} /> ₹{applied.discount_amount?.toFixed(2)} off applied
-//                         </p>
-//                       )}
-//                     </Field>
-
-//                     {/* Discount breakdown — matches checkout style */}
-//                     <Field label="">
-//                       {applied?.success && discount > 0 ? (
-//                         <div className="h-full flex flex-col justify-center bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-4 py-3 space-y-1.5">
-//                           <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-//                             <span>Original</span>
-//                             <span className="line-through">₹{base.toFixed(2)}</span>
-//                           </div>
-//                           <div className="flex justify-between text-xs font-semibold text-green-600 dark:text-green-400">
-//                             <span>Discount</span>
-//                             <span>−₹{discount.toFixed(2)}</span>
-//                           </div>
-//                           <div className="border-t border-green-200 dark:border-green-700 pt-1.5 flex justify-between text-sm font-bold text-green-700 dark:text-green-300">
-//                             <span>Final Amount</span>
-//                             <span>₹{final.toFixed(2)}</span>
-//                           </div>
-//                         </div>
-//                       ) : (
-//                         <div className="hidden sm:flex h-full items-center justify-center text-xs text-gray-400 dark:text-gray-600 italic">
-//                           Apply a coupon to see savings
-//                         </div>
-//                       )}
-//                     </Field>
-//                   </div>
-
-//                   {/* Row 4 — Address + Landmark */}
-//                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                     <Field label="Service Address" required>
-//                       <input
-//                         className={inp}
-//                         type="text"
-//                         required
-//                         placeholder="123 Main St, City"
-//                         value={form.address}
-//                         onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
-//                       />
-//                     </Field>
-//                     <Field label="Landmark / Location">
-//                       <input
-//                         className={inp}
-//                         type="text"
-//                         placeholder="Near temple, behind mall…"
-//                         value={form.exact_location}
-//                         onChange={e => setForm(p => ({ ...p, exact_location: e.target.value }))}
-//                       />
-//                     </Field>
-//                   </div>
-
-//                   {/* Row 5 — Date + Time */}
-//                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-//                     <Field label="Preferred Date">
-//                       <input
-//                         className={inp}
-//                         type="date"
-//                         value={form.preferred_date}
-//                         onChange={e => setForm(p => ({ ...p, preferred_date: e.target.value }))}
-//                       />
-//                     </Field>
-//                     <Field label="Preferred Time">
-//                       <input
-//                         className={inp}
-//                         type="time"
-//                         value={form.preferred_time}
-//                         onChange={e => setForm(p => ({ ...p, preferred_time: e.target.value }))}
-//                       />
-//                     </Field>
-//                   </div>
-
-//                   {/* Description */}
-//                   <Field
-//                     label={
-//                       form.service_type === "Custom Service"
-//                         ? "Describe Your Custom Requirement"
-//                         : "Additional Details"
-//                     }
-//                     required={form.service_type === "Custom Service"}
-//                   >
-//                     <textarea
-//                       className={inp}
-//                       rows={3}
-//                       style={{ resize: "vertical" }}
-//                       required={form.service_type === "Custom Service"}
-//                       placeholder={
-//                         form.service_type === "Custom Service"
-//                           ? "Please describe the specific work you need done…"
-//                           : "Describe the issue briefly…"
-//                       }
-//                       value={form.description}
-//                       onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-//                     />
-//                   </Field>
-
-//                   {/* Submit — same style as hero CTA button */}
-//                   <button
-//                     type="submit"
-//                     disabled={submitting}
-//                     className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm md:text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-//                   >
-//                     {submitting
-//                       ? <><Loader2 size={17} className="animate-spin" /> Submitting…</>
-//                       : <><CalendarDays size={17} /> Request Service</>
-//                     }
-//                   </button>
-
-//                 </form>
-//               )}
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* ── Bottom trust strip — mirrors the stats band on home ── */}
-//         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-//           {[
-//             { emoji: "⚡", label: "Fast Response",      sub: "Avg. 45 minutes" },
-//             { emoji: "🛡️", label: "Certified Techs",    sub: "Trained & verified" },
-//             { emoji: "💰", label: "No Hidden Charges",  sub: "Transparent pricing" },
-//             { emoji: "📞", label: "24/7 Emergency",     sub: PHONE_NUMBER },
-//           ].map(({ emoji, label, sub }) => (
-//             <div
-//               key={label}
-//               className="bg-blue-50 dark:bg-gray-700 rounded-xl p-4 border border-blue-100 dark:border-gray-600"
-//             >
-//               <div className="text-2xl mb-1">{emoji}</div>
-//               <div className="text-sm font-semibold text-gray-900 dark:text-white">{label}</div>
-//               <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{sub}</div>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </section>
-//   );
-// }
-
-// // ── Shared input class — mirrors the rest of the page's form inputs ──────────
-// const inp =
-//   "w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2.5 px-3 " +
-//   "text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 " +
-//   "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " +
-//   "placeholder-gray-400 dark:placeholder-gray-500 transition duration-150 " +
-//   "font-[Poppins,sans-serif]";
-
-// // ── Tiny field wrapper ────────────────────────────────────────────────────────
-// function Field({
-//   label,
-//   required,
-//   children,
-// }: {
-//   label: React.ReactNode;
-//   required?: boolean;
-//   children: React.ReactNode;
-// }) {
-//   return (
-//     <div className="flex flex-col gap-1.5">
-//       {label !== "" && (
-//         <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-//           {label}
-//           {required && <span className="text-red-500 ml-0.5">*</span>}
-//         </label>
-//       )}
-//       {children}
-//     </div>
-//   );
-// }
-
-
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Check, Phone, CheckCircle, Loader2, CalendarDays,
-  Tag, Award, Smile, Wrench, ChevronDown,
+  Tag, Award, Smile, Wrench, ChevronDown, AlertCircle, X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -1449,27 +10,169 @@ import { PHONE_NUMBER } from "@/data/services";
 import { useServicesStore } from "@/stores/servicesStore";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
 
+// ─── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
   preselectedService?: string;
   preselectedOffer?: string;
 }
 
+interface FormState {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  exact_location: string;
+  service_type: string;
+  preferred_date: string;
+  preferred_time: string;
+  description: string;
+  // Service-specific questions
+  custom_service_demand: string;
+  is_switch_working: string;
+  has_old_fan: string;
+  is_electricity_supply_on: string;
+}
+
+type FieldKey = keyof FormState;
+type FormErrors = Partial<Record<FieldKey, string>>;
+
+// ─── Constants ──────────────────────────────────────────────────────────────────
+const BLANK: FormState = {
+  name: "", phone: "", email: "", address: "",
+  exact_location: "", service_type: "",
+  preferred_date: "", preferred_time: "", description: "",
+  custom_service_demand: "", is_switch_working: "", has_old_fan: "", is_electricity_supply_on: "",
+};
+
+const OPEN_HOUR        = 7;   // 7:00 AM
+const CLOSE_HOUR       = 21;  // 9:00 PM
+const MIN_ADVANCE_HOURS = 2;  // must book at least 2h ahead
+const SESSION_LIMIT    = 3;   // max submissions per page load
+
+// ─── Validation ─────────────────────────────────────────────────────────────────
+const PHONE_RE = /^[6-9]\d{9}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Returns today midnight in IST as a Date */
+function todayIST(): Date {
+  const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** YYYY-MM-DD string for today in IST */
+function todayISOStr(): string {
+  const d = todayIST();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** YYYY-MM-DD string for today + 3 months */
+function maxDateISOStr(): string {
+  const d = todayIST();
+  d.setMonth(d.getMonth() + 3);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** True when selected slot is at least MIN_ADVANCE_HOURS from now */
+function isSlotFarEnough(dateStr: string, timeStr: string): boolean {
+  if (!dateStr) return true;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [h = 9, min = 0] = timeStr ? timeStr.split(":").map(Number) : [];
+  const slot = new Date(y, m - 1, d, h, min, 0);
+  const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  return slot.getTime() - nowIST.getTime() >= MIN_ADVANCE_HOURS * 3_600_000;
+}
+
+function validate(form: FormState): FormErrors {
+  const err: FormErrors = {};
+
+  // Name
+  const name = form.name.trim();
+  if (!name)                                  err.name = "Full name is required";
+  else if (name.length < 2)                   err.name = "At least 2 characters required";
+  else if (name.length > 80)                  err.name = "Name is too long";
+  else if (!/^[a-zA-Z\s'.]+$/.test(name))     err.name = "Only letters, spaces, apostrophes and dots";
+
+  // Phone
+  const phone = form.phone.trim();
+  if (!phone)                                 err.phone = "Phone number is required";
+  else if (!PHONE_RE.test(phone))             err.phone = "Enter a valid 10-digit Indian mobile number";
+
+  // Email (optional, validated when provided)
+  if (form.email.trim() && !EMAIL_RE.test(form.email.trim()))
+    err.email = "Enter a valid email address";
+
+  // Service
+  if (!form.service_type)                     err.service_type = "Please select a service";
+
+  // Address
+  const addr = form.address.trim();
+  if (!addr)                                  err.address = "Service address is required";
+  else if (addr.length < 10)                  err.address = "Please provide a complete address (min. 10 chars)";
+  else if (addr.length > 300)                 err.address = "Address is too long";
+
+  // Date — block past dates
+  if (form.preferred_date) {
+    const [y, m, d] = form.preferred_date.split("-").map(Number);
+    const selected = new Date(y, m - 1, d);
+    if (selected < todayIST()) {
+      err.preferred_date = "Preferred date cannot be in the past";
+    } else if (!isSlotFarEnough(form.preferred_date, form.preferred_time)) {
+      err.preferred_date = `Please book at least ${MIN_ADVANCE_HOURS} hours in advance`;
+    }
+  }
+
+  // Time — only check when date is also selected
+  if (form.preferred_date && form.preferred_time) {
+    const [h] = form.preferred_time.split(":").map(Number);
+    if (h < OPEN_HOUR || h >= CLOSE_HOUR) {
+      err.preferred_time = `We operate ${OPEN_HOUR}:00 AM – ${CLOSE_HOUR % 12}:00 PM`;
+    }
+  }
+
+  // Custom Service — required & min length
+  if (form.service_type === "Custom Service") {
+    const customDemand = form.custom_service_demand.trim();
+    if (!customDemand)               err.custom_service_demand = "Please describe your custom requirement";
+    else if (customDemand.length < 20) err.custom_service_demand = "Please provide more detail (min. 20 characters)";
+  }
+
+  // Fan Installation — required questions
+  if (form.service_type === "Fan Installation") {
+    if (!form.is_switch_working)      err.is_switch_working = "Please answer this question";
+    if (!form.has_old_fan)            err.has_old_fan = "Please answer this question";
+    if (!form.is_electricity_supply_on) err.is_electricity_supply_on = "Please answer this question";
+  }
+
+  return err;
+}
+
+// ─── Utility ────────────────────────────────────────────────────────────────────
+function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    Promise.resolve(p),
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`TIMEOUT: ${label}`)), ms)
+    ),
+  ]);
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────────
 export default function RequestServiceSection({ preselectedService, preselectedOffer }: Props) {
   const { user } = useAuth();
   const { bookingServices, getServiceCharge, fetchBookingServices } = useServicesStore();
 
-  const [done, setDone]             = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [couponCode, setCouponCode] = useState(preselectedOffer || "");
-  const [applying, setApplying]     = useState(false);
-  const [applied, setApplied]       = useState<any>(null);
-  const submitControllerRef         = useRef<AbortController | null>(null);
-
-  const [form, setForm] = useState({
-    name: "", phone: "", email: "", address: "",
-    exact_location: "", service_type: preselectedService || "",
-    preferred_date: "", preferred_time: "", description: "",
-  });
+  const [done, setDone]                 = useState(false);
+  const [submitting, setSubmitting]     = useState(false);
+  const [form, setForm]                 = useState<FormState>({ ...BLANK, service_type: preselectedService || "" });
+  const [touched, setTouched]           = useState<Partial<Record<FieldKey, boolean>>>({});
+  const [errors, setErrors]             = useState<FormErrors>({});
+  const [couponCode, setCouponCode]     = useState(preselectedOffer || "");
+  const [applying, setApplying]         = useState(false);
+  const [applied, setApplied]           = useState<any>(null);
+  const [sessionCount, setSessionCount] = useState(0);
+  const lastHashRef                     = useRef<string | null>(null);
+  const controllerRef                   = useRef<AbortController | null>(null);
 
   const counters = useMemo(() => ({
     experience: new Date().getFullYear() - 1992,
@@ -1477,96 +180,130 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     projects: 8000,
   }), []);
 
+  const todayStr  = useMemo(todayISOStr,   []);
+  const maxDate   = useMemo(maxDateISOStr, []);
+
   useEffect(() => { fetchBookingServices(); }, [fetchBookingServices]);
+
   useEffect(() => {
     if (preselectedService) setForm(p => ({ ...p, service_type: preselectedService }));
   }, [preselectedService]);
 
+  // Re-validate whenever form changes
+  useEffect(() => { setErrors(validate(form)); }, [form]);
+
   // Cleanup on unmount
-  useEffect(() => () => { submitControllerRef.current?.abort(); }, []);
+  useEffect(() => () => { controllerRef.current?.abort(); }, []);
 
   const services = [...bookingServices, { title: "Custom Service" }];
   const charge   = form.service_type ? getServiceCharge(form.service_type) : null;
-
-  // ── Coupon ──────────────────────────────────────────────────────────────────
-  const applyCoupon = async () => {
-    if (!couponCode.trim())  { toast.error("Enter a coupon code"); return; }
-    if (!user)               { toast.error("Please login to apply coupon"); return; }
-    const base = charge ? parseFloat(charge.amount) : 0;
-    if (!base)               { toast.error("Select a service first"); return; }
-
-    setApplying(true);
-    const toastId = toast.loading("Validating coupon…");
-
-    try {
-      // 8-second timeout on coupon validation
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-
-      const { data, error } = await supabase.rpc("apply_coupon", {
-        p_coupon_code: couponCode.toUpperCase().trim(),
-        p_user_id:     user.id,
-        p_cart_total:  base,
-        p_cart_items:  [] as any,
-      });
-
-      clearTimeout(timer);
-
-      if (error) {
-        toast.error(error.message || "Failed to apply coupon", { id: toastId });
-        setApplied(null);
-        return;
-      }
-
-      const r = data?.[0];
-      if (r?.success) {
-        setApplied(r);
-        toast.success(`Coupon applied! ₹${r.discount_amount?.toFixed(2)} off`, { id: toastId });
-      } else {
-        toast.error(r?.message || "Invalid coupon", { id: toastId });
-        setApplied(null);
-      }
-    } catch (err: any) {
-      const msg = err?.name === "AbortError"
-        ? "Coupon validation timed out — try again"
-        : "Failed to apply coupon";
-      toast.error(msg, { id: toastId });
-      setApplied(null);
-    } finally {
-      setApplying(false);
-    }
-  };
-
-  // ── Amounts ─────────────────────────────────────────────────────────────────
   const base     = charge ? parseFloat(charge.amount) : 0;
   const discount = applied?.success ? Math.min(applied.discount_amount || 0, base) : 0;
   const final    = base - discount;
 
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const touch = (f: FieldKey) => setTouched(t => ({ ...t, [f]: true }));
+
+  const visibleError = (f: FieldKey) => (touched[f] ? errors[f] : undefined);
+
+  /** Generic onChange for most fields */
+  const set = (f: FieldKey) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setForm(p => ({ ...p, [f]: e.target.value }));
+
+  // ── Coupon ──────────────────────────────────────────────────────────────────
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) { toast.error("Enter a coupon code"); return; }
+    if (!user)              { toast.error("Please login to apply a coupon"); return; }
+    if (!base)              { toast.error("Select a service first"); return; }
+
+    setApplying(true);
+    const tid = toast.loading("Validating coupon…");
+    try {
+      const { data, error } = await withTimeout(
+        supabase.rpc("apply_coupon", {
+          p_coupon_code: couponCode.toUpperCase().trim(),
+          p_user_id:     user.id,
+          p_cart_total:  base,
+          p_cart_items:  [] as any,
+        }) as unknown as Promise<any>,
+        8_000, "coupon"
+      );
+      if (error) { toast.error(error.message || "Failed to apply coupon", { id: tid }); setApplied(null); return; }
+      const r = data?.[0];
+      if (r?.success) {
+        setApplied(r);
+        toast.success(`Coupon applied! ₹${r.discount_amount?.toFixed(2)} off`, { id: tid });
+      } else {
+        toast.error(r?.message || "Invalid coupon code", { id: tid });
+        setApplied(null);
+      }
+    } catch (e: any) {
+      toast.error(
+        e?.message?.startsWith("TIMEOUT") ? "Coupon validation timed out" : "Failed to apply coupon",
+        { id: tid }
+      );
+      setApplied(null);
+    } finally { setApplying(false); }
+  };
+
+  const removeCoupon = () => { setCouponCode(""); setApplied(null); };
+
   // ── Submit ──────────────────────────────────────────────────────────────────
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting) return;
 
-    // Cancel any previous in-flight request
-    submitControllerRef.current?.abort();
-    submitControllerRef.current = new AbortController();
+    // Touch all → reveal every error
+    setTouched(Object.fromEntries(Object.keys(BLANK).map(k => [k, true])) as any);
+    const errs = validate(form);
 
+    if (Object.keys(errs).length > 0) {
+      toast.error("Please fix the errors highlighted below.");
+      const firstKey = Object.keys(errs)[0];
+      document.getElementById(`field-${firstKey}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // Session rate limit
+    if (sessionCount >= SESSION_LIMIT) {
+      toast.error(`Max ${SESSION_LIMIT} submissions per session. Please call us directly.`);
+      return;
+    }
+
+    // Duplicate guard — same phone + service + date
+    const hash = `${form.phone.trim()}|${form.service_type}|${form.preferred_date}`;
+    if (lastHashRef.current === hash) {
+      toast.warning("This request looks like a duplicate. Check your previous submission.");
+      return;
+    }
+
+    controllerRef.current?.abort();
+    controllerRef.current = new AbortController();
     setSubmitting(true);
-    const toastId = toast.loading("Submitting your request…");
+    const tid = toast.loading("Submitting your request…");
 
     const payload: any = {
-      name:            form.name,
-      phone:           form.phone,
-      email:           form.email,
-      address:         form.address,
+      name:            form.name.trim(),
+      phone:           form.phone.trim(),
+      email:           form.email.trim() || null,
+      address:         form.address.trim(),
       service_type:    form.service_type === "Custom Service"
-                         ? `Custom: ${form.description}`
+                         ? `Custom: ${form.custom_service_demand.trim()}`
                          : form.service_type,
       preferred_date:  form.preferred_date  || null,
       preferred_time:  form.preferred_time  || null,
-      description:     form.description     || null,
-      exact_location:  form.exact_location  || null,
-      coupon_code:     couponCode           || null,
+      description:     form.service_type === "Custom Service"
+                         ? form.custom_service_demand.trim()
+                         : (form.description.trim() || null),
+      exact_location:  form.exact_location.trim() || null,
+      // Service-specific questions
+      custom_service_demand: form.service_type === "Custom Service" ? form.custom_service_demand.trim() : null,
+      is_switch_working:     form.is_switch_working || null,
+      has_old_fan:           form.has_old_fan || null,
+      is_electricity_supply_on: form.is_electricity_supply_on || null,
+      // Coupon fields
+      coupon_code:     couponCode || null,
       offer_id:        null,
       discount_amount: discount > 0 ? discount : null,
       original_amount: base     > 0 ? base     : null,
@@ -1576,106 +313,83 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     if (user) payload.user_id = user.id;
 
     try {
-      // ── Step 1: Insert booking with a 12-second timeout ───────────────────
-      const bookingPromise = supabase
-        .from("bookings")
-        .insert(payload)
-        .select("id, name, service_type, preferred_date")
-        .single();
-
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("BOOKING_TIMEOUT")), 12_000)
+      // ── DB insert with 8s timeout (free tier optimized) ─────────────────────
+      const { data: booking, error: bookingError } = await withTimeout(
+        supabase.from("bookings").insert(payload).select("id, name, service_type, preferred_date").single() as unknown as Promise<any>,
+        8000,
+        "booking-insert"
       );
-
-      const { data: booking, error: bookingError } = await Promise.race([
-        bookingPromise,
-        timeoutPromise,
-      ]) as any;
-
       if (bookingError) throw bookingError;
 
-      // ── Step 2: Fire background tasks in PARALLEL — don't await them ──────
-      // These never block the user. Failures are logged, not surfaced.
-      Promise.allSettled([
-        // Auto-assign technician (best-effort, 10s timeout)
-        withTimeout(
-          supabase.functions.invoke("auto-assign-technician", {
-            body: { bookingId: booking.id },
-          }),
-          10_000,
-          "auto-assign"
-        ).then(({ data: r }) => {
-          if (r?.success) {
-            toast.info(`Technician ${r.technician?.name} has been assigned.`, { duration: 4000 });
-          }
-        }).catch(() => { /* silent — booking already confirmed */ }),
+      lastHashRef.current = hash;
+      setSessionCount(c => c + 1);
 
-        // Admin notification (fire-and-forget, 8s timeout)
+      // ── Background tasks — never block user ───────────────────────────────
+      Promise.allSettled([
+        withTimeout(
+          supabase.functions.invoke("auto-assign-technician", { body: { bookingId: booking.id } }) as Promise<any>,
+          10_000, "auto-assign"
+        ).then(({ data: r }: any) => {
+          if (r?.success) toast.info(`Technician ${r.technician?.name} assigned.`, { duration: 4000 });
+        }).catch(() => {}),
+
         withTimeout(
           sendAdminNotificationAsync(
             {
-              title:   "🔔 New Service Request",
-              message: `New booking from ${form.name} for ${form.service_type}` +
-                       (form.preferred_date ? ` on ${form.preferred_date}` : ""),
-              type:    "new_booking",
+              title:        "🔔 New Service Request",
+              message:      `New booking from ${form.name.trim()} for ${form.service_type}` +
+                            (form.preferred_date ? ` on ${form.preferred_date}` : ""),
+              type:         "new_booking",
               bookingId:    booking.id,
-              customerName: form.name,
+              customerName: form.name.trim(),
               service:      form.service_type,
               metadata: {
-                customer_name:  form.name,
-                customer_phone: form.phone,
-                customer_email: form.email,
+                customer_name:  form.name.trim(),
+                customer_phone: form.phone.trim(),
+                customer_email: form.email.trim(),
                 service_type:   form.service_type,
                 preferred_date: form.preferred_date,
                 preferred_time: form.preferred_time,
-                address:        form.address,
-                exact_location: form.exact_location,
+                address:        form.address.trim(),
+                exact_location: form.exact_location.trim(),
                 is_guest:       !user,
               },
             },
             user
           ),
-          8_000,
-          "admin-notify"
-        ).catch(() => { /* never block booking */ }),
+          8_000, "admin-notify"
+        ).catch(() => {}),
       ]);
 
-      // ── Step 3: Immediate success feedback ────────────────────────────────
-      toast.success("Request submitted! We'll contact you soon.", { id: toastId, duration: 5000 });
+      // ── Immediate success ─────────────────────────────────────────────────
+      toast.success("Request submitted! We'll contact you soon.", { id: tid, duration: 5000 });
       setDone(true);
-      setForm({
-        name: "", phone: "", email: "", address: "",
-        service_type: "", preferred_date: "", preferred_time: "",
-        description: "", exact_location: "",
-      });
+      setForm({ ...BLANK, service_type: preselectedService || "" });
+      setTouched({});
       setCouponCode("");
       setApplied(null);
 
     } catch (err: any) {
-      const isTimeout = err?.message === "BOOKING_TIMEOUT";
+      const isTimeout = err?.message?.includes("TIMEOUT");
+      const isDupe    = err?.code === "23505"; // Postgres unique_violation
+      const isNetwork = err?.message?.includes("fetch") || err?.message?.includes("network");
       toast.error(
-        isTimeout
-          ? "Request timed out — please check your connection and try again."
-          : err?.message || "Failed to submit. Please try again.",
-        { id: toastId, duration: 6000 }
+        isDupe    ? "This booking already exists. Please check your submissions." :
+        isTimeout ? "Request timed out. Your booking may have been saved - please check before retrying." :
+        isNetwork ? "Connection issue. Please check your internet and try again." :
+                    err?.message || "Failed to submit. Please try again.",
+        { id: tid, duration: 7000 }
       );
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [form, submitting, couponCode, applied, base, discount, final, user, sessionCount]);
 
   // ── Sidebar ──────────────────────────────────────────────────────────────
   const sideStats = [
-    { label: "Years Exp.",      value: `${counters.experience}+`, icon: Award },
-    { label: "Happy Clients",   value: `${counters.clients.toLocaleString()}+`, icon: Smile },
-    { label: "Jobs Done",       value: `${counters.projects.toLocaleString()}+`, icon: Wrench },
-  ];
-
-  const features = [
-    `${counters.experience}+ years of trusted service`,
-    "Certified & experienced technicians",
-    "Quick response — avg. 45 minutes",
-    "Affordable pricing, no hidden charges",
+    { label: "Years Exp.",    value: `${counters.experience}+`, icon: Award },
+    { label: "Happy Clients", value: `${counters.clients.toLocaleString()}+`, icon: Smile },
+    { label: "Jobs Done",     value: `${counters.projects.toLocaleString()}+`, icon: Wrench },
   ];
 
   return (
@@ -1685,7 +399,8 @@ export default function RequestServiceSection({ preselectedService, preselectedO
       style={{ fontFamily: "'Poppins', 'Segoe UI', sans-serif" }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+
+        {/* ── Header ── */}
         <div className="text-center mb-12 md:mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Request a Service
@@ -1696,18 +411,23 @@ export default function RequestServiceSection({ preselectedService, preselectedO
           </p>
         </div>
 
-        {/* Card */}
+        {/* ── Card ── */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
           <div className="grid grid-cols-1 lg:grid-cols-3">
 
-            {/* Sidebar */}
+            {/* ── Sidebar ── */}
             <div className="bg-blue-600 dark:bg-blue-700 p-8 lg:p-10 flex flex-col justify-between gap-8">
               <div>
                 <h3 className="text-xl md:text-2xl font-bold text-white mb-6 leading-snug">
                   Why Choose<br />ElectrooBuddy?
                 </h3>
                 <ul className="space-y-4">
-                  {features.map((f, i) => (
+                  {[
+                    `${counters.experience}+ years of trusted service`,
+                    "Certified & experienced technicians",
+                    "Quick response — avg. 45 minutes",
+                    "Affordable pricing, no hidden charges",
+                  ].map((f, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
                         <Check size={11} color="#fff" strokeWidth={3} />
@@ -1717,6 +437,8 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                   ))}
                 </ul>
               </div>
+
+              {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
                 {sideStats.map(({ label, value, icon: Icon }) => (
                   <div key={label} className="bg-white/10 rounded-xl p-3 text-center border border-white/15">
@@ -1726,6 +448,15 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                   </div>
                 ))}
               </div>
+
+              {/* Business hours notice */}
+              <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-xs text-white/80 space-y-1">
+                <div className="font-semibold text-white text-sm mb-1">🕐 Business Hours</div>
+                <div>Mon – Sun: 7:00 AM – 9:00 PM</div>
+                <div className="text-white/60">Book at least {MIN_ADVANCE_HOURS}h in advance</div>
+              </div>
+
+              {/* Emergency call */}
               <a
                 href={`tel:${PHONE_NUMBER}`}
                 className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition border border-white/25 rounded-xl px-4 py-3 group"
@@ -1734,15 +465,25 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                   <Phone size={16} color="#fff" />
                 </div>
                 <div>
-                  <div className="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Emergency</div>
+                  <div className="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Emergency Line</div>
                   <div className="text-sm font-semibold text-white">{PHONE_NUMBER}</div>
                 </div>
               </a>
             </div>
 
-            {/* Form Panel */}
+            {/* ── Form panel ── */}
             <div className="lg:col-span-2 p-6 sm:p-8 lg:p-10 bg-white dark:bg-gray-900">
+
+              {/* Rate-limit warning */}
+              {sessionCount === SESSION_LIMIT - 1 && (
+                <div className="mb-5 flex items-start gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+                  <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                  You have 1 submission remaining this session.
+                </div>
+              )}
+
               {done ? (
+                /* ── Success state ── */
                 <div className="h-full flex flex-col items-center justify-center text-center py-10 gap-5">
                   <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                     <CheckCircle size={40} className="text-green-600 dark:text-green-400" />
@@ -1750,41 +491,82 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Request Submitted!</h3>
                     <p className="text-gray-600 dark:text-gray-300 max-w-sm mx-auto leading-relaxed">
-                      We'll contact you shortly to confirm your service appointment.
+                      We'll contact you shortly to confirm your appointment.
+                      Need faster help? Call us at{" "}
+                      <a href={`tel:${PHONE_NUMBER}`} className="text-blue-600 dark:text-blue-400 font-semibold underline">
+                        {PHONE_NUMBER}
+                      </a>.
                     </p>
                   </div>
-                  <button
-                    onClick={() => setDone(false)}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
-                  >
-                    Submit Another Request
-                  </button>
+                  {sessionCount < SESSION_LIMIT && (
+                    <button
+                      onClick={() => setDone(false)}
+                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition"
+                    >
+                      Submit Another Request
+                    </button>
+                  )}
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
+                /* ── Form ── */
+                <form onSubmit={handleSubmit} noValidate className="space-y-5">
+
                   {/* Row 1 — Name + Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Full Name" required>
-                      <input className={inp} type="text" required placeholder="Rahul Sharma"
-                        value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+                    <Field id="field-name" label="Full Name" required error={visibleError("name")}>
+                      <input
+                        id="inp-name"
+                        className={inp(visibleError("name"))}
+                        type="text"
+                        autoComplete="name"
+                        placeholder="Rahul Sharma"
+                        maxLength={80}
+                        value={form.name}
+                        onChange={set("name")}
+                        onBlur={() => touch("name")}
+                      />
                     </Field>
-                    <Field label="Phone Number" required>
-                      <input className={inp} type="tel" required placeholder="9876543210"
-                        value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
+
+                    <Field id="field-phone" label="Phone Number" required error={visibleError("phone")}>
+                      <input
+                        id="inp-phone"
+                        className={inp(visibleError("phone"))}
+                        type="tel"
+                        autoComplete="tel"
+                        placeholder="9876543210"
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={form.phone}
+                        onChange={e => setForm(p => ({ ...p, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                        onBlur={() => touch("phone")}
+                      />
                     </Field>
                   </div>
 
                   {/* Row 2 — Email + Service */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Email Address">
-                      <input className={inp} type="email" placeholder="rahul@email.com"
-                        value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
+                    <Field id="field-email" label="Email Address" error={visibleError("email")} hint="Optional">
+                      <input
+                        id="inp-email"
+                        className={inp(visibleError("email"))}
+                        type="email"
+                        autoComplete="email"
+                        placeholder="rahul@email.com"
+                        value={form.email}
+                        onChange={set("email")}
+                        onBlur={() => touch("email")}
+                      />
                     </Field>
-                    <Field label="Service Needed" required>
+
+                    <Field id="field-service_type" label="Service Needed" required error={visibleError("service_type")}>
                       <div className="relative">
-                        <select className={inp + " appearance-none pr-9"} required
+                        <select
+                          id="inp-service_type"
+                          className={inp(visibleError("service_type")) + " appearance-none pr-9"}
                           value={form.service_type}
-                          onChange={e => setForm(p => ({ ...p, service_type: e.target.value }))}>
+                          onChange={set("service_type")}
+                          onBlur={() => touch("service_type")}
+                        >
                           <option value="">Select a service</option>
                           {services.map(s => (
                             <option key={s.title} value={s.title}>{s.title}</option>
@@ -1801,22 +583,134 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                     </Field>
                   </div>
 
-                  {/* Row 3 — Coupon + Discount summary */}
+                  {/* Custom Service — Additional Details */}
+                  {form.service_type === "Custom Service" && (
+                    <div className="mt-4">
+                      <Field
+                        id="field-custom_service_demand"
+                        label="Describe Your Custom Requirement"
+                        required
+                        error={visibleError("custom_service_demand")}
+                        hint="Min. 20 characters"
+                      >
+                        <div className="relative">
+                          <textarea
+                            id="inp-custom_service_demand"
+                            className={inp(visibleError("custom_service_demand"))}
+                            rows={4}
+                            style={{ resize: "vertical" }}
+                            maxLength={1000}
+                            placeholder="Please describe the specific electrical work you need done..."
+                            value={form.custom_service_demand}
+                            onChange={(e) => setForm(p => ({ ...p, custom_service_demand: e.target.value }))}
+                            onBlur={() => touch("custom_service_demand")}
+                          />
+                          <span className="absolute bottom-2 right-3 text-[10px] text-gray-400 pointer-events-none">
+                            {form.custom_service_demand.length}/1000
+                          </span>
+                        </div>
+                      </Field>
+                    </div>
+                  )}
+
+                  {/* Fan Installation — Conditional Questions */}
+                  {form.service_type === "Fan Installation" && (
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900">
+                      <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center gap-2">
+                        <Wrench size={16} />
+                        Fan Installation Details
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Field
+                          id="field-is_switch_working"
+                          label="Is switch working?"
+                          required
+                          error={visibleError("is_switch_working")}
+                        >
+                          <select
+                            id="inp-is_switch_working"
+                            className={inp(visibleError("is_switch_working")) + " appearance-none"}
+                            value={form.is_switch_working}
+                            onChange={(e) => setForm(p => ({ ...p, is_switch_working: e.target.value }))}
+                            onBlur={() => touch("is_switch_working")}
+                          >
+                            <option value="">Select...</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                            <option value="not_sure">Not Sure</option>
+                          </select>
+                        </Field>
+
+                        <Field
+                          id="field-has_old_fan"
+                          label="Has old fan?"
+                          required
+                          error={visibleError("has_old_fan")}
+                        >
+                          <select
+                            id="inp-has_old_fan"
+                            className={inp(visibleError("has_old_fan")) + " appearance-none"}
+                            value={form.has_old_fan}
+                            onChange={(e) => setForm(p => ({ ...p, has_old_fan: e.target.value }))}
+                            onBlur={() => touch("has_old_fan")}
+                          >
+                            <option value="">Select...</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                          </select>
+                        </Field>
+
+                        <Field
+                          id="field-is_electricity_supply_on"
+                          label="Electricity supply on?"
+                          required
+                          error={visibleError("is_electricity_supply_on")}
+                        >
+                          <select
+                            id="inp-is_electricity_supply_on"
+                            className={inp(visibleError("is_electricity_supply_on")) + " appearance-none"}
+                            value={form.is_electricity_supply_on}
+                            onChange={(e) => setForm(p => ({ ...p, is_electricity_supply_on: e.target.value }))}
+                            onBlur={() => touch("is_electricity_supply_on")}
+                          >
+                            <option value="">Select...</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                          </select>
+                        </Field>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Row 3 — Coupon + Discount */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Coupon Code">
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                          <input className={inp + " pl-8"} type="text" placeholder="OFFER CODE"
+                          <input
+                            className={inp() + " pl-8 pr-7"}
+                            type="text"
+                            placeholder="OFFER CODE"
                             value={couponCode}
-                            onChange={e => { setCouponCode(e.target.value.toUpperCase()); setApplied(null); }} />
+                            onChange={e => { setCouponCode(e.target.value.toUpperCase()); setApplied(null); }}
+                          />
+                          {couponCode && (
+                            <button type="button" onClick={removeCoupon}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition"
+                              title="Clear coupon"
+                            >
+                              <X size={13} />
+                            </button>
+                          )}
                         </div>
-                        <button type="button" onClick={applyCoupon}
-                          disabled={applying || !couponCode.trim()}
-                          className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-md transition">
-                          {applying
-                            ? <Loader2 size={13} className="animate-spin" />
-                            : applied?.success ? <Check size={13} /> : null}
+                        <button
+                          type="button"
+                          onClick={applyCoupon}
+                          disabled={applying || !couponCode.trim() || !!applied?.success}
+                          className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-md transition"
+                        >
+                          {applying ? <Loader2 size={13} className="animate-spin" /> : applied?.success ? <Check size={13} /> : null}
                           {applied?.success ? "Applied" : "Apply"}
                         </button>
                       </div>
@@ -1826,6 +720,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                         </p>
                       )}
                     </Field>
+
                     <Field label="">
                       {applied?.success && discount > 0 ? (
                         <div className="h-full flex flex-col justify-center bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-4 py-3 space-y-1.5">
@@ -1849,56 +744,121 @@ export default function RequestServiceSection({ preselectedService, preselectedO
 
                   {/* Row 4 — Address + Landmark */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Service Address" required>
-                      <input className={inp} type="text" required placeholder="123 Main St, City"
-                        value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+                    <Field id="field-address" label="Service Address" required error={visibleError("address")}>
+                      <input
+                        id="inp-address"
+                        className={inp(visibleError("address"))}
+                        type="text"
+                        autoComplete="street-address"
+                        placeholder="123 Main St, City"
+                        maxLength={300}
+                        value={form.address}
+                        onChange={set("address")}
+                        onBlur={() => touch("address")}
+                      />
                     </Field>
-                    <Field label="Landmark / Location">
-                      <input className={inp} type="text" placeholder="Near temple, behind mall…"
-                        value={form.exact_location} onChange={e => setForm(p => ({ ...p, exact_location: e.target.value }))} />
+                    <Field label="Landmark / Location" hint="Optional">
+                      <input
+                        className={inp()}
+                        type="text"
+                        placeholder="Near temple, behind mall…"
+                        maxLength={200}
+                        value={form.exact_location}
+                        onChange={set("exact_location")}
+                      />
                     </Field>
                   </div>
 
                   {/* Row 5 — Date + Time */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Field label="Preferred Date">
-                      <input className={inp} type="date" value={form.preferred_date}
-                        onChange={e => setForm(p => ({ ...p, preferred_date: e.target.value }))} />
+                    <Field
+                      id="field-preferred_date"
+                      label="Preferred Date"
+                      error={visibleError("preferred_date")}
+                      hint="Optional · No past dates"
+                    >
+                      <input
+                        id="inp-preferred_date"
+                        className={inp(visibleError("preferred_date"))}
+                        type="date"
+                        min={todayStr}
+                        max={maxDate}
+                        value={form.preferred_date}
+                        onChange={set("preferred_date")}
+                        onBlur={() => touch("preferred_date")}
+                      />
                     </Field>
-                    <Field label="Preferred Time">
-                      <input className={inp} type="time" value={form.preferred_time}
-                        onChange={e => setForm(p => ({ ...p, preferred_time: e.target.value }))} />
+                    <Field
+                      id="field-preferred_time"
+                      label="Preferred Time"
+                      error={visibleError("preferred_time")}
+                      hint={`7:00 AM – 9:00 PM`}
+                    >
+                      <input
+                        id="inp-preferred_time"
+                        className={inp(visibleError("preferred_time"))}
+                        type="time"
+                        min="07:00"
+                        max="21:00"
+                        value={form.preferred_time}
+                        onChange={set("preferred_time")}
+                        onBlur={() => touch("preferred_time")}
+                      />
                     </Field>
                   </div>
 
-                  {/* Description */}
+                  {/* Description — Additional Details (Optional) */}
                   <Field
-                    label={form.service_type === "Custom Service" ? "Describe Your Custom Requirement" : "Additional Details"}
-                    required={form.service_type === "Custom Service"}
+                    id="field-description"
+                    label="Additional Details"
+                    error={visibleError("description")}
+                    hint="Optional"
                   >
-                    <textarea className={inp} rows={3} style={{ resize: "vertical" }}
-                      required={form.service_type === "Custom Service"}
-                      placeholder={form.service_type === "Custom Service"
-                        ? "Please describe the specific work you need done…"
-                        : "Describe the issue briefly…"}
-                      value={form.description}
-                      onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
+                    <div className="relative">
+                      <textarea
+                        id="inp-description"
+                        className={inp(visibleError("description"))}
+                        rows={3}
+                        style={{ resize: "vertical" }}
+                        maxLength={500}
+                        placeholder="Any additional information about your service request..."
+                        value={form.description}
+                        onChange={set("description")}
+                        onBlur={() => touch("description")}
+                      />
+                    </div>
                   </Field>
 
                   {/* Submit */}
-                  <button type="submit" disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm md:text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                    {submitting
-                      ? <><Loader2 size={17} className="animate-spin" /> Submitting…</>
-                      : <><CalendarDays size={17} /> Request Service</>}
-                  </button>
+                  <div className="pt-1 space-y-3">
+                    <button
+                      type="submit"
+                      disabled={submitting || sessionCount >= SESSION_LIMIT}
+                      className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm md:text-base rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                    >
+                      {submitting
+                        ? <><Loader2 size={17} className="animate-spin" /> Submitting…</>
+                        : <><CalendarDays size={17} /> Request Service</>}
+                    </button>
+
+                    {sessionCount >= SESSION_LIMIT ? (
+                      <p className="text-center text-xs text-red-500 dark:text-red-400">
+                        Session limit reached. Please call{" "}
+                        <a href={`tel:${PHONE_NUMBER}`} className="underline font-semibold">{PHONE_NUMBER}</a>.
+                      </p>
+                    ) : (
+                      <p className="text-center text-[11px] text-gray-400 dark:text-gray-500">
+                        By submitting, you agree to be contacted regarding your service request.
+                      </p>
+                    )}
+                  </div>
                 </form>
               )}
             </div>
           </div>
         </div>
 
-        {/* Trust strip */}
+        {/* ── Trust strip ── */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
           {[
             { emoji: "⚡", label: "Fast Response",     sub: "Avg. 45 minutes" },
@@ -1918,41 +878,55 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   );
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-/** Wraps a promise with a timeout; rejects with a labelled error on timeout */
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`TIMEOUT:${label}`)), ms)
-    ),
-  ]);
-}
+// ─── Input class — error-aware ────────────────────────────────────────────────
+const inp = (error?: string) =>
+  "w-full border rounded-md shadow-sm py-2.5 px-3 text-sm " +
+  "text-gray-900 dark:text-white bg-white dark:bg-gray-800 " +
+  "focus:outline-none focus:ring-2 transition duration-150 " +
+  "placeholder-gray-400 dark:placeholder-gray-500 font-[Poppins,sans-serif] " +
+  (error
+    ? "border-red-400 dark:border-red-500 focus:ring-red-300 focus:border-red-400 bg-red-50/50 dark:bg-red-900/10"
+    : "border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500");
 
-const inp =
-  "w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2.5 px-3 " +
-  "text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 " +
-  "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " +
-  "placeholder-gray-400 dark:placeholder-gray-500 transition duration-150 " +
-  "font-[Poppins,sans-serif]";
-
+// ─── Field wrapper ────────────────────────────────────────────────────────────
 function Field({
+  id,
   label,
   required,
+  error,
+  hint,
   children,
 }: {
+  id?: string;
   label: React.ReactNode;
   required?: boolean;
+  error?: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5" id={id}>
       {label !== "" && (
-        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-          {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-        </label>
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor={id ? id.replace("field-", "inp-") : undefined}
+            className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            {label}
+            {required && <span className="text-red-500 ml-0.5">*</span>}
+          </label>
+          {hint && !error && (
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 italic">{hint}</span>
+          )}
+        </div>
       )}
       {children}
+      {error && (
+        <p className="flex items-center gap-1 text-[11px] text-red-500 dark:text-red-400 font-medium mt-0.5 leading-snug">
+          <AlertCircle size={11} className="flex-shrink-0" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }

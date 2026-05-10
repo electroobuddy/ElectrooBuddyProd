@@ -1,11 +1,14 @@
-// @ts-ignore - Deno modules loaded at runtime
+// @ts-nocheck - Deno runtime, TypeScript checks as Node
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// @ts-ignore - Deno modules loaded at runtime
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  createClient,
+  SupabaseClient,
+} from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 interface RequestBody {
@@ -39,16 +42,24 @@ serve(async (req: Request) => {
     }
 
     // Create Supabase client with admin privileges
-    const supabaseUrl = (globalThis as any).Deno?.env?.get("SUPABASE_URL") ?? 
-                        process.env.SUPABASE_URL ?? "";
-    const supabaseServiceRoleKey = (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY") ?? 
-                                    process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-    
+    // Deno.env for production, (globalThis as any).process.env for local testing
+    const supabaseUrl =
+      (globalThis as any).Deno?.env?.get("SUPABASE_URL") ??
+      (globalThis as any).process?.env?.SUPABASE_URL ??
+      "";
+    const supabaseServiceRoleKey =
+      (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY") ??
+      (globalThis as any).process?.env?.SUPABASE_SERVICE_ROLE_KEY ??
+      "";
+
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error("Missing Supabase environment variables");
     }
 
-    const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+    const supabase: SupabaseClient = createClient(
+      supabaseUrl,
+      supabaseServiceRoleKey,
+    );
 
     // Parse request body
     const { bookingId }: RequestBody = await req.json();
@@ -78,13 +89,16 @@ serve(async (req: Request) => {
 
     // Check if booking is already assigned
     if (booking.assigned_technician_id) {
-      return new Response(JSON.stringify({ 
-        message: "Booking already assigned",
-        technician_id: booking.assigned_technician_id 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          message: "Booking already assigned",
+          technician_id: booking.assigned_technician_id,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Fetch all active technicians
@@ -100,13 +114,16 @@ serve(async (req: Request) => {
 
     if (!technicians || technicians.length === 0) {
       console.log("[Auto-Assign] No active technicians available");
-      return new Response(JSON.stringify({ 
-        success: false,
-        message: "No active technicians available" 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "No active technicians available",
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     console.log(`[Auto-Assign] Found ${technicians.length} active technicians`);
@@ -114,21 +131,33 @@ serve(async (req: Request) => {
     // Get today's date in YYYY-MM-DD format
     const today = new Date().toISOString().split("T")[0];
 
-    // Calculate today's assignments for each technician
-    const techniciansWithCount = await Promise.all(
-      technicians.map(async (tech: Technician) => {
-        const { count } = await supabase
-          .from("bookings")
-          .select("*", { count: "exact", head: true })
-          .eq("assigned_technician_id", tech.id)
-          .eq("assignment_date", today);
-
-        return {
-          ...tech,
-          todayCount: count || 0,
-        };
+    // OPTIMIZED: Single aggregation query instead of N parallel queries
+    // This reduces free tier timeout risk significantly
+    const technicianIds = technicians.map((t: Technician) => t.id);
+    const { data: assignmentCounts, error: countError } = await supabase
+      .from("bookings")
+      .select("assigned_technician_id, count:assigned_technician_id.count()", {
+        count: "exact",
       })
-    );
+      .eq("assignment_date", today)
+      .in("assigned_technician_id", technicianIds)
+      .not("assigned_technician_id", "is", null);
+
+    if (countError) {
+      console.error("[Auto-Assign] Error fetching counts:", countError);
+    }
+
+    // Build a map of technician_id -> count
+    const countMap: Record<string, number> = {};
+    assignmentCounts?.forEach((row: any) => {
+      countMap[row.assigned_technician_id] = parseInt(row.count) || 0;
+    });
+
+    // Merge counts with technicians
+    const techniciansWithCount = technicians.map((tech: Technician) => ({
+      ...tech,
+      todayCount: countMap[tech.id] || 0,
+    }));
 
     console.log(
       "[Auto-Assign] Technician counts:",
@@ -136,23 +165,26 @@ serve(async (req: Request) => {
         name: t.name,
         count: t.todayCount,
         limit: t.daily_limit,
-      }))
+      })),
     );
 
     // Filter technicians who have capacity
     const availableTechnicians = techniciansWithCount.filter(
-      (tech: Technician) => tech.todayCount! < (tech.daily_limit || 5)
+      (tech: Technician) => tech.todayCount! < (tech.daily_limit || 5),
     );
 
     if (availableTechnicians.length === 0) {
       console.log("[Auto-Assign] All technicians are at capacity");
-      return new Response(JSON.stringify({ 
-        success: false,
-        message: "All technicians are at capacity today" 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "All technicians are at capacity today",
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Sort by priority (DESC) then by today's count (ASC - least loaded first)
@@ -166,7 +198,9 @@ serve(async (req: Request) => {
     });
 
     const selectedTechnician = availableTechnicians[0];
-    console.log(`[Auto-Assign] Selected technician: ${selectedTechnician.name}`);
+    console.log(
+      `[Auto-Assign] Selected technician: ${selectedTechnician.name}`,
+    );
 
     // Assign the booking
     const { error: updateError } = await supabase
@@ -183,30 +217,38 @@ serve(async (req: Request) => {
       throw updateError;
     }
 
-    console.log(`[Auto-Assign] Successfully assigned booking to ${selectedTechnician.name}`);
+    console.log(
+      `[Auto-Assign] Successfully assigned booking to ${selectedTechnician.name}`,
+    );
 
-    return new Response(JSON.stringify({
-      success: true,
-      message: "Technician assigned successfully",
-      technician: {
-        id: selectedTechnician.id,
-        name: selectedTechnician.name,
-        email: selectedTechnician.email,
-        phone: selectedTechnician.phone,
-        skills: selectedTechnician.skills,
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Technician assigned successfully",
+        technician: {
+          id: selectedTechnician.id,
+          name: selectedTechnician.name,
+          email: selectedTechnician.email,
+          phone: selectedTechnician.phone,
+          skills: selectedTechnician.skills,
+        },
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    );
   } catch (error: any) {
     console.error("[Auto-Assign] Error:", error);
-    return new Response(JSON.stringify({ 
-      error: error.message || "Unknown error occurred",
-      message: "Failed to assign technician" 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: error.message || "Unknown error occurred",
+        message: "Failed to assign technician",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });

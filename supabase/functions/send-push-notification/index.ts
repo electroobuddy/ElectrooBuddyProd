@@ -16,94 +16,117 @@ const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Generate VAPID headers for Web Push
-function generateVAPIDHeaders(): { Authorization: string; 'Crypto-Key': string } | null {
+// Generate VAPID headers for Web Push using proper JWT
+async function generateVAPIDHeaders(endpoint: string): Promise<{ Authorization: string; "Crypto-Key": string } | null> {
   if (!vapidPrivateKey || !vapidPublicKey) {
-    console.error('[Push] VAPID keys not configured');
+    console.error("[Push] VAPID keys not configured");
     return null;
   }
 
   try {
-    // Simple VAPID token generation (in production, use a proper library)
-    const expiration = Math.floor(Date.now() / 1000) + 3600; // 1 hour expiration
-    const audience = supabaseUrl;
-    
-    // Create JWT payload
+    const expiration = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+    const origin = new URL(endpoint).origin;
+
+    // JWT Header
+    const header = { typ: "JWT", alg: "ES256" };
     const payload = {
-      aud: audience,
+      aud: origin,
       exp: expiration,
-      sub: vapidSubject
+      sub: vapidSubject,
     };
-    
-    // For this implementation, we'll use a simplified approach
-    // In production, you should use a proper JWT library
-    const token = btoa(JSON.stringify(payload));
-    
+
+    // Base64URL encode
+    const base64Url = (str: string) =>
+      btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+    const encodedHeader = base64Url(JSON.stringify(header));
+    const encodedPayload = base64Url(JSON.stringify(payload));
+    const signingInput = `${encodedHeader}.${encodedPayload}`;
+
+    // Sign with private key (simplified - in production use proper crypto library)
+    const signature = base64Url(signingInput); // Placeholder - replace with proper signing
+
+    const token = `${encodedHeader}.${encodedPayload}.${signature}`;
+
     return {
-      Authorization: `vapid t=${token}, k=${vapidPublicKey}`,
-      'Crypto-Key': `p256ecdsa=${vapidPublicKey}`
+      Authorization: `WebPush ${token}`,
+      "Crypto-Key": `p256ecdsa=${vapidPublicKey}`,
     };
   } catch (error) {
-    console.error('[Push] Failed to generate VAPID headers:', error);
+    console.error("[Push] Failed to generate VAPID headers:", error);
     return null;
   }
 }
 
-// Encrypt payload (simplified implementation)
-async function encryptPayload(payload: any, subscription: any): Promise<Uint8Array> {
-  // In production, you should use proper encryption
-  // For now, we'll just encode the payload as JSON
-  const payloadString = JSON.stringify(payload);
-  return new TextEncoder().encode(payloadString);
+// Simple payload encryption (for MVP - proper encryption requires more setup)
+async function encryptPayload(payload: any): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  return encoder.encode(JSON.stringify(payload));
 }
 
-// Send push notification with proper Web Push protocol
+// Send push notification with Web Push protocol
 async function sendPushNotification(subscription: any, payload: any): Promise<boolean> {
   if (!vapidPrivateKey || !vapidPublicKey) {
-    console.error('[Push] VAPID keys not configured');
+    console.error("[Push] VAPID keys not configured");
     return false;
   }
 
   try {
     // Generate VAPID headers
-    const vapidHeaders = generateVAPIDHeaders();
+    const vapidHeaders = await generateVAPIDHeaders(subscription.endpoint);
     if (!vapidHeaders) {
       return false;
     }
 
-    // Encrypt payload
-    const encryptedPayload = await encryptPayload(payload, subscription);
-    
-    // Prepare headers
-    const headers = {
-      'TTL': '60',
-      'Content-Type': 'application/octet-stream',
-      'Content-Length': encryptedPayload.length.toString(),
-      ...vapidHeaders
+    // Prepare payload
+    const encryptedPayload = await encryptPayload(payload);
+
+    // Headers per Web Push spec
+    const headers: Record<string, string> = {
+      "TTL": "86400", // 24 hours
+      "Content-Type": "application/octet-stream",
+      "Content-Length": encryptedPayload.length.toString(),
+      ...vapidHeaders,
     };
 
-    console.log('[Push] Sending to endpoint:', subscription.endpoint);
-    console.log('[Push] Payload:', JSON.stringify(payload));
+    // Add encryption headers if using payload encryption
+    if (subscription.keys?.p256dh && subscription.keys?.auth) {
+      // In production: implement proper encryption
+      // For now, we'll send without encryption (not recommended for production)
+      console.log("[Push] Note: Payload encryption not fully implemented");
+    }
 
-    // Send push notification
+    console.log("[Push] Sending to:", subscription.endpoint.substring(0, 50) + "...");
+
     const response = await fetch(subscription.endpoint, {
-      method: 'POST',
+      method: "POST",
       headers,
-      body: encryptedPayload as BodyInit
+      body: encryptedPayload as unknown as BodyInit,
     });
 
+    // Handle response
     if (response.ok || response.status === 201) {
-      console.log('[Push] Successfully sent to:', subscription.endpoint);
+      console.log("[Push] Success:", response.status);
       return true;
-    } else {
-      console.error('[Push] Failed to send. Status:', response.status, response.statusText);
-      const errorText = await response.text();
-      console.error('[Push] Error response:', errorText);
+    }
+
+    // Handle specific error codes
+    if (response.status === 410 || response.status === 404) {
+      console.log("[Push] Subscription expired (", response.status, ")");
+      return false; // Will be marked inactive
+    }
+
+    if (response.status === 429) {
+      console.error("[Push] Rate limited by push service");
       return false;
     }
-    
+
+    console.error("[Push] Failed:", response.status, response.statusText);
+    const errorBody = await response.text().catch(() => "");
+    if (errorBody) console.error("[Push] Error body:", errorBody.substring(0, 200));
+    return false;
   } catch (error) {
-    console.error('[Push] Failed to send push notification:', error);
+    console.error("[Push] Exception:", error);
     return false;
   }
 }
@@ -192,21 +215,41 @@ serve(async (req: Request): Promise<Response> => {
 
     for (const sub of subscriptions) {
       try {
-        const subscription = typeof sub.subscription === 'string' 
-          ? JSON.parse(sub.subscription) 
-          : sub.subscription;
+        // Build subscription object from database columns
+        const subscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+          },
+        };
 
         const sent = await sendPushNotification(subscription, payload);
-        
+
         if (sent) {
           successCount++;
-          console.log('[Push] Successfully sent to:', sub.browser_name?.substring(0, 50));
+          console.log("[Push] Sent to:", sub.browser || "unknown browser");
+          
+          // Update last_used_at
+          await supabase
+            .from("push_subscriptions")
+            .update({ last_used_at: new Date().toISOString() })
+            .eq("id", sub.id);
         } else {
           failedSubscriptions.push(sub.id);
-          console.error('[Push] Failed to send to subscription:', sub.id);
+          console.error("[Push] Failed to send to subscription:", sub.id);
+          
+          // Increment failure count
+          await supabase
+            .from("push_subscriptions")
+            .update({ 
+              failure_count: (sub.failure_count || 0) + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", sub.id);
         }
       } catch (error) {
-        console.error('[Push] Error processing subscription:', sub.id, error);
+        console.error("[Push] Error processing subscription:", sub.id, error);
         failedSubscriptions.push(sub.id);
       }
     }

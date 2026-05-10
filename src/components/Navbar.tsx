@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Menu,
@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
+import NotificationBell from "@/components/NotificationBell";
 import { useCart } from "@/contexts/CartContext";
 
 // Import favicon
@@ -39,28 +40,18 @@ const navLinks = [
 ];
 
 // ─── Blinking Eye Component ───────────────────────────────────────────────────
-// Replaces the second 'o' in "Electroo" with an animated eye that blinks
-// naturally: quick double-blink, then a long pause.
-
-const BlinkingEye = () => {
+const BlinkingEye = memo(() => {
   const [blink, setBlink] = useState(false);
 
   useEffect(() => {
-    // Sequence: blink → short pause → blink again → long pause → repeat
     const schedule = () => {
-      // First blink
       setBlink(true);
       setTimeout(() => setBlink(false), 120);
-
-      // Second blink (double-blink feel)
       setTimeout(() => setBlink(true), 420);
       setTimeout(() => setBlink(false), 540);
-
-      // Schedule next cycle: 3–5 s random interval
       const next = 3000 + Math.random() * 2000;
       setTimeout(schedule, next + 540);
     };
-
     const initial = setTimeout(schedule, 1500);
     return () => clearTimeout(initial);
   }, []);
@@ -79,7 +70,6 @@ const BlinkingEye = () => {
         flexShrink: 0,
       }}
     >
-      {/* Eye white / sclera */}
       <span
         style={{
           position: "absolute",
@@ -93,7 +83,6 @@ const BlinkingEye = () => {
           justifyContent: "center",
         }}
       >
-        {/* Pupil */}
         <span
           style={{
             width: "42%",
@@ -107,8 +96,6 @@ const BlinkingEye = () => {
           }}
         />
       </span>
-
-      {/* Upper eyelid — slides down on blink */}
       <span
         style={{
           position: "absolute",
@@ -126,8 +113,6 @@ const BlinkingEye = () => {
           zIndex: 2,
         }}
       />
-
-      {/* Lower eyelid — slides up slightly on blink */}
       <span
         style={{
           position: "absolute",
@@ -145,8 +130,6 @@ const BlinkingEye = () => {
           zIndex: 2,
         }}
       />
-
-      {/* Subtle shine glint */}
       <span
         style={{
           position: "absolute",
@@ -162,10 +145,9 @@ const BlinkingEye = () => {
       />
     </span>
   );
-};
+});
 
 // ─── Logo Text ────────────────────────────────────────────────────────────────
-
 const LogoText = () => (
   <span className="logo-text">
     Electr
@@ -176,23 +158,22 @@ const LogoText = () => (
 );
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
-
-const Navbar = () => {
+const Navbar = memo(() => {
   const [open, setOpen] = useState(false);
   const [pagesOpen, setPagesOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [darkMode, setDarkMode] = useState(true); // Default to dark mode
+  const [darkMode, setDarkMode] = useState(true);
   const location = useLocation();
   const { user } = useAuth();
   const { itemCount } = useCart();
 
-  // Dark mode effect for mobile menu
+  const isActive = useCallback((to: string) => location.pathname === to, [location.pathname]);
+  const memoizedNavLinks = useMemo(() => navLinks, []);
+
   useEffect(() => {
-    // Check localStorage first, if not set, default to dark mode (true)
     const storedMode = localStorage.getItem("darkMode");
     const isDark = storedMode !== null ? storedMode === "true" : true;
     setDarkMode(isDark);
-    // Ensure dark class is applied
     document.documentElement.classList.toggle("dark", isDark);
   }, []);
 
@@ -206,8 +187,6 @@ const Navbar = () => {
     setOpen(false);
     setPagesOpen(false);
   }, [location]);
-
-  const isActive = (to: string) => location.pathname === to;
 
   return (
     <>
@@ -246,60 +225,41 @@ const Navbar = () => {
           background: rgba(17, 24, 39, 0.7);
         }
 
+        /* ── Nav Inner ── */
         .nav-inner {
           display: flex;
           align-items: center;
           justify-content: space-between;
           height: 64px;
           padding: 0 12px;
-          max-width: 1280px;
+          max-width: 1400px;
           margin: 0 auto;
-        }
-
-        @media (min-width: 480px) {
-          .nav-inner {
-            padding: 0 16px;
-          }
-        }
-
-        @media (min-width: 640px) {
-          .nav-inner {
-            height: 68px;
-            padding: 0 20px;
-          }
-        }
-
-        @media (min-width: 768px) {
-          .nav-inner {
-            height: 72px;
-            padding: 0 24px;
-          }
+          gap: 8px;
         }
 
         @media (min-width: 1024px) {
           .nav-inner {
-            padding: 0 32px;
+            height: 68px;
+            padding: 0 20px;
+            gap: 4px;
           }
         }
 
         @media (min-width: 1280px) {
           .nav-inner {
-            padding: 0 40px;
+            height: 72px;
+            padding: 0 32px;
+            gap: 8px;
           }
         }
 
-        /* Logo */
+        /* ── Logo ── */
         .nav-logo {
           display: flex;
           align-items: center;
           gap: 8px;
           text-decoration: none;
-        }
-
-        @media (min-width: 640px) {
-          .nav-logo {
-            gap: 10px;
-          }
+          flex-shrink: 0;
         }
 
         .logo-icon {
@@ -315,15 +275,14 @@ const Navbar = () => {
           flex-shrink: 0;
         }
 
-        @media (min-width: 640px) {
+        @media (min-width: 1024px) {
           .logo-icon {
             width: 36px;
             height: 36px;
-            border-radius: 11px;
           }
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 1280px) {
           .logo-icon {
             width: 40px;
             height: 40px;
@@ -338,37 +297,22 @@ const Navbar = () => {
 
         .logo-text {
           font-family: 'Poppins', sans-serif;
-          font-size: 18px;
+          font-size: 17px;
           font-weight: 800;
           color: #1e3a8a;
           line-height: 1;
           display: inline-flex;
           align-items: center;
-          gap: 0;
           white-space: nowrap;
         }
 
-        @media (min-width: 640px) {
+        @media (min-width: 1280px) {
           .logo-text {
             font-size: 20px;
           }
         }
 
-        @media (min-width: 768px) {
-          .logo-text {
-            font-size: 22px;
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .logo-text {
-            font-size: 24px;
-          }
-        }
-
-        .dark .logo-text {
-          color: #60a5fa;
-        }
+        .dark .logo-text { color: #60a5fa; }
 
         .logo-tagline {
           font-family: 'Poppins', sans-serif;
@@ -378,68 +322,89 @@ const Navbar = () => {
           letter-spacing: 0.3px;
           white-space: nowrap;
           margin-top: 2px;
+          display: none;
         }
 
-        @media (min-width: 640px) {
-          .logo-tagline {
-            font-size: 10px;
-          }
+        @media (min-width: 1100px) {
+          .logo-tagline { display: block; }
         }
 
-        @media (min-width: 768px) {
-          .logo-tagline {
-            font-size: 11px;
-          }
-        }
+        .dark .logo-tagline { color: #9ca3af; }
 
-        .dark .logo-tagline {
-          color: #9ca3af;
-        }
-
-        /* Desktop links */
+        /* ── Desktop Nav Links ── */
+        /*
+          KEY FIX: Desktop nav only shows at 1024px+.
+          Nav links use very compact padding at 1024-1279px,
+          and comfortable padding at 1280px+.
+        */
         .desktop-nav {
           display: none;
           align-items: center;
-          gap: 2px;
+          gap: 0;
+          flex: 1;
+          justify-content: center;
+          min-width: 0;
         }
 
-        @media (min-width: 1024px) { 
-          .desktop-nav { 
-            display: flex; 
-            gap: 4px;
-          } 
+        @media (min-width: 1024px) {
+          .desktop-nav { display: flex; gap: 0; }
         }
 
-        @media (min-width: 1280px) { 
-          .desktop-nav { 
-            gap: 6px;
-          } 
+        /* Desktop right controls */
+        .desktop-actions {
+          display: none;
+          align-items: center;
+          gap: 4px;
+          flex-shrink: 0;
+        }
+
+        @media (min-width: 1024px) {
+          .desktop-actions { display: flex; }
+        }
+
+        @media (min-width: 1280px) {
+          .desktop-actions { gap: 6px; }
         }
 
         .nav-link {
           position: relative;
-          padding: 6px 10px;
-          font-size: 13px;
+          padding: 6px 7px;
+          font-size: 11.5px;
           font-weight: 500;
           color: #6b7280;
           border-radius: 8px;
           text-decoration: none;
           transition: all 0.25s ease;
           font-family: 'Poppins', sans-serif;
+          white-space: nowrap;
+        }
+
+        @media (min-width: 1120px) {
+          .nav-link {
+            padding: 6px 9px;
+            font-size: 12.5px;
+          }
         }
 
         @media (min-width: 1280px) {
           .nav-link {
+            padding: 7px 12px;
+            font-size: 13.5px;
+            border-radius: 10px;
+          }
+        }
+
+        @media (min-width: 1400px) {
+          .nav-link {
             padding: 8px 14px;
             font-size: 14px;
-            border-radius: 10px;
           }
         }
 
         .nav-link::after {
           content: '';
           position: absolute;
-          bottom: 4px;
+          bottom: 3px;
           left: 50%;
           transform: translateX(-50%);
           width: 0;
@@ -463,9 +428,9 @@ const Navbar = () => {
         .nav-dropdown-trigger {
           display: flex;
           align-items: center;
-          gap: 4px;
-          padding: 6px 10px;
-          font-size: 13px;
+          gap: 3px;
+          padding: 6px 7px;
+          font-size: 11.5px;
           font-weight: 500;
           color: #6b7280;
           border-radius: 8px;
@@ -474,19 +439,33 @@ const Navbar = () => {
           cursor: pointer;
           transition: all 0.25s ease;
           font-family: 'Poppins', sans-serif;
+          white-space: nowrap;
+        }
+
+        @media (min-width: 1120px) {
+          .nav-dropdown-trigger {
+            padding: 6px 9px;
+            font-size: 12.5px;
+          }
         }
 
         @media (min-width: 1280px) {
           .nav-dropdown-trigger {
-            gap: 5px;
-            padding: 8px 14px;
-            font-size: 14px;
+            padding: 7px 12px;
+            font-size: 13.5px;
             border-radius: 10px;
           }
         }
 
+        @media (min-width: 1400px) {
+          .nav-dropdown-trigger {
+            padding: 8px 14px;
+            font-size: 14px;
+          }
+        }
+
         .nav-dropdown-trigger:hover { color: #1e3a8a; background: rgba(59, 130, 246, 0.05); }
-        .trigger-chevron { transition: transform 0.3s ease; }
+        .trigger-chevron { transition: transform 0.3s ease; flex-shrink: 0; }
         .trigger-chevron.open { transform: rotate(180deg); }
 
         .dark .nav-dropdown-trigger { color: #9ca3af; }
@@ -497,7 +476,7 @@ const Navbar = () => {
           position: absolute;
           top: calc(100% + 8px);
           left: 0;
-          width: 200px;
+          width: 210px;
           background: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(20px);
           border: 1px solid #e5e7eb;
@@ -505,20 +484,6 @@ const Navbar = () => {
           overflow: hidden;
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
           z-index: 100;
-        }
-
-        @media (min-width: 1024px) and (max-width: 1279px) {
-          .dropdown-menu {
-            width: 210px;
-          }
-        }
-
-        @media (min-width: 1280px) {
-          .dropdown-menu {
-            top: calc(100% + 10px);
-            width: 220px;
-            border-radius: 16px;
-          }
         }
 
         .dark .dropdown-menu {
@@ -540,13 +505,6 @@ const Navbar = () => {
           border-bottom: 1px solid rgba(229, 231, 235, 0.5);
           font-family: 'Poppins', sans-serif;
         }
-
-        @media (min-width: 1280px) {
-          .dropdown-item {
-            padding: 13px 18px;
-            font-size: 14px;
-          }
-        }
         .dropdown-item:last-child { border-bottom: none; }
         .dropdown-item:hover { background: rgba(59, 130, 246, 0.05); color: #1e3a8a; padding-left: 22px; }
         .dropdown-arrow { opacity: 0; transform: translateX(-4px); transition: all 0.22s ease; color: #3b82f6; }
@@ -556,106 +514,188 @@ const Navbar = () => {
         .dark .dropdown-item:hover { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
         .dark .dropdown-arrow { color: #60a5fa; }
 
+        /* Icon-only action buttons (cart, bell, user) */
+        .action-icon-btn {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          color: #6b7280;
+          text-decoration: none;
+          transition: all 0.22s ease;
+          flex-shrink: 0;
+        }
+
+        @media (min-width: 1280px) {
+          .action-icon-btn {
+            width: 36px;
+            height: 36px;
+          }
+        }
+
+        .action-icon-btn:hover {
+          background: rgba(59, 130, 246, 0.08);
+          color: #1e3a8a;
+        }
+
+        .dark .action-icon-btn { color: #9ca3af; }
+        .dark .action-icon-btn:hover { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+
+        .cart-badge {
+          position: absolute;
+          top: -2px;
+          right: -2px;
+          background: #3b82f6;
+          color: white;
+          font-size: 9px;
+          font-weight: 700;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        /* Login link — icon only at 1024-1199, icon+text at 1200+ */
+        .login-link {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 5px 7px;
+          font-size: 11.5px;
+          font-weight: 500;
+          color: #6b7280;
+          border-radius: 8px;
+          text-decoration: none;
+          transition: all 0.25s ease;
+          font-family: 'Poppins', sans-serif;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        @media (min-width: 1280px) {
+          .login-link {
+            padding: 6px 10px;
+            font-size: 13px;
+            border-radius: 10px;
+          }
+        }
+
+        .login-link:hover { color: #1e3a8a; background: rgba(59, 130, 246, 0.05); }
+        .dark .login-link { color: #9ca3af; }
+        .dark .login-link:hover { color: #60a5fa; background: rgba(59, 130, 246, 0.1); }
+
+        .login-label {
+          display: none;
+        }
+
+        @media (min-width: 1160px) {
+          .login-label { display: inline; }
+        }
+
         /* Book Now CTA */
         .book-btn {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          margin-left: 8px;
-          padding: 8px 16px;
+          gap: 4px;
+          padding: 7px 10px;
           background: linear-gradient(135deg, #3b82f6, #1e3a8a);
           color: #ffffff;
           font-family: 'Poppins', sans-serif;
-          font-size: 13px;
+          font-size: 11px;
           font-weight: 700;
           border-radius: 8px;
           text-decoration: none;
           transition: all 0.3s ease;
           position: relative;
           overflow: hidden;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
 
         @media (min-width: 1280px) {
           .book-btn {
-            gap: 8px;
-            margin-left: 10px;
-            padding: 10px;
-            font-size: 14px;
+            padding: 9px 14px;
+            font-size: 12.5px;
+            border-radius: 9px;
+          }
+        }
+
+        @media (min-width: 1400px) {
+          .book-btn {
+            padding: 10px 18px;
+            font-size: 13.5px;
             border-radius: 10px;
           }
         }
+
         .book-btn::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0); transition: background 0.3s; }
-        .book-btn:hover { box-shadow: 0 0 24px rgba(59, 130, 246, 0.45), 0 6px 18px rgba(59, 130, 246, 0.3); transform: translateY(-2px); }
+        .book-btn:hover {
+          box-shadow: 0 0 24px rgba(59, 130, 246, 0.45), 0 6px 18px rgba(59, 130, 246, 0.3);
+          transform: translateY(-2px);
+        }
         .book-btn:hover::before { background: rgba(255,255,255,0.08); }
 
-        /* Mobile controls */
-        .mobile-controls { display: flex; align-items: center; gap: 6px; }
-        
-        @media (min-width: 640px) { 
-          .mobile-controls { 
-            gap: 8px; 
-          } 
+        /* Divider between theme and actions */
+        .nav-divider {
+          width: 1px;
+          height: 20px;
+          background: rgba(107, 114, 128, 0.2);
+          margin: 0 2px;
+          flex-shrink: 0;
         }
-        
-        @media (min-width: 1024px) { 
-          .mobile-controls { 
-            display: none; 
-          } 
+
+        /* ── Mobile controls ── */
+        .mobile-controls {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        @media (min-width: 1024px) {
+          .mobile-controls { display: none; }
         }
 
         .hamburger-btn {
-          width: 36px; 
+          width: 36px;
           height: 36px;
           border-radius: 8px;
           border: 1px solid #e5e7eb;
           background: rgba(59, 130, 246, 0.05);
-          display: flex; 
-          align-items: center; 
+          display: flex;
+          align-items: center;
           justify-content: center;
           color: #3b82f6;
           cursor: pointer;
           transition: all 0.25s ease;
         }
 
-        @media (min-width: 640px) {
-          .hamburger-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-          }
-        }
         .hamburger-btn:hover { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; color: #1e3a8a; }
-
         .dark .hamburger-btn { border-color: #374151; background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
-        .dark .hamburger-btn:hover { background: rgba(59, 130, 246, 0.2); border-color: #60a5fa; color: #60a5fa; }
+        .dark .hamburger-btn:hover { background: rgba(59, 130, 246, 0.2); border-color: #60a5fa; }
 
         .mobile-theme-toggle {
-          width: 36px; 
-          height: 36px;
+          width: 34px;
+          height: 34px;
           border-radius: 8px;
           border: 1px solid #e5e7eb;
           background: rgba(59, 130, 246, 0.05);
-          display: flex; 
-          align-items: center; 
+          display: flex;
+          align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.25s ease;
           flex-shrink: 0;
         }
-
-        @media (min-width: 640px) {
-          .mobile-theme-toggle {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-          }
-        }
         .mobile-theme-toggle:hover { background: rgba(59, 130, 246, 0.1); border-color: #3b82f6; }
-
         .dark .mobile-theme-toggle { border-color: #374151; background: rgba(59, 130, 246, 0.1); }
         .dark .mobile-theme-toggle:hover { background: rgba(59, 130, 246, 0.2); border-color: #60a5fa; }
 
-        /* Mobile menu */
+        /* ── Mobile menu ── */
         .mobile-menu {
           background: rgba(255, 255, 255, 0.98);
           backdrop-filter: blur(20px);
@@ -667,25 +707,20 @@ const Navbar = () => {
           background: rgba(31, 41, 55, 0.98);
           border-color: #374151;
         }
-        
-        @media (min-width: 1024px) { 
-          .mobile-menu { 
-            display: none; 
-          } 
+
+        @media (min-width: 1024px) {
+          .mobile-menu { display: none; }
         }
 
-        .mobile-menu-inner { 
-          padding: 12px 16px 20px; 
-          display: flex; 
-          flex-direction: column; 
-          gap: 6px; 
+        .mobile-menu-inner {
+          padding: 12px 16px 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         }
 
         @media (min-width: 640px) {
-          .mobile-menu-inner {
-            padding: 16px 20px 24px;
-            gap: 8px;
-          }
+          .mobile-menu-inner { padding: 16px 20px 24px; gap: 6px; }
         }
 
         .mobile-theme-row {
@@ -693,18 +728,10 @@ const Navbar = () => {
           align-items: center;
           justify-content: space-between;
           padding: 10px 14px;
-          margin-bottom: 6px;
+          margin-bottom: 4px;
           border-radius: 8px;
           background: rgba(59, 130, 246, 0.05);
           border: 1px solid rgba(229, 231, 235, 0.5);
-        }
-
-        @media (min-width: 640px) {
-          .mobile-theme-row {
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            border-radius: 10px;
-          }
         }
 
         .dark .mobile-theme-row {
@@ -713,7 +740,7 @@ const Navbar = () => {
         }
 
         .mobile-theme-label {
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 500;
           color: #6b7280;
           font-family: 'Poppins', sans-serif;
@@ -722,14 +749,12 @@ const Navbar = () => {
           gap: 8px;
         }
 
-        .dark .mobile-theme-label {
-          color: #9ca3af;
-        }
+        .dark .mobile-theme-label { color: #9ca3af; }
 
         .mobile-link {
           display: block;
           padding: 10px 14px;
-          font-size: 13px; 
+          font-size: 13px;
           font-weight: 500;
           color: #6b7280;
           border-radius: 8px;
@@ -740,24 +765,32 @@ const Navbar = () => {
         }
 
         @media (min-width: 640px) {
-          .mobile-link {
-            padding: 12px 16px;
-            font-size: 14px;
-            border-radius: 10px;
-          }
+          .mobile-link { padding: 12px 16px; font-size: 14px; border-radius: 10px; }
         }
-        .mobile-link:hover, .mobile-link.active { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.2); color: #1e3a8a; padding-left: 20px; }
-        
+
+        .mobile-link:hover,
+        .mobile-link.active {
+          background: rgba(59, 130, 246, 0.1);
+          border-color: rgba(59, 130, 246, 0.2);
+          color: #1e3a8a;
+          padding-left: 20px;
+        }
+
         .dark .mobile-link { color: #9ca3af; }
-        .dark .mobile-link:hover, .dark .mobile-link.active { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #60a5fa; }
+        .dark .mobile-link:hover,
+        .dark .mobile-link.active {
+          background: rgba(59, 130, 246, 0.15);
+          border-color: rgba(59, 130, 246, 0.3);
+          color: #60a5fa;
+        }
 
         .mobile-trigger {
-          display: flex; 
-          align-items: center; 
+          display: flex;
+          align-items: center;
           justify-content: space-between;
-          width: 100%; 
+          width: 100%;
           padding: 10px 14px;
-          font-size: 13px; 
+          font-size: 13px;
           font-weight: 500;
           color: #6b7280;
           border-radius: 8px;
@@ -769,14 +802,10 @@ const Navbar = () => {
         }
 
         @media (min-width: 640px) {
-          .mobile-trigger {
-            padding: 12px 16px;
-            font-size: 14px;
-            border-radius: 10px;
-          }
+          .mobile-trigger { padding: 12px 16px; font-size: 14px; border-radius: 10px; }
         }
-        .mobile-trigger:hover { background: rgba(59, 130, 246, 0.05); border-color: rgba(229, 231, 235, 0.5); color: #1e3a8a; }
 
+        .mobile-trigger:hover { background: rgba(59, 130, 246, 0.05); border-color: rgba(229, 231, 235, 0.5); color: #1e3a8a; }
         .dark .mobile-trigger { color: #9ca3af; }
         .dark .mobile-trigger:hover { background: rgba(59, 130, 246, 0.1); border-color: rgba(55, 65, 81, 0.5); color: #60a5fa; }
 
@@ -793,49 +822,54 @@ const Navbar = () => {
         }
 
         @media (min-width: 640px) {
-          .mobile-sub-link {
-            padding: 10px 16px 10px 28px;
-            font-size: 13px;
-            border-radius: 8px;
-          }
+          .mobile-sub-link { padding: 10px 16px 10px 28px; font-size: 13px; border-radius: 8px; }
         }
-        .mobile-sub-link::before { content: '⚡'; position: absolute; left: 12px; font-size: 9px; top: 50%; transform: translateY(-50%); opacity: 0.4; }
-        .mobile-sub-link:hover { color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
 
+        .mobile-sub-link::before {
+          content: '⚡';
+          position: absolute;
+          left: 12px;
+          font-size: 9px;
+          top: 50%;
+          transform: translateY(-50%);
+          opacity: 0.4;
+        }
+
+        .mobile-sub-link:hover { color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
         .dark .mobile-sub-link { color: #9ca3af; }
         .dark .mobile-sub-link:hover { color: #60a5fa; background: rgba(59, 130, 246, 0.1); }
 
-        .mobile-divider { height: 1px; background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), transparent); margin: 4px 0; }
+        .mobile-divider {
+          height: 1px;
+          background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), transparent);
+          margin: 2px 0;
+        }
 
         .dark .mobile-divider { background: linear-gradient(90deg, rgba(59, 130, 246, 0.5), transparent); }
 
         .mobile-book-btn {
-          display: block; 
-          text-align: center; 
-          margin-top: 6px; 
+          display: block;
+          text-align: center;
+          margin-top: 6px;
           padding: 12px;
           background: linear-gradient(135deg, #3b82f6, #1e3a8a);
           color: #ffffff;
           font-family: 'Poppins', sans-serif;
-          font-size: 14px; 
+          font-size: 14px;
           font-weight: 700;
-          border-radius: 10px; 
+          border-radius: 10px;
           text-decoration: none;
           box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
         }
 
         @media (min-width: 640px) {
-          .mobile-book-btn {
-            margin-top: 8px;
-            padding: 14px;
-            font-size: 15px;
-            border-radius: 12px;
-          }
+          .mobile-book-btn { margin-top: 8px; padding: 14px; font-size: 15px; border-radius: 12px; }
         }
       `}</style>
 
       <nav className={`navbar-root ${scrolled ? "scrolled" : "top"}`}>
         <div className="nav-inner">
+
           {/* ── Logo ── */}
           <Link to="/" className="nav-logo">
             <div className="logo-icon">
@@ -851,7 +885,7 @@ const Navbar = () => {
             </div>
           </Link>
 
-          {/* ── Desktop nav ── */}
+          {/* ── Desktop nav links (center) ── */}
           <div className="desktop-nav">
             {navLinks.map((link) =>
               link.children ? (
@@ -864,7 +898,7 @@ const Navbar = () => {
                   <button className="nav-dropdown-trigger">
                     {link.label}
                     <ChevronDown
-                      size={14}
+                      size={13}
                       className={`trigger-chevron ${pagesOpen ? "open" : ""}`}
                     />
                   </button>
@@ -901,62 +935,52 @@ const Navbar = () => {
                 </Link>
               ),
             )}
+          </div>
 
-            <div style={{ marginLeft: 4 }}>
-              <ThemeToggle />
-            </div>
+          {/* ── Desktop right actions ── */}
+          <div className="desktop-actions">
+            {/* Theme toggle */}
+            <ThemeToggle />
 
-            <Link
-              to="/cart"
-              className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              style={{ marginRight: 6 }}
-            >
-              <ShoppingCart
-                size={18}
-                className="text-gray-700 dark:text-gray-300"
-              />
+            <div className="nav-divider" />
+
+            {/* Notification Bell */}
+            <NotificationBell userId={user?.id} />
+
+            {/* Cart */}
+            <Link to="/cart" className="action-icon-btn">
+              <ShoppingCart size={17} />
               {itemCount > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center"
-                  style={{ fontSize: "10px" }}
-                >
-                  {itemCount}
-                </span>
+                <span className="cart-badge">{itemCount}</span>
               )}
             </Link>
 
+            <div className="nav-divider" />
+
+            {/* Login / Dashboard */}
             <Link
               to={user ? "/dashboard" : "/login"}
-              className="nav-link"
-              style={{ display: "flex", alignItems: "center", gap: 4 }}
+              className="login-link"
             >
-              <User size={13} />
-              <span className="hidden xl:inline">
+              <User size={14} />
+              <span className="login-label">
                 {user ? "Dashboard" : "Login"}
               </span>
-              <span className="xl:hidden">{user ? "Dash" : "Login"}</span>
             </Link>
 
+            {/* Book Now */}
             <Link to="/booking" className="book-btn">
-              <Zap size={13} /> Book Now
+              <Zap size={12} />
+              <span>Book Now</span>
             </Link>
           </div>
 
           {/* ── Mobile controls ── */}
           <div className="mobile-controls">
-            <Link
-              to="/cart"
-              className="relative p-2 mr-1"
-              style={{ color: "#6b7280" }}
-            >
-              <ShoppingCart size={18} className="dark:text-gray-300" />
+            <Link to="/cart" className="action-icon-btn" style={{ display: "flex" }}>
+              <ShoppingCart size={18} className="dark:text-gray-300" style={{ color: "#6b7280" }} />
               {itemCount > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center"
-                  style={{ fontSize: "10px" }}
-                >
-                  {itemCount}
-                </span>
+                <span className="cart-badge">{itemCount}</span>
               )}
             </Link>
             <button
@@ -984,22 +1008,14 @@ const Navbar = () => {
                 <div className="mobile-theme-row">
                   <span className="mobile-theme-label">
                     {darkMode ? <Moon size={14} /> : <Sun size={14} />}
-                    <span className="hidden sm:inline">
-                      {darkMode ? "Dark Mode" : "Light Mode"}
-                    </span>
-                    <span className="sm:hidden">
-                      {darkMode ? "Dark" : "Light"}
-                    </span>
+                    {darkMode ? "Dark Mode" : "Light Mode"}
                   </span>
                   <button
                     className="mobile-theme-toggle"
                     onClick={() => {
                       const newMode = !darkMode;
                       setDarkMode(newMode);
-                      document.documentElement.classList.toggle(
-                        "dark",
-                        newMode,
-                      );
+                      document.documentElement.classList.toggle("dark", newMode);
                       localStorage.setItem("darkMode", String(newMode));
                     }}
                     aria-label="Toggle theme"
@@ -1007,10 +1023,7 @@ const Navbar = () => {
                     {darkMode ? (
                       <Sun size={16} className="text-yellow-500" />
                     ) : (
-                      <Moon
-                        size={16}
-                        className="text-gray-700 dark:text-gray-300"
-                      />
+                      <Moon size={16} style={{ color: "#374151" }} />
                     )}
                   </button>
                 </div>
@@ -1066,6 +1079,7 @@ const Navbar = () => {
                     </Link>
                   ),
                 )}
+
                 <Link
                   to={user ? "/dashboard" : "/login"}
                   className="mobile-link"
@@ -1073,13 +1087,9 @@ const Navbar = () => {
                   style={{ display: "flex", alignItems: "center", gap: 8 }}
                 >
                   <User size={14} />
-                  <span className="hidden sm:inline">
-                    {user ? "My Dashboard" : "Login / Sign Up"}
-                  </span>
-                  <span className="sm:hidden">
-                    {user ? "Dashboard" : "Login"}
-                  </span>
+                  {user ? "My Dashboard" : "Login / Sign Up"}
                 </Link>
+
                 <Link
                   to="/cart"
                   className="mobile-link"
@@ -1087,13 +1097,9 @@ const Navbar = () => {
                   style={{ display: "flex", alignItems: "center", gap: 8 }}
                 >
                   <ShoppingCart size={14} />
-                  <span className="hidden sm:inline">
-                    My Cart {itemCount > 0 && `(${itemCount})`}
-                  </span>
-                  <span className="sm:hidden">
-                    Cart {itemCount > 0 && `(${itemCount})`}
-                  </span>
+                  My Cart {itemCount > 0 && `(${itemCount})`}
                 </Link>
+
                 <Link
                   to="/booking"
                   className="mobile-book-btn"
@@ -1108,6 +1114,6 @@ const Navbar = () => {
       </nav>
     </>
   );
-};
+});
 
 export default Navbar;
