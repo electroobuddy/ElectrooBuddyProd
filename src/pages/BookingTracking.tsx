@@ -24,12 +24,8 @@ const BookingTracking = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🔍 [BookingTracking] Search initiated');
-    console.log('📝 [BookingTracking] Search type:', searchType);
-    console.log('📝 [BookingTracking] Search value:', searchValue);
     
     if (!searchValue.trim()) {
-      console.warn('⚠️ [BookingTracking] Empty search value');
       toast.error("Please enter a valid search value");
       return;
     }
@@ -37,115 +33,70 @@ const BookingTracking = () => {
     setLoading(true);
     setBookings([]);
     setSearched(true);
-    console.log('✅ [BookingTracking] Loading state set to true');
 
     try {
       // Normalize phone number - remove all non-numeric characters
       const normalizedPhone = searchValue.trim().replace(/\D/g, '');
-      console.log('📱 [BookingTracking] Normalized phone:', normalizedPhone);
       
       if (searchType === "phone") {
-        console.log('📞 [BookingTracking] Searching by phone...');
-        
         // Search by phone number with multiple format variations
         // This handles +91XXXXXXXXXX, 91XXXXXXXXXX, 0XXXXXXXXXX, XXXXXXXXXX formats
         const phonePatterns = [
-          normalizedPhone, // Exact match
-          normalizedPhone.startsWith('91') ? normalizedPhone.slice(2) : '91' + normalizedPhone, // Add/remove 91 prefix
-          normalizedPhone.length === 10 ? '91' + normalizedPhone : normalizedPhone.slice(2), // Toggle 91 prefix
-        ].filter(Boolean);
+          normalizedPhone, // XXXXXXXXXX
+          `91${normalizedPhone}`, // 91XXXXXXXXXX
+          `+91${normalizedPhone}`, // +91XXXXXXXXXX
+          normalizedPhone.startsWith('0') ? normalizedPhone.slice(1) : `0${normalizedPhone}`, // 0XXXXXXXXXX
+        ];
 
         // Remove duplicates
         const uniquePhones = [...new Set(phonePatterns)];
-        
-        console.log('🎯 [BookingTracking] Phone patterns to search:', uniquePhones);
-        console.log('📊 [BookingTracking] Number of unique patterns:', uniquePhones.length);
 
         // Fetch all bookings and filter client-side for phone number matches
-        console.log('💾 [BookingTracking] Fetching all bookings from database...');
         const { data, error } = await supabase
           .from("bookings")
           .select("*")
           .order("created_at", { ascending: false });
         
-        console.log('📦 [BookingTracking] Database response:');
-        console.log('   - Data count:', data?.length || 0);
-        console.log('   - Error:', error);
-        
         if (error) {
-          console.error('❌ [BookingTracking] Database error:', error);
           throw error;
         }
         
         // Filter bookings that match any of the phone patterns
-        console.log('🔍 [BookingTracking] Starting client-side filtering...');
         const matchingBookings = (data || []).filter(booking => {
           const bookingPhone = booking.phone?.replace(/\D/g, '') || '';
           const isMatch = uniquePhones.some(pattern => 
-            bookingPhone === pattern || 
-            bookingPhone.includes(pattern) ||
-            pattern.includes(bookingPhone)
+            bookingPhone.includes(pattern.replace(/\D/g, ''))
           );
-          
-          if (isMatch) {
-            console.log('✅ [BookingTracking] MATCH FOUND:');
-            console.log('   - Booking ID:', booking.id);
-            console.log('   - Booking Name:', booking.name);
-            console.log('   - Booking Phone:', booking.phone);
-            console.log('   - Normalized Booking Phone:', bookingPhone);
-            console.log('   - Matched Pattern:', uniquePhones.find(pattern => 
-              bookingPhone === pattern || 
-              bookingPhone.includes(pattern) ||
-              pattern.includes(bookingPhone)
-            ));
-          }
           
           return isMatch;
         });
 
-        console.log('📊 [BookingTracking] Total matching bookings:', matchingBookings.length);
         setBookings(matchingBookings);
         
         if (matchingBookings.length === 0) {
-          console.warn('⚠️ [BookingTracking] No matches found for phone number');
           toast.info("No bookings found for this phone number");
         } else {
-          console.log('✅ [BookingTracking] Success! Found', matchingBookings.length, 'booking(s)');
           toast.success(`Found ${matchingBookings.length} booking(s)`);
         }
       } else {
-        console.log('📧 [BookingTracking] Searching by email...');
-        
         // Search by email - direct booking email match
         const searchTerm = searchValue.trim().toLowerCase();
-        console.log('📧 [BookingTracking] Search term (lowercase):', searchTerm);
         
         if (!searchTerm) {
-          console.warn('⚠️ [BookingTracking] Empty email search term');
           toast.error("Please enter an email address");
           setLoading(false);
           return;
         }
 
-        console.log('💾 [BookingTracking] Querying database with ILIKE...');
         const { data, error } = await supabase
           .from("bookings")
           .select("*")
           .ilike("email", `%${searchTerm}%`)
           .order("created_at", { ascending: false });
         
-        console.log('📦 [BookingTracking] Email search response:');
-        console.log('   - Data count:', data?.length || 0);
-        console.log('   - Error:', error);
-        
         if (error) {
-          console.error('❌ [BookingTracking] Email search error:', error);
-          console.error('❌ [BookingTracking] Error message:', error.message);
-          console.error('❌ [BookingTracking] Error details:', JSON.stringify(error, null, 2));
-          
           // If error is about column not existing, show helpful message
           if (error.message.includes('column "email" does not exist')) {
-            console.warn('⚠️ [BookingTracking] Email column does not exist in database yet!');
             toast.error("Email search is not available yet. Please search by phone number.");
             setSearchType("phone");
             setLoading(false);
@@ -154,30 +105,18 @@ const BookingTracking = () => {
           throw error;
         }
         
-        console.log('✅ [BookingTracking] Email search successful');
         setBookings(data || []);
         
         if (data.length === 0) {
-          console.warn('⚠️ [BookingTracking] No bookings found for email:', searchTerm);
           toast.info("No bookings found for this email");
         } else {
-          console.log('✅ [BookingTracking] Success! Found', data.length, 'booking(s)');
-          console.log('📋 [BookingTracking] Matching bookings:', (data as any[]).map(b => ({
-            id: b.id,
-            name: b.name,
-            email: b.email,
-            phone: b.phone
-          })));
           toast.success(`Found ${data.length} booking(s)`);
         }
       }
     } catch (error: any) {
-      console.error('💥 [BookingTracking] Catch block error:', error);
-      console.error('💥 [BookingTracking] Error stack:', error.stack);
-      console.error('💥 [BookingTracking] Full error object:', JSON.stringify(error, null, 2));
+      console.error("Error searching bookings:", error);
       toast.error("Failed to search bookings. Please try again.");
     } finally {
-      console.log('🏁 [BookingTracking] Search completed, setting loading to false');
       setLoading(false);
     }
   };

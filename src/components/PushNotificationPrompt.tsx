@@ -7,7 +7,7 @@ import {
   getNotificationPermission,
   isPushSupported,
   hasActiveSubscription
-} from "@/utils/pushNotifications";
+} from "@/utils/firebaseNotifications";
 import { toast } from "sonner";
 
 interface PushNotificationPromptProps {

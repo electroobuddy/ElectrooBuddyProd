@@ -89,24 +89,39 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
 
     const subscriptionJson = subscription.toJSON();
     const endpoint = subscriptionJson.endpoint;
+    const keys = subscriptionJson.keys;
 
-    if (!endpoint) {
-      console.error('[Push] Failed to get endpoint from subscription');
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      console.error('[Push] Failed to get required subscription data');
       return false;
     }
 
-    console.log('[Push] Subscription created:', endpoint);
+    // Detect browser and device type
+    const ua = navigator.userAgent;
+    const browser = /Chrome/.test(ua) ? 'chrome' : 
+                    /Firefox/.test(ua) ? 'firefox' :
+                    /Safari/.test(ua) ? 'safari' :
+                    /Edge/.test(ua) ? 'edge' : 'other';
+    const deviceType = /Mobile/.test(ua) ? 'mobile' : 
+                       /Tablet/.test(ua) ? 'tablet' : 'desktop';
 
-    // Save subscription to database
-    const { error } = await supabase
-      .from('push_subscriptions')
+    console.log('[Push] Subscription created:', endpoint.substring(0, 50) + '...');
+
+    // Save subscription to database (new schema)
+    // Note: Type cast needed until Supabase types are regenerated
+    const { error } = await (supabase
+      .from('push_subscriptions') as any)
       .upsert({
         user_id: userId,
         endpoint: endpoint,
-        subscription: subscriptionJson as any,
-        browser_name: navigator.userAgent,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        user_agent: ua,
+        browser: browser,
+        device_type: deviceType,
         is_active: true,
-        updated_at: new Date().toISOString()
+        failure_count: 0,
+        last_used_at: new Date().toISOString()
       }, {
         onConflict: 'endpoint'
       });

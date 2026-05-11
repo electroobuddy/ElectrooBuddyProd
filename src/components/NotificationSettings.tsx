@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
-import { Bell, Mail, Smartphone, Loader2, Send } from "lucide-react";
+import { Bell, Mail, Smartphone, Loader2, Send, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { isPushSupported, getNotificationPermission } from "@/utils/pushNotifications";
+import { 
+  isPushSupported, 
+  getNotificationPermission,
+  subscribeToPush,
+  unsubscribeFromPush,
+  hasActiveSubscription,
+  requestNotificationPermission
+} from "@/utils/firebaseNotifications";
 
 interface NotificationSettingsProps {
   userId: string | null;
@@ -27,6 +34,9 @@ const NotificationSettings = ({ userId }: NotificationSettingsProps) => {
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -83,6 +93,25 @@ const NotificationSettings = ({ userId }: NotificationSettingsProps) => {
     fetchPreferences();
   }, [userId]);
 
+  // Check push notification status and subscription
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkPushStatus = async () => {
+      if (isPushSupported()) {
+        const permission = getNotificationPermission();
+        setPermissionStatus(permission);
+        
+        if (permission === 'granted') {
+          const subscription = await hasActiveSubscription(userId);
+          setHasSubscription(subscription);
+        }
+      }
+    };
+
+    checkPushStatus();
+  }, [userId]);
+
   const handleSave = async () => {
     if (!userId || !preferences) return;
 
@@ -110,6 +139,60 @@ const NotificationSettings = ({ userId }: NotificationSettingsProps) => {
   const updatePreference = (key: keyof NotificationPreferences, value: boolean) => {
     if (!preferences) return;
     setPreferences({ ...preferences, [key]: value });
+  };
+
+  const handleEnablePushNotifications = async () => {
+    if (!userId) return;
+
+    setSubscribing(true);
+    try {
+      // Request permission first
+      const permissionGranted = await requestNotificationPermission();
+      if (!permissionGranted) {
+        toast.error("Notification permission denied. Please enable notifications in your browser settings.");
+        return;
+      }
+
+      // Subscribe to push notifications
+      const subscribed = await subscribeToPush(userId);
+      if (subscribed) {
+        setHasSubscription(true);
+        setPermissionStatus('granted');
+        toast.success("Push notifications enabled! You'll receive notifications even when the website is closed.");
+      } else {
+        toast.error("Failed to enable push notifications. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Error enabling push notifications:", error);
+      toast.error("Failed to enable push notifications: " + error.message);
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  const handleDisablePushNotifications = async () => {
+    if (!userId) return;
+
+    setSubscribing(true);
+    try {
+      const unsubscribed = await unsubscribeFromPush(userId);
+      if (unsubscribed) {
+        setHasSubscription(false);
+        toast.success("Push notifications disabled.");
+        
+        // Also disable the preference
+        if (preferences) {
+          updatePreference("push_notifications", false);
+        }
+      } else {
+        toast.error("Failed to disable push notifications. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Error disabling push notifications:", error);
+      toast.error("Failed to disable push notifications: " + error.message);
+    } finally {
+      setSubscribing(false);
+    }
   };
 
   if (loading) {
@@ -233,6 +316,68 @@ const NotificationSettings = ({ userId }: NotificationSettingsProps) => {
           </div>
         </div>
         
+        {/* Permission Status and Subscription Management */}
+        {isPushSupported() && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-950/20 rounded-xl">
+              <div className="flex-1">
+                <p className="font-semibold text-zinc-900 dark:text-white text-sm">
+                  {permissionStatus === 'granted' && hasSubscription 
+                    ? '✅ Push notifications enabled' 
+                    : permissionStatus === 'granted' 
+                    ? '🔔 Permission granted, setup required'
+                    : permissionStatus === 'denied' 
+                    ? '❌ Permission denied'
+                    : '🔕 Permission not requested'
+                  }
+                </p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {permissionStatus === 'granted' && hasSubscription
+                    ? 'You will receive notifications even when the website is closed'
+                    : permissionStatus === 'granted'
+                    ? 'Click enable to complete setup'
+                    : permissionStatus === 'denied'
+                    ? 'Enable notifications in your browser settings'
+                    : 'Click enable to request permission'
+                  }
+                </p>
+              </div>
+              
+              {permissionStatus === 'granted' && hasSubscription ? (
+                <button
+                  onClick={handleDisablePushNotifications}
+                  disabled={subscribing}
+                  className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {subscribing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Disabling...
+                    </>
+                  ) : (
+                    'Disable'
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleEnablePushNotifications}
+                  disabled={subscribing || permissionStatus === 'denied'}
+                  className="px-3 py-1.5 text-xs font-medium text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {subscribing ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Enabling...
+                    </>
+                  ) : (
+                    'Enable'
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* Master toggle */}
         <div className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-950/20 rounded-xl mb-3">
           <div>
@@ -242,8 +387,17 @@ const NotificationSettings = ({ userId }: NotificationSettingsProps) => {
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
-              checked={preferences.push_notifications}
-              onChange={(e) => updatePreference("push_notifications", e.target.checked)}
+              checked={preferences.push_notifications && hasSubscription}
+              onChange={(e) => {
+                if (e.target.checked && !hasSubscription) {
+                  handleEnablePushNotifications();
+                } else if (!e.target.checked && hasSubscription) {
+                  handleDisablePushNotifications();
+                } else {
+                  updatePreference("push_notifications", e.target.checked);
+                }
+              }}
+              disabled={!hasSubscription && permissionStatus !== 'granted'}
               className="sr-only peer"
             />
             <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
@@ -251,7 +405,7 @@ const NotificationSettings = ({ userId }: NotificationSettingsProps) => {
         </div>
 
         {/* Individual push toggles */}
-        {preferences.push_notifications && (
+        {preferences.push_notifications && hasSubscription && (
           <div className="space-y-3">
             {[
               { key: "push_booking_created", label: "Booking Created", desc: "When a new booking is created" },

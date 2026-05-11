@@ -119,9 +119,9 @@ serve(async (req) => {
           p_metadata: { customer_name: booking.name, service: booking.service_type },
         });
         
-        // Send push notification to technician
+        // Send push notification to technician via FCM
         try {
-          await supabase.functions.invoke("send-push-notification", {
+          await supabase.functions.invoke("send-fcm-notification", {
             body: {
               userId: technician.user_id,
               title: "👨‍🔧 New Booking Assigned",
@@ -131,7 +131,7 @@ serve(async (req) => {
             },
           });
         } catch (pushError) {
-          console.error("Failed to send push to technician:", pushError);
+          console.error("Failed to send FCM push to technician:", pushError);
         }
       }
     }
@@ -153,10 +153,10 @@ serve(async (req) => {
       }
     }
 
-    // Send push notification if user has subscriptions
+    // Send push notification if user has subscriptions via FCM
     if (booking.user_id && createdNotificationId) {
       try {
-        await supabase.functions.invoke("send-push-notification", {
+        await supabase.functions.invoke("send-fcm-notification", {
           body: {
             userId: booking.user_id,
             title: statusMsg.title,
@@ -167,7 +167,7 @@ serve(async (req) => {
           },
         });
       } catch (pushError) {
-        console.error("Failed to send push notification:", pushError);
+        console.error("Failed to send FCM notification:", pushError);
       }
     }
 
