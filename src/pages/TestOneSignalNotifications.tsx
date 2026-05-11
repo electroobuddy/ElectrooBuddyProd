@@ -40,15 +40,29 @@ const TestOneSignalNotifications = () => {
     if (!user) return;
     
     try {
-      const { data } = await supabase
+      // Check database subscription
+      const { data: dbSubscription } = await supabase
         .from("push_subscriptions")
-        .select("is_active")
+        .select("is_active, endpoint")
         .eq("user_id", user.id)
         .eq("subscription_type", "onesignal")
         .limit(1)
         .maybeSingle();
       
-      setIsSubscribed(data?.is_active || false);
+      // Check OneSignal SDK subscription
+      let sdkSubscribed = false;
+      if (window.OneSignal && window.OneSignal.User && window.OneSignal.User.PushSubscription) {
+        const subscriptionId = window.OneSignal.User.PushSubscription.id;
+        sdkSubscribed = !!subscriptionId;
+        console.log('[TestOneSignal] SDK subscription ID:', subscriptionId);
+      }
+      
+      const isActive = dbSubscription?.is_active && sdkSubscribed;
+      setIsSubscribed(isActive);
+      
+      console.log('[TestOneSignal] DB subscription:', dbSubscription?.is_active);
+      console.log('[TestOneSignal] SDK subscription:', sdkSubscribed);
+      console.log('[TestOneSignal] Final status:', isActive);
     } catch (error) {
       console.error("Error checking subscription:", error);
     }

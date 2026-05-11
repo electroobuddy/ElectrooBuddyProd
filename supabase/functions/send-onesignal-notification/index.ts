@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 declare const Deno: {
   env: {
@@ -7,8 +8,12 @@ declare const Deno: {
   };
 };
 
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
 interface OneSignalNotification {
-  playerIds: string[];
+  playerIds?: string[];
+  userIds?: string[]; // Alternative: send by user IDs
   title: string;
   message: string;
   url?: string;
@@ -19,6 +24,31 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+async function fetchSubscriptionIds(userIds: string[]): Promise<string[]> {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data, error } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint")
+      .in("user_id", userIds)
+      .eq("subscription_type", "onesignal")
+      .eq("is_active", true);
+    
+    if (error) {
+      console.error("[OneSignal] Error fetching subscriptions:", error);
+      return [];
+    }
+    
+    const subscriptionIds = data?.map(sub => sub.endpoint).filter(Boolean) || [];
+    console.log("[OneSignal] Fetched subscription IDs:", subscriptionIds);
+    return subscriptionIds;
+  } catch (error) {
+    console.error("[OneSignal] Exception fetching subscriptions:", error);
+    return [];
+  }
+}
 
 async function sendOneSignalNotification(notification: OneSignalNotification): Promise<boolean> {
   const appId = Deno.env.get("ONESIGNAL_APP_ID");
@@ -78,17 +108,44 @@ serve(async (req) => {
   }
 
   try {
-    const { playerIds, title, message, url, data } = await req.json();
+    const body = await req.json();
+    const { playerIds, userIds, title, message, url, data } = body;
 
-    if (!playerIds || !title || !message) {
+    if (!title || !message) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: playerIds, title, message" }),
+        JSON.stringify({ error: "Missing required fields: title, message" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Determine subscription IDs to use
+    let subscriptionIds: string[] = [];
+    
+    if (playerIds && playerIds.length > 0) {
+      // Use provided player IDs directly
+      subscriptionIds = playerIds;
+    } else if (userIds && userIds.length > 0) {
+      // Fetch subscription IDs from database by user IDs
+      console.log("[OneSignal] Fetching subscriptions for users:", userIds);
+      subscriptionIds = await fetchSubscriptionIds(userIds);
+    } else {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: playerIds or userIds" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (subscriptionIds.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No active OneSignal subscriptions found" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("[OneSignal] Sending to subscription IDs:", subscriptionIds);
+
     const success = await sendOneSignalNotification({
-      playerIds,
+      playerIds: subscriptionIds,
       title,
       message,
       url,
@@ -97,7 +154,7 @@ serve(async (req) => {
 
     if (success) {
       return new Response(
-        JSON.stringify({ success: true, sent: playerIds.length }),
+        JSON.stringify({ success: true, sent: subscriptionIds.length }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } else {

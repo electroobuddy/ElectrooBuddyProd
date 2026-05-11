@@ -78,6 +78,7 @@ const AdminSubscriptions = lazy(() => import("@/components/AdminSubscriptions"))
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const TestFCMNotifications = lazy(() => import("./pages/TestFCMNotifications"));
 const TestOneSignalNotifications = lazy(() => import("./pages/TestOneSignalNotifications"));
+const OneSignalDebug = lazy(() => import("./pages/OneSignalDebug"));
 
 const queryClient = new QueryClient();
 
@@ -166,6 +167,7 @@ const AppContent = () => {
             <Route path="/subscription-success" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><SubscriptionSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/test-fcm" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><TestFCMNotifications /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/test-onesignal" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><TestOneSignalNotifications /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/onesignal-debug" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><OneSignalDebug /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Terms /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/products" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Products /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/products/:slug" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><ProductDetails /></AsyncErrorBoundary></Suspense></PageTransition>} />
