@@ -172,7 +172,7 @@ const AdminNotifications = () => {
   const handleResendPush = async (notification: AdminNotification) => {
     setActionLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('send-push-notification', {
+      const { error } = await supabase.functions.invoke('send-fcm-notification', {
         body: {
           userId: notification.user_id,
           title: notification.title,
@@ -188,7 +188,7 @@ const AdminNotifications = () => {
       toast.success("Push notification resent successfully");
     } catch (error: any) {
       console.error("Error resending push notification:", error);
-      toast.error("Failed to resend push notification");
+      toast.error("Failed to resend push notification: " + (error.message || "Unknown error"));
     } finally {
       setActionLoading(false);
     }

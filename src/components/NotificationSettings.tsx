@@ -4,12 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   isPushSupported, 
-  getNotificationPermission, 
-  requestNotificationPermission,
+  getNotificationPermission,
   subscribeToPush,
   unsubscribeFromPush,
-  hasActiveSubscription
-} from "@/utils/pushNotifications";
+  hasActiveSubscription,
+  requestNotificationPermission
+} from "@/utils/firebaseNotifications";
 
 interface NotificationSettingsProps {
   userId: string | null;
