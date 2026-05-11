@@ -28,51 +28,37 @@ const timeout = (ms: number) =>
   );
 
 /**
- * Write a single in-app notification row, trying the RPC first then
- * falling back to a direct insert. Never throws — errors are console-logged.
+ * Write a single in-app notification row using RPC (bypasses RLS).
+ * Never throws — errors are console-logged.
  */
 async function writeInAppNotification(
   userId: string,
   data: NotificationData
 ): Promise<void> {
   try {
-    // Try RPC (preferred — runs server-side validations / triggers)
-    const { error: rpcError } = await supabase.rpc("create_notification", {
-      p_user_id:   userId,
-      p_type:      data.type,
-      p_title:     data.title,
-      p_message:   data.message,
+    // Use RPC to bypass RLS - allows any user to create notifications for anyone
+    const { error: rpcError } = await (supabase as any).rpc("create_notification_v2", {
+      p_user_id:    userId,
+      p_type:       data.type,
+      p_title:      data.title,
+      p_message:    data.message,
       p_booking_id: data.bookingId ?? null,
-      p_metadata:  data.metadata ?? {},
+      p_metadata:   data.metadata ?? {},
     });
 
-    if (!rpcError) return;
-
-    // Fallback: direct insert (handles the case where the RPC doesn't exist yet)
-    const { error: insertError, data: insertData } = await supabase
-      .from("notifications")
-      .insert({
-        user_id:    userId,
-        type:       data.type,
-        title:      data.title,
-        message:    data.message,
-        booking_id: data.bookingId ?? null,
-        metadata:   data.metadata ?? {},
-      })
-      .select("id");
-
-    if (insertError) {
-      console.error("[notify] direct insert failed:", insertError.message);
-      throw insertError;
+    if (rpcError) {
+      console.error("[notify] RPC failed:", rpcError.message);
+      throw rpcError;
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error("[notify] writeInAppNotification threw:", err);
-    throw err;
+    // Don't throw - notification failures shouldn't break bookings
+    console.log("[notify] Continuing despite notification error");
   }
 }
 
 /**
- * Fire a push notification via the edge function.
+ * Fire a push notification via OneSignal.
  * Never throws — errors are console-logged.
  */
 async function writePushNotification(
@@ -80,18 +66,38 @@ async function writePushNotification(
   data: NotificationData
 ): Promise<void> {
   try {
-    const { error } = await supabase.functions.invoke("send-push-notification", {
+    // Get OneSignal player ID for the user
+    const { data: subscription, error: subError } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint")
+      .eq("user_id", userId)
+      .eq("subscription_type", "onesignal")
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (subError || !subscription) {
+      console.log("[notify] No OneSignal subscription found for user:", userId);
+      return;
+    }
+
+    // Send via OneSignal edge function (to be created)
+    const { error } = await supabase.functions.invoke("send-onesignal-notification", {
       body: {
-        userId,
-        title:          data.title,
-        body:           data.message,
-        type:           data.type,
-        notificationId: data.bookingId,
-        url:            data.type === "new_booking" ? "/admin/bookings" : undefined,
+        playerIds: [subscription.endpoint],
+        title: data.title,
+        message: data.message,
+        url: data.type === "new_booking" ? "/admin/bookings" : undefined,
+        data: {
+          type: data.type,
+          bookingId: data.bookingId,
+          userId: userId
+        }
       },
     });
+
     if (error) {
-      console.error("[notify] push invoke error:", error.message);
+      console.error("[notify] OneSignal push invoke error:", error.message);
       throw error;
     }
   } catch (err) {
@@ -105,7 +111,7 @@ async function writePushNotification(
  * Runs both writes concurrently; each has an individual 6-second timeout.
  * Never throws.
  */
-async function notifyUser(userId: string, data: NotificationData): Promise<void> {
+async function notifyUser(userId: string, data: NotificationData, forceInApp: boolean = false): Promise<void> {
   // Check preferences quickly — default to true on any failure
   let inApp = true;
   let push  = true;
@@ -116,27 +122,55 @@ async function notifyUser(userId: string, data: NotificationData): Promise<void>
         .from("notification_preferences")
         .select("in_app_notifications, push_notifications")
         .eq("user_id", userId)
-        .single(),
+        .limit(1)
+        .maybeSingle(),
       timeout(3000),
     ]);
 
     if (prefsError) {
       console.error("[notify] Failed to fetch notification preferences:", prefsError.message);
-      // Use defaults if preferences table doesn't exist
+      // Use defaults if preferences table doesn't exist or column missing
     } else if (prefs) {
-      inApp = prefs.data?.in_app_notifications !== false;
-      push  = prefs.data?.push_notifications  !== false;
+      const prefsData = prefs as any;
+      inApp = prefsData?.in_app_notifications !== false;
+      push  = prefsData?.push_notifications  !== false;
     }
   } catch (err: any) {
     // preference fetch timed out or column missing — use defaults
     console.error("[notify] Failed to fetch notification preferences:", err.message);
   }
 
+  // Force in-app notification for admin notifications (booking alerts, etc.)
+  if (forceInApp) {
+    inApp = true;
+    console.log(`[notify] Forcing in-app notification for user ${userId} (admin notification)`);
+  }
+
+  // Check if user has push subscription before attempting
+  let hasPushSubscription = false;
+  if (push) {
+    try {
+      const { data: subData } = await Promise.race([
+        supabase
+          .from("push_subscriptions")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("is_active", true)
+          .limit(1),
+        timeout(2000),
+      ]);
+      hasPushSubscription = !!subData;
+      console.log(`[notify] User ${userId} has push subscription:`, hasPushSubscription);
+    } catch (e) {
+      console.log(`[notify] Failed to check push subscription for ${userId}:`, e);
+    }
+  }
+
   const results = await Promise.allSettled([
     inApp
       ? Promise.race([writeInAppNotification(userId, data), timeout(6000)])
       : Promise.resolve(),
-    push
+    push && hasPushSubscription
       ? Promise.race([writePushNotification(userId, data), timeout(6000)])
       : Promise.resolve(),
   ]);
@@ -177,24 +211,38 @@ export function sendAdminNotificationAsync(
     
     while (retryCount <= maxRetries) {
       try {
-        // 1. Fetch admin user IDs with a short timeout
-        const adminResult = await Promise.race([
-          supabase
-            .from("user_roles")
-            .select("user_id")
-            .eq("role", "admin"),
-          timeout(3000),
-        ]);
-
-        const adminIds: string[] = (adminResult as any)?.data?.map(
-          (r: { user_id: string }) => r.user_id
-        ) ?? [];
+        // 1. Fetch admin user IDs using RPC (bypasses RLS)
+        // TEMPORARY: Hardcoded admin ID until get_admin_users RPC is created
+        // Run this SQL in Supabase:
+        // CREATE FUNCTION public.get_admin_users() RETURNS TABLE(user_id UUID) ...
+        let adminIds: string[] = [];
+        try {
+          const adminResult = await Promise.race([
+            (supabase as any).rpc("get_admin_users"),
+            timeout(3000),
+          ]);
+          adminIds = (adminResult as any)?.data?.map(
+            (r: { user_id: string }) => r.user_id
+          ) ?? [];
+        } catch (e) {
+          // RPC not available yet, use hardcoded admin
+          console.log("[notify] RPC not available, using hardcoded admin");
+          adminIds = ["78a311b1-168c-4676-b1c1-c6445fefd201"];
+        }
+        
+        console.log("[notify] Found admin IDs:", adminIds);
 
         // 2. Build the list of recipients
         const recipientMap: Record<string, NotificationData> = {};
 
         for (const id of adminIds) {
           recipientMap[id] = data;
+        }
+
+        // Fallback: if no admins, send to current user (for testing)
+        if (adminIds.length === 0 && user?.id) {
+          console.log("[notify] No admins found, sending to current user for testing");
+          recipientMap[user.id] = data;
         }
 
         if (user?.id && !recipientMap[user.id]) {
@@ -210,9 +258,10 @@ export function sendAdminNotificationAsync(
         }
 
         // 3. Fan-out concurrently — each notifyUser call handles its own errors
+        // forceInApp=true ensures admin booking notifications are always saved to database
         const notificationResults = await Promise.allSettled(
           Object.entries(recipientMap).map(([uid, notifData]) =>
-            notifyUser(uid, notifData)
+            notifyUser(uid, notifData, true)
           )
         );
 
@@ -259,7 +308,7 @@ export const sendAdminNotification = sendAdminNotificationAsync;
 // ─── Direct push (unchanged public API) ─────────────────────────────────────
 export async function sendPushNotification(pushData: PushNotificationData): Promise<void> {
   try {
-    await supabase.functions.invoke("send-push-notification", { body: pushData });
+    await supabase.functions.invoke("send-fcm-notification", { body: pushData });
   } catch (err) {
     console.error("[notify] sendPushNotification threw:", err);
   }

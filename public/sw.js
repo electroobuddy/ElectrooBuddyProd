@@ -15,6 +15,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Push event - handle incoming push notifications
+// Note: Firebase FCM uses firebase-messaging-sw.js, this handles VAPID/Web Push
 self.addEventListener('push', function(event) {
   console.log('[Service Worker] Push received', event);
   
@@ -23,6 +24,13 @@ self.addEventListener('push', function(event) {
     data = event.data?.json() || {};
   } catch (e) {
     console.error('[Service Worker] Failed to parse push data:', e);
+  }
+  
+  // Check if this is an FCM message (has special FCM format)
+  if (data.from === 'firebase' || data.notification) {
+    console.log('[Service Worker] FCM message detected, delegating to Firebase SW');
+    // Let Firebase service worker handle FCM messages
+    return;
   }
   
   const options = {

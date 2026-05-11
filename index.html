@@ -263,6 +263,21 @@
       ]
     }
     </script>
+
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "01fda38a-4a53-4f72-9c10-2d4c9db304f0",
+          safari_web_id: "web.onesignal.auto.1b5ff574-1f63-4acf-ab26-dadb313db610",
+          notifyButton: {
+            enable: true,
+          },
+        });
+      });
+    </script>
 </head>
 
   <body>

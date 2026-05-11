@@ -313,12 +313,37 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     if (user) payload.user_id = user.id;
 
     try {
-      // ── DB insert with 8s timeout (free tier optimized) ─────────────────────
-      const { data: booking, error: bookingError } = await withTimeout(
-        supabase.from("bookings").insert(payload).select("id, name, service_type, preferred_date").single() as unknown as Promise<any>,
-        8000,
-        "booking-insert"
-      );
+      // ── DB insert with 12s timeout (more reliable) ─────────────────────
+      let booking = null;
+      let bookingError = null;
+      
+      try {
+        const result = await withTimeout(
+          supabase.from("bookings").insert(payload).select("id, name, service_type, preferred_date").single() as unknown as Promise<any>,
+          12000,
+          "booking-insert"
+        );
+        booking = result.data;
+        bookingError = result.error;
+      } catch (timeoutErr: any) {
+        // Timeout - check if booking was saved by querying with phone
+        const { data: existing } = await supabase
+          .from("bookings")
+          .select("id, name, service_type, preferred_date")
+          .eq("phone", form.phone.trim())
+          .eq("service_type", form.service_type === "Custom Service" ? `Custom: ${form.custom_service_demand.trim()}` : form.service_type)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (existing) {
+          booking = existing;
+          console.log("Booking recovered from timeout:", booking.id);
+        } else {
+          throw timeoutErr;
+        }
+      }
+      
       if (bookingError) throw bookingError;
 
       lastHashRef.current = hash;

@@ -76,6 +76,8 @@ const TechnicianSignUp = lazy(() => import("./pages/technician/TechnicianSignUp"
 const Subscriptions = lazy(() => import("@/components/Subscriptions"));
 const AdminSubscriptions = lazy(() => import("@/components/AdminSubscriptions"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
+const TestFCMNotifications = lazy(() => import("./pages/TestFCMNotifications"));
+const TestOneSignalNotifications = lazy(() => import("./pages/TestOneSignalNotifications"));
 
 const queryClient = new QueryClient();
 
@@ -162,6 +164,8 @@ const AppContent = () => {
             <Route path="/privacy" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Privacy /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/subscriptions" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Subscriptions /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/subscription-success" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><SubscriptionSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/test-fcm" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><TestFCMNotifications /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/test-onesignal" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><TestOneSignalNotifications /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/terms" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Terms /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/products" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Products /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/products/:slug" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><ProductDetails /></AsyncErrorBoundary></Suspense></PageTransition>} />

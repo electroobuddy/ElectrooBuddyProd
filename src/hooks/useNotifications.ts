@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { hasActiveSubscription } from "@/utils/pushNotifications";
+import { hasActiveSubscription } from "@/utils/firebaseNotifications";
 
 export interface Notification {
   id: string;
@@ -154,7 +154,7 @@ export const useNotifications = (userId: string | null) => {
       const hasSubscription = await hasActiveSubscription(userId);
       if (!hasSubscription) return;
 
-      await supabase.functions.invoke("send-push-notification", {
+      await supabase.functions.invoke("send-fcm-notification", {
         body: {
           userId:         notification.user_id,
           title:          notification.title,
