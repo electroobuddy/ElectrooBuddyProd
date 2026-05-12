@@ -17,6 +17,7 @@ import BookingModal from "@/components/BookingModal";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AsyncErrorBoundary from "@/components/AsyncErrorBoundary";
+import { initializeBrowserNotifications, setupRealtimeSubscription, isNotificationSupported } from "@/utils/browserNotifications";
 
 // Lazy load heavy components
 const Index = lazy(() => import("./pages/Index"));
@@ -96,6 +97,17 @@ const AppContent = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Initialize browser notifications for admin dashboard
+  useEffect(() => {
+    if (isAdmin && isNotificationSupported()) {
+      // Initialize browser notifications
+      initializeBrowserNotifications();
+      // Set up realtime subscription for new bookings
+      setupRealtimeSubscription();
+      console.log('[App] Browser notifications and realtime initialized for admin');
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!mounted || !shouldCheckModal) return;

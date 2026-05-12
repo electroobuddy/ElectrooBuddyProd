@@ -46,25 +46,46 @@ const PushNotificationPrompt = ({ userId }: PushNotificationPromptProps) => {
   const checkSubscription = async () => {
     if (!userId) return;
     
+    console.log('[PushNotificationPrompt] Checking subscription status...');
+    
     // Check database for active subscription
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("push_subscriptions")
-      .select("is_active")
+      .select("is_active, endpoint")
       .eq("user_id", userId)
       .eq("subscription_type", "onesignal")
       .eq("is_active", true)
       .limit(1)
       .maybeSingle();
     
+    if (error) {
+      console.error('[PushNotificationPrompt] Error checking subscription:', error);
+    }
+    
+    console.log('[PushNotificationPrompt] Subscription data:', data);
     setIsSubscribed(!!data);
   };
 
   const handleSubscribe = async () => {
-    if (!userId) return;
+    if (!userId) {
+      toast.error('Please log in first to enable notifications');
+      return;
+    }
     setLoading(true);
 
     try {
+      console.log('[PushNotificationPrompt] Starting subscription for user:', userId);
+      
+      // Check if OneSignal is loaded
+      if (typeof window.OneSignal === 'undefined') {
+        console.error('[PushNotificationPrompt] OneSignal SDK not loaded');
+        toast.error('OneSignal SDK not loaded. Please refresh the page.');
+        setLoading(false);
+        return;
+      }
+      
       const success = await subscribeToOneSignal(userId);
+      
       if (success) {
         setIsSubscribed(true);
         setPermission('granted');
@@ -73,12 +94,12 @@ const PushNotificationPrompt = ({ userId }: PushNotificationPromptProps) => {
         });
       } else {
         toast.error('Failed to enable push notifications', {
-          description: 'Please check your browser settings and try again.',
+          description: 'Check browser console for errors or refresh and try again.',
         });
       }
-    } catch (error) {
-      console.error('Subscription error:', error);
-      toast.error('Failed to subscribe to notifications');
+    } catch (error: any) {
+      console.error('[PushNotificationPrompt] Subscription error:', error);
+      toast.error('Failed to subscribe: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
       setShowPrompt(false);

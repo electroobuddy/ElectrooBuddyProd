@@ -1,18 +1,17 @@
-// @ts-nocheck
+// OneSignal Debug Test Component - Simplified for Testing
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Bell, CheckCircle, XCircle, AlertCircle, RefreshCw, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-const OneSignalDebug = () => {
+const OneSignalDebugTest = () => {
   const { user } = useAuth();
   const [logs, setLogs] = useState<string[]>([]);
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [permission, setPermission] = useState<string>('default');
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [dbSubscription, setDbSubscription] = useState<any>(null);
-  const [pushSubObject, setPushSubObject] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const log = (message: string) => {
@@ -21,35 +20,45 @@ const OneSignalDebug = () => {
   };
 
   useEffect(() => {
-    log('Starting OneSignal debug...');
-    checkSDKStatus();
+    log('🚀 Starting OneSignal Debug Test...');
+    checkOneSignalScript();
     checkPermission();
     
-    // Delay subscription check to allow SDK to initialize
-    const timer = setTimeout(() => {
-      checkSubscriptionStatus();
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const checkSDKStatus = () => {
-    log(`Window.OneSignal exists: ${!!window.OneSignal}`);
-    log(`OneSignalDeferred exists: ${!!window.OneSignalDeferred}`);
-
+    // Check if OneSignal is already loaded
     if (window.OneSignal) {
       setSdkLoaded(true);
-      log('✅ OneSignal SDK loaded successfully');
-      
-      // Log SDK structure
-      log(`OneSignal.User exists: ${!!window.OneSignal.User}`);
-      log(`OneSignal.Notifications exists: ${!!window.OneSignal.Notifications}`);
-      
-      if (window.OneSignal.User) {
-        log(`OneSignal.User.PushSubscription exists: ${!!window.OneSignal.User.PushSubscription}`);
-      }
+      log('✅ OneSignal SDK already loaded');
+      checkSubscriptionStatus();
     } else {
-      log('❌ OneSignal SDK not loaded - check index.html');
+      log('⏳ Waiting for OneSignal to load...');
+      // Wait for script to load
+      const timer = setInterval(() => {
+        if (window.OneSignal) {
+          setSdkLoaded(true);
+          log('✅ OneSignal SDK loaded');
+          clearInterval(timer);
+          checkSubscriptionStatus();
+        }
+      }, 500);
+      
+      // Stop checking after 10 seconds
+      setTimeout(() => clearInterval(timer), 10000);
+    }
+  }, []);
+
+  const checkOneSignalScript = () => {
+    // Check if OneSignal script is in the page
+    const scripts = document.querySelectorAll('script');
+    const oneSignalScript = Array.from(scripts).find(script => 
+      script.src?.includes('onesignal') || script.innerHTML?.includes('OneSignal')
+    );
+    
+    log(`📜 OneSignal script in page: ${!!oneSignalScript}`);
+    
+    if (!oneSignalScript) {
+      log('❌ OneSignal script not found - add to index.html');
+      log('📝 Add this to index.html head:');
+      log('<script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>');
     }
   };
 
@@ -64,44 +73,36 @@ const OneSignalDebug = () => {
   };
 
   const checkSubscriptionStatus = async () => {
-    log('🔍 Checking subscription status...');
-    
     if (!window.OneSignal) {
       log('❌ OneSignal SDK not available');
       return;
     }
 
     try {
-      // Import the initialization function
-      const { initializeOneSignal } = await import('@/utils/oneSignalNotifications');
+      log('🔍 Checking subscription status...');
       
-      // Try using the proper initialization flow
-      log('🔄 Running proper OneSignal initialization...');
-      const subscriptionId = await initializeOneSignal();
-      
-      if (subscriptionId) {
-        setPlayerId(subscriptionId);
-        log(`✅ Subscription ID obtained: ${subscriptionId}`);
-        await checkDatabaseStatus(subscriptionId);
+      // Check if user is logged in
+      if (!user) {
+        log('⚠️ Not logged in - subscription will not be saved');
+      }
+
+      // Try to get current subscription
+      if (window.OneSignal.User?.PushSubscription) {
+        const pushSub = window.OneSignal.User.PushSubscription;
+        log('📊 PushSubscription object:');
+        log(JSON.stringify(pushSub, null, 2));
         
-        // Set PushSubscription object for display
-        if (window.OneSignal.User?.PushSubscription) {
-          const pushSub = window.OneSignal.User.PushSubscription;
-          setPushSubObject(pushSub);
-          log('📊 PushSubscription object captured for display');
+        const subscriptionId = pushSub.id || pushSub.token || pushSub.subscriptionId;
+        
+        if (subscriptionId) {
+          setPlayerId(subscriptionId);
+          log(`✅ Subscription ID: ${subscriptionId}`);
+          await checkDatabaseStatus(subscriptionId);
+        } else {
+          log('⚠️ No subscription ID found');
         }
       } else {
-        log('⚠️ Failed to get subscription ID');
-        
-        // Log additional diagnostic info
-        if (window.OneSignal.User) {
-          log('OneSignal.User structure: ' + JSON.stringify(Object.keys(window.OneSignal.User)));
-        }
-        if (window.OneSignal.User?.PushSubscription) {
-          const ps = window.OneSignal.User.PushSubscription;
-          log('PushSubscription keys: ' + JSON.stringify(Object.keys(ps)));
-          log('PushSubscription values: ' + JSON.stringify(ps, null, 2));
-        }
+        log('❌ PushSubscription not available');
       }
     } catch (error) {
       log(`❌ Error checking subscription: ${error.message}`);
@@ -115,6 +116,8 @@ const OneSignalDebug = () => {
     }
 
     try {
+      log('🔍 Checking database for subscription...');
+      
       const { data, error } = await supabase
         .from('push_subscriptions')
         .select('*')
@@ -127,9 +130,13 @@ const OneSignalDebug = () => {
         log(`❌ Database error: ${error.message}`);
       } else if (data) {
         setDbSubscription(data);
-        log(`✅ Database subscription found: ${data.is_active ? 'Active' : 'Inactive'}`);
+        log(`✅ Database subscription found:`);
+        log(`   - Active: ${data.is_active}`);
+        log(`   - Browser: ${data.browser}`);
+        log(`   - Device: ${data.device_type}`);
+        log(`   - Created: ${data.created_at}`);
       } else {
-        log('⚠️ No database subscription found - need to save');
+        log('⚠️ No database subscription found');
       }
     } catch (error) {
       log(`❌ Database check error: ${error.message}`);
@@ -144,37 +151,83 @@ const OneSignalDebug = () => {
 
     setLoading(true);
     try {
-      // Check if already granted
-      const perm = Notification.permission;
-      if (perm === 'granted') {
-        log('✅ Permission already granted');
-        
-        // Just call optIn if permission is already granted
-        if (window.OneSignal.User?.PushSubscription?.optIn) {
-          log('Calling optIn()...');
-          await window.OneSignal.User.PushSubscription.optIn();
-          log('✅ optIn() called successfully');
-        }
-        
-        // Re-check subscription after permission
-        setTimeout(() => checkSubscriptionStatus(), 2000);
-        return;
-      }
-      
-      log('Requesting notification permission...');
+      log('🔔 Requesting notification permission...');
       
       if (window.OneSignal.Notifications?.requestPermission) {
         const result = await window.OneSignal.Notifications.requestPermission();
         setPermission(result);
         log(`Permission result: ${result}`);
-        toast.success(`Permission: ${result}`);
         
-        // Re-check subscription after permission
-        setTimeout(() => checkSubscriptionStatus(), 2000);
+        if (result === 'granted') {
+          toast.success('Permission granted! Checking subscription...');
+          setTimeout(() => checkSubscriptionStatus(), 2000);
+        } else {
+          toast.error(`Permission denied: ${result}`);
+        }
+      } else {
+        log('❌ requestPermission not available');
       }
     } catch (error) {
       log(`❌ Permission request failed: ${error.message}`);
       toast.error(`Permission request failed: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const subscribeToPush = async () => {
+    if (!window.OneSignal) {
+      toast.error("OneSignal SDK not loaded");
+      return;
+    }
+
+    if (!user) {
+      toast.error("Please log in first");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      log('🔔 Subscribing to push notifications...');
+      
+      // Login to OneSignal with user ID
+      if (window.OneSignal.User?.login) {
+        log(`👤 Logging in user: ${user.id}`);
+        await window.OneSignal.User.login(user.id);
+      }
+
+      // Request permission if not granted
+      const currentPermission = Notification.permission;
+      if (currentPermission !== 'granted') {
+        if (window.OneSignal.Notifications?.requestPermission) {
+          const permResult = await window.OneSignal.Notifications.requestPermission();
+          log(`Permission result: ${permResult}`);
+          
+          if (permResult !== 'granted') {
+            toast.error(`Permission denied: ${permResult}`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // Opt in to push notifications
+      if (window.OneSignal.User?.PushSubscription?.optIn) {
+        log('📞 Calling optIn()...');
+        await window.OneSignal.User.PushSubscription.optIn();
+        log('✅ optIn() called successfully');
+      }
+      
+      // Wait for subscription to be established
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Check subscription status again
+      await checkSubscriptionStatus();
+      
+      toast.success('Push subscription completed!');
+    } catch (error) {
+      log(`❌ Subscription failed: ${error.message}`);
+      toast.error(`Subscription failed: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -188,7 +241,7 @@ const OneSignalDebug = () => {
 
     setLoading(true);
     try {
-      log('Saving subscription to database...');
+      log('💾 Saving subscription to database...');
       
       const ua = navigator.userAgent;
       const browser = /Chrome/.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'Other';
@@ -229,36 +282,9 @@ const OneSignalDebug = () => {
     }
   };
 
-  const manualOptIn = async () => {
-    if (!window.OneSignal) {
-      toast.error("OneSignal SDK not loaded");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      log('🔄 Attempting manual optIn...');
-      
-      if (window.OneSignal.User?.PushSubscription?.optIn) {
-        await window.OneSignal.User.PushSubscription.optIn();
-        log('✅ optIn() called');
-        
-        // Wait and check
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setTimeout(() => checkSubscriptionStatus(), 2000);
-      } else {
-        log('❌ optIn not available');
-      }
-    } catch (error) {
-      log(`❌ optIn failed: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const refreshAll = () => {
     setLogs([]);
-    checkSDKStatus();
+    checkOneSignalScript();
     checkPermission();
     checkSubscriptionStatus();
   };
@@ -272,7 +298,7 @@ const OneSignalDebug = () => {
       <div className="max-w-4xl mx-auto">
         <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-6">
           <h1 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-white">
-            OneSignal Debug Console
+            OneSignal Debug Test
           </h1>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -336,12 +362,12 @@ const OneSignalDebug = () => {
               Request Permission
             </button>
             <button
-              onClick={manualOptIn}
+              onClick={subscribeToPush}
               disabled={!sdkLoaded || loading}
               className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center gap-2"
             >
               <Bell className="w-4 h-4" />
-              Manual optIn
+              Subscribe to Push
             </button>
             <button
               onClick={saveToDatabase}
@@ -374,19 +400,9 @@ const OneSignalDebug = () => {
                 ) : playerId ? (
                   <p>⚠️ Subscription ID obtained but not saved to database. Click "Save to DB" button.</p>
                 ) : (
-                  <p>ℹ️ No subscription ID yet. Request permission first.</p>
+                  <p>ℹ️ No subscription ID yet. Click "Subscribe to Push" button.</p>
                 )}
               </div>
-            </div>
-          )}
-
-          {/* PushSubscription Object */}
-          {pushSubObject && (
-            <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <h3 className="font-medium text-purple-900 dark:text-purple-200 mb-2">PushSubscription Object</h3>
-              <pre className="text-xs text-purple-700 dark:text-purple-300 overflow-x-auto">
-                {JSON.stringify(pushSubObject, null, 2)}
-              </pre>
             </div>
           )}
 
@@ -409,4 +425,4 @@ const OneSignalDebug = () => {
   );
 };
 
-export default OneSignalDebug;
+export default OneSignalDebugTest;

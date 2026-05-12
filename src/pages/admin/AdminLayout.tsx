@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import { initializeBrowserNotifications, isNotificationSupported, getNotificationPermission } from "@/utils/browserNotifications";
 
 const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000;
 
@@ -74,6 +75,19 @@ const AdminLayout = () => {
     const events = ["mousedown", "keydown", "scroll", "touchstart"];
     events.forEach(e => document.addEventListener(e, updateActivity));
     resetTimeouts();
+    
+    // Initialize browser notifications for admin
+    if (isNotificationSupported() && getNotificationPermission() !== 'granted') {
+      initializeBrowserNotifications().then(granted => {
+        if (granted) {
+          console.log('[AdminLayout] Browser notifications enabled');
+          toast.success('🔔 Browser notifications enabled', {
+            description: 'You will receive real-time alerts for new bookings.',
+          });
+        }
+      });
+    }
+    
     return () => {
       events.forEach(e => document.removeEventListener(e, updateActivity));
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);

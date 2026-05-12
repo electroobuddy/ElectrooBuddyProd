@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { showBrowserNotification, setupRealtimeSubscription, isNotificationSupported } from './browserNotifications';
 
 export interface NotificationData {
   title: string;
@@ -17,6 +18,33 @@ export interface PushNotificationData {
   type: string;
   url?: string;
   notificationId?: string;
+}
+
+// ─── Browser Notification Helper ──────────────────────────────────
+
+async function sendBrowserNotification(userId: string, data: NotificationData): Promise<void> {
+  if (!isNotificationSupported() || Notification.permission !== 'granted') {
+    console.log('[notify] Browser notifications not available for user:', userId);
+    return;
+  }
+
+  try {
+    await showBrowserNotification({
+      title: data.title,
+      body: data.message,
+      tag: `notification-${Date.now()}`,
+      data: {
+        type: data.type,
+        bookingId: data.bookingId,
+        customerName: data.customerName,
+        service: data.service,
+      },
+      url: data.type === 'new_booking' ? '/admin/bookings' : undefined,
+    });
+    console.log('[notify] Browser notification shown');
+  } catch (error) {
+    console.error('[notify] Browser notification error:', error);
+  }
 }
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
@@ -81,8 +109,10 @@ async function writePushNotification(
       return;
     }
 
-    // Send via OneSignal edge function (to be created)
-    const { error } = await supabase.functions.invoke("send-onesignal-notification", {
+    console.log("[notify] Found OneSignal subscription:", subscription.endpoint);
+
+    // Send via OneSignal edge function
+    const { error, data: result } = await supabase.functions.invoke("send-onesignal-notification", {
       body: {
         playerIds: [subscription.endpoint],
         title: data.title,
@@ -91,7 +121,9 @@ async function writePushNotification(
         data: {
           type: data.type,
           bookingId: data.bookingId,
-          userId: userId
+          userId: userId,
+          customerName: data.customerName,
+          service: data.service
         }
       },
     });
@@ -100,6 +132,8 @@ async function writePushNotification(
       console.error("[notify] OneSignal push invoke error:", error.message);
       throw error;
     }
+
+    console.log("[notify] OneSignal push sent successfully:", result);
   } catch (err) {
     console.error("[notify] writePushNotification threw:", err);
     throw err;
@@ -123,7 +157,7 @@ async function notifyUser(userId: string, data: NotificationData, forceInApp: bo
         .select("in_app_notifications, push_notifications")
         .eq("user_id", userId)
         .limit(1)
-        .maybeSingle(),
+        .maybeSingle() as any,
       timeout(3000),
     ]);
 
@@ -146,7 +180,6 @@ async function notifyUser(userId: string, data: NotificationData, forceInApp: bo
     console.log(`[notify] Forcing in-app notification for user ${userId} (admin notification)`);
   }
 
-  // Check if user has push subscription before attempting
   let hasPushSubscription = false;
   if (push) {
     try {
@@ -156,7 +189,7 @@ async function notifyUser(userId: string, data: NotificationData, forceInApp: bo
           .select("id")
           .eq("user_id", userId)
           .eq("is_active", true)
-          .limit(1),
+          .limit(1) as any,
         timeout(2000),
       ]);
       hasPushSubscription = !!subData;
@@ -173,6 +206,8 @@ async function notifyUser(userId: string, data: NotificationData, forceInApp: bo
     push && hasPushSubscription
       ? Promise.race([writePushNotification(userId, data), timeout(6000)])
       : Promise.resolve(),
+    // Always try browser notification for admin
+    Promise.race([sendBrowserNotification(userId, data), timeout(3000)]),
   ]);
 
   // Log individual failures for debugging
@@ -308,7 +343,7 @@ export const sendAdminNotification = sendAdminNotificationAsync;
 // ─── Direct push (unchanged public API) ─────────────────────────────────────
 export async function sendPushNotification(pushData: PushNotificationData): Promise<void> {
   try {
-    await supabase.functions.invoke("send-fcm-notification", { body: pushData });
+    await (supabase.functions as any).invoke("send-fcm-notification", { body: pushData });
   } catch (err) {
     console.error("[notify] sendPushNotification threw:", err);
   }
