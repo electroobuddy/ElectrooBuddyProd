@@ -18,6 +18,7 @@ import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AsyncErrorBoundary from "@/components/AsyncErrorBoundary";
 import { initializeBrowserNotifications, setupRealtimeSubscription, isNotificationSupported } from "@/utils/browserNotifications";
+import { initOneSignal } from "./utils/oneSignalutils";
 
 // Lazy load heavy components
 const Index = lazy(() => import("./pages/Index"));
@@ -97,7 +98,11 @@ const AppContent = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
-
+  useEffect(() => {
+    // ── OneSignal: initialize once on app load ──
+    // Must run client-side only (typeof window check is inside initOneSignal)
+    initOneSignal();
+  }, []);
   // Initialize browser notifications for admin dashboard
   useEffect(() => {
     if (isAdmin && isNotificationSupported()) {

@@ -8,7 +8,9 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useServicesStore } from "@/stores/servicesStore";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
-
+// ADD this line right after the sendAdminNotificationAsync import
+import { sendBookingNtfy } from "@/utils/notifyBooking";
+import { sendOneSignalNotification } from "@/utils/oneSignal";
 // Timeout wrapper for Supabase free tier optimization
 function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -17,16 +19,6 @@ function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Pro
       setTimeout(() => reject(new Error(`TIMEOUT: ${label}`)), ms)
     ),
   ]);
-}
-
-interface CouponValidation {
-  is_valid: boolean;
-  offer_id: string | null;
-  title: string | null;
-  type: string | null;
-  value: number | null;
-  message: string;
-  discount_amount: number;
 }
 
 const BookingForm = () => {
@@ -242,6 +234,28 @@ const BookingForm = () => {
     };
 
     try {
+        sendBookingNtfy(                           // NOT awaited on purpose
+        {
+          name:  form.name,
+          phone: form.phone,
+          email: form.email,
+          address: form.address,
+          service_type:
+            form.service_type === "Custom Service"
+              ? `Custom: ${form.custom_service_demand.trim()}`
+              : form.service_type,
+          preferred_date: form.preferred_date,
+          preferred_time: form.preferred_time,
+          description:    form.description,
+          exact_location: form.exact_location,
+          coupon_code:    couponCode?.trim()?.toUpperCase() || undefined,
+          is_switch_working:        form.is_switch_working        || undefined,
+          has_old_fan:              form.has_old_fan              || undefined,
+          is_electricity_supply_on: form.is_electricity_supply_on || undefined,
+        },
+        { original, discount, final },
+        !user  // true = guest booking
+      );
       // CRITICAL PATH: Insert booking with 8s timeout (free tier limit is ~10s)
       const { data: bookingData, error } = await withTimeout(
         supabase.from("bookings").insert(insertData).select("id, name, service_type, preferred_date").single(),
@@ -278,7 +292,39 @@ const BookingForm = () => {
       // BACKGROUND TASKS (fire-and-forget, never block user):
       // These run after success is shown - failures are logged but don't affect UX
       Promise.allSettled([
-        // 1. Send notifications (6s timeout)
+        // 1. Send OneSignal push notification to admin users
+        (async () => {
+          try {
+            // Get admin user IDs from database using direct query
+            const { data: adminUsers, error } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('role', 'admin')
+              .eq('is_active', true);
+            
+            if (!error && adminUsers && adminUsers.length > 0) {
+              const adminIds = adminUsers.map((admin: any) => admin.id);
+              await sendOneSignalNotification(
+                adminIds,
+                "🔔 New Booking Received",
+                `New booking from ${form.name.trim()} for ${form.service_type}`,
+                {
+                  type: "new_booking",
+                  bookingId: bookingId,
+                  customerName: form.name.trim(),
+                  service: form.service_type,
+                  customer_phone: form.phone.trim(),
+                  preferred_date: form.preferred_date,
+                  preferred_time: form.preferred_time,
+                }
+              );
+            }
+          } catch (error) {
+            console.error("OneSignal notification failed:", error);
+          }
+        })(),
+
+        // 2. Send in-app notifications (6s timeout)
         withTimeout(
           sendAdminNotificationAsync({
             title: "🔔 New Booking Received",

@@ -9,7 +9,13 @@ import {
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
-import { initializeBrowserNotifications, isNotificationSupported, getNotificationPermission } from "@/utils/browserNotifications";
+import {
+  identifyOneSignalUser,
+  logoutOneSignalUser,
+  setOneSignalTags,
+  requestOneSignalPermission,
+  getOneSignalPermission,
+} from "@/utils/oneSignalutils";
 
 const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000;
 
@@ -20,7 +26,7 @@ const navItems = [
   { label: "Categories & Coupons", to: "/admin/coupons-categories", icon: ShoppingCart, group: "store" },
   { label: "Orders",       to: "/admin/orders",       icon: ShoppingCart,    group: "store" },
   { label: "Payments",     to: "/admin/payments",     icon: DollarSign,      group: "store" },
-  { label: "Subscriptions", to: "/admin/subscriptions", icon: ShieldCheck,    group: "store" },
+  { label: "Subscriptions", to: "/admin/subscriptions", icon: ShieldCheck,   group: "store" },
   { label: "Shipping",     to: "/admin/shipping",     icon: Truck,           group: "store" },
   { label: "Services",     to: "/admin/services",     icon: Wrench,          group: "services" },
   { label: "Bookings",     to: "/admin/bookings",     icon: CalendarDays,    group: "services" },
@@ -30,7 +36,7 @@ const navItems = [
   { label: "Testimonials", to: "/admin/testimonials", icon: Star,            group: "content" },
   { label: "Projects",     to: "/admin/projects",     icon: FolderOpen,      group: "content" },
   { label: "Messages",     to: "/admin/messages",     icon: Mail,            group: "content" },
-  { label: "Notifications", to: "/admin/notifications", icon: Bell,            group: "system" },
+  { label: "Notifications", to: "/admin/notifications", icon: Bell,          group: "system" },
   { label: "Settings",     to: "/admin/settings",     icon: Settings,        group: "system" },
 ];
 
@@ -75,19 +81,36 @@ const AdminLayout = () => {
     const events = ["mousedown", "keydown", "scroll", "touchstart"];
     events.forEach(e => document.addEventListener(e, updateActivity));
     resetTimeouts();
-    
-    // Initialize browser notifications for admin
-    if (isNotificationSupported() && getNotificationPermission() !== 'granted') {
-      initializeBrowserNotifications().then(granted => {
-        if (granted) {
-          console.log('[AdminLayout] Browser notifications enabled');
-          toast.success('🔔 Browser notifications enabled', {
-            description: 'You will receive real-time alerts for new bookings.',
-          });
+
+    // ── OneSignal: identify the admin user + request permission ──────────────
+    (async () => {
+      try {
+        // Link this browser subscription to the admin's user ID
+        await identifyOneSignalUser(user.id);
+        // Tag the user as admin for targeted notifications
+        await setOneSignalTags({
+          role: "admin",
+          email: user.email || "",
+          user_id: user.id,
+        });
+        // Request push permission if not already granted
+        if (getOneSignalPermission() !== "granted") {
+          const granted = await requestOneSignalPermission();
+          if (granted) {
+            console.log("[AdminLayout] OneSignal push permission granted");
+            toast.success("Bell Push notifications enabled", {
+              description: "You will receive real-time alerts for new bookings.",
+            });
+          }
+        } else {
+          console.log("[AdminLayout] OneSignal already subscribed");
         }
-      });
-    }
-    
+      } catch (err) {
+        console.warn("[AdminLayout] OneSignal setup error (non-fatal):", err);
+      }
+    })();
+    // ────────────────────────────────────────────────────────────────────────
+
     return () => {
       events.forEach(e => document.removeEventListener(e, updateActivity));
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
@@ -96,6 +119,7 @@ const AdminLayout = () => {
   }, [user, isAdmin, resetTimeouts]);
 
   const handleAutoSignOut = async () => {
+    await logoutOneSignalUser();
     await signOut();
     toast.info("Session expired", { description: "You have been automatically signed out due to inactivity." });
     navigate("/admin");
@@ -141,7 +165,7 @@ const AdminLayout = () => {
                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-colors">
                 Stay Signed In
               </button>
-              <button onClick={async () => { await signOut(); navigate("/admin"); }}
+              <button onClick={async () => { await logoutOneSignalUser(); await signOut(); navigate("/admin"); }}
                 className="flex-1 py-2.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-semibold text-sm rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
                 Sign Out
               </button>
@@ -208,7 +232,7 @@ const AdminLayout = () => {
         {/* Sign out — always visible at bottom */}
         <div className="flex-shrink-0 px-2 py-3 border-t border-zinc-800">
           <p className="text-xs text-zinc-500 truncate px-3 mb-2">{user.email}</p>
-          <button onClick={async () => { await signOut(); navigate("/admin"); }}
+          <button onClick={async () => { await logoutOneSignalUser(); await signOut(); navigate("/admin"); }}
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all w-full group">
             <LogOut className="w-4 h-4 flex-shrink-0 text-zinc-500 group-hover:text-zinc-300" />
             Sign Out
@@ -267,7 +291,7 @@ const AdminLayout = () => {
             </nav>
             <div className="flex-shrink-0 px-2 py-3 border-t border-zinc-800">
               <p className="text-xs text-zinc-500 truncate px-3 mb-2">{user.email}</p>
-              <button onClick={async () => { await signOut(); setMobileOpen(false); navigate("/admin"); }}
+              <button onClick={async () => { await logoutOneSignalUser(); await signOut(); setMobileOpen(false); navigate("/admin"); }}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all w-full">
                 <LogOut className="w-4 h-4 flex-shrink-0 text-zinc-500" /> Sign Out
               </button>

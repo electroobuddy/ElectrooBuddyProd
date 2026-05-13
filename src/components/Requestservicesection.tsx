@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { PHONE_NUMBER } from "@/data/services";
 import { useServicesStore } from "@/stores/servicesStore";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
+import { sendOneSignalNotification } from "@/utils/oneSignal";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -351,6 +352,40 @@ export default function RequestServiceSection({ preselectedService, preselectedO
 
       // ── Background tasks — never block user ───────────────────────────────
       Promise.allSettled([
+        // 1. Send OneSignal push notification to admin users
+        (async () => {
+          try {
+            // Get admin user IDs from database using direct query
+            const { data: adminUsers, error } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('role', 'admin')
+              .eq('is_active', true);
+            
+            if (!error && adminUsers && adminUsers.length > 0) {
+              const adminIds = adminUsers.map((admin: any) => admin.id);
+              await sendOneSignalNotification(
+                adminIds,
+                "🔔 New Service Request",
+                `New booking from ${form.name.trim()} for ${form.service_type}` +
+                (form.preferred_date ? ` on ${form.preferred_date}` : ""),
+                {
+                  type: "new_booking",
+                  bookingId: booking.id,
+                  customerName: form.name.trim(),
+                  service: form.service_type,
+                  customer_phone: form.phone.trim(),
+                  preferred_date: form.preferred_date,
+                  preferred_time: form.preferred_time,
+                }
+              );
+            }
+          } catch (error) {
+            console.error("OneSignal notification failed:", error);
+          }
+        })(),
+
+        // 2. Auto-assign technician
         withTimeout(
           supabase.functions.invoke("auto-assign-technician", { body: { bookingId: booking.id } }) as Promise<any>,
           10_000, "auto-assign"
@@ -358,6 +393,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
           if (r?.success) toast.info(`Technician ${r.technician?.name} assigned.`, { duration: 4000 });
         }).catch(() => {}),
 
+        // 3. Send in-app notifications
         withTimeout(
           sendAdminNotificationAsync(
             {

@@ -3,6 +3,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Zap, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  identifyOneSignalUser,
+  requestOneSignalPermission,
+  setOneSignalTags,
+  getOneSignalPermission,
+} from "@/utils/oneSignalutils";
 
 const AdminLogin = () => {
   const { isAdmin, loading, signIn, user } = useAuth();
@@ -25,13 +31,40 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+
     const { error } = await signIn(email, password);
+
     if (error) {
       toast.error(error.message || "Login failed");
-    } else {
-      // Auth state change will handle redirect
+      setSubmitting(false);
+      return;
     }
+
+    // ── OneSignal: identify user + request push permission after login ──────
+    // We do this in the background so it never blocks the redirect
+    try {
+      // We need the user from auth state — re-fetch it slightly after signIn
+      // The auth context will update via onAuthStateChange; we use email as a
+      // temporary tag since user.id isn't available yet in this scope.
+      // AdminLayout will call identifyOneSignalUser(user.id) once auth resolves.
+
+      // Request permission if not already granted
+      if (getOneSignalPermission() !== "granted") {
+        const granted = await requestOneSignalPermission();
+        if (granted) {
+          toast.success("🔔 Push notifications enabled", {
+            description: "You'll receive real-time booking alerts.",
+            duration: 4000,
+          });
+        }
+      }
+    } catch (err) {
+      // Non-fatal — never block login flow
+      console.warn("[OneSignal] Post-login setup failed:", err);
+    }
+
     setSubmitting(false);
+    // Auth state change in AdminLayout will handle redirect + full identification
   };
 
   return (
