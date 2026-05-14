@@ -2,13 +2,17 @@ import { supabase } from '@/integrations/supabase/client';
 
 declare global {
   interface Window {
-    OneSignalDeferred: Array<() => void>;
     OneSignal: {
-      isPushNotificationsEnabled: boolean;
+      init(options: { appId: string }): Promise<void>;
+      isPushNotificationsEnabled(): Promise<boolean>;
       Notifications: {
         requestPermission(): Promise<string>;
-        getUserId(appId: string): Promise<string>;
+        permission: NotificationPermission;
       };
+      getUserId(): Promise<string>;
+      login(externalId: string): Promise<void>;
+      logout(): Promise<void>;
+      addTag(key: string, value: string): Promise<void>;
     };
   }
 }
@@ -25,32 +29,22 @@ export async function initializeOneSignal(): Promise<string | null> {
 
     console.log('[OneSignal] SDK loaded, initializing...');
 
-    // Wait for OneSignal to be ready
-    await new Promise((resolve) => {
-      if (window.OneSignal.isPushNotificationsEnabled) {
-        resolve(undefined);
-      } else {
-        window.OneSignalDeferred.push(resolve);
+    // Check if already enabled
+    const isEnabled = await window.OneSignal.isPushNotificationsEnabled();
+    if (!isEnabled) {
+      const permission = await window.OneSignal.Notifications.requestPermission();
+      console.log('[OneSignal] Permission result:', permission);
+      if (permission !== 'granted') {
+        console.log('[OneSignal] Permission denied:', permission);
+        return null;
       }
-    });
-
-    // Request permission and get subscription
-    const permission = await window.OneSignal.Notifications.requestPermission();
-    console.log('[OneSignal] Permission result:', permission);
-
-    if (permission !== 'granted') {
-      console.log('[OneSignal] Permission denied:', permission);
-      return null;
     }
 
     // Get the player ID (subscription ID)
-    const appId = "01fda38a-4a53-4f72-9c10-2d4c9db304f0";
-    
-    // Try multiple times to get player ID
     let player_id = null;
     for (let i = 0; i < 3; i++) {
       try {
-        player_id = await window.OneSignal.getUserId(appId);
+        player_id = await window.OneSignal.getUserId();
         if (player_id) {
           console.log('[OneSignal] Player ID retrieved on attempt', i + 1, ':', player_id);
           break;

@@ -7,42 +7,34 @@ declare const Deno: {
   };
 };
 
-interface OneSignalNotification {
-  playerIds: string[];
-  title: string;
-  message: string;
-  url?: string;
-  data?: Record<string, string>;
-}
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function sendOneSignalNotification(notification: OneSignalNotification): Promise<boolean> {
+async function sendViaOneSignal(playerIds: string[], title: string, message: string, url?: string, data?: Record<string, string>): Promise<{ ok: boolean; details: string }> {
   const appId = Deno.env.get("ONESIGNAL_APP_ID");
   const apiKey = Deno.env.get("ONESIGNAL_API_KEY");
 
   if (!appId || !apiKey) {
-    console.error("[OneSignal] App ID or API key not configured");
-    return false;
+    return { ok: false, details: "ONESIGNAL_APP_ID or ONESIGNAL_API_KEY env var not set" };
+  }
+  if (!playerIds?.length) {
+    return { ok: false, details: "No playerIds provided" };
   }
 
   try {
     const payload = {
       app_id: appId,
-      include_player_ids: notification.playerIds,
-      headings: { en: notification.title },
-      contents: { en: notification.message },
-      url: notification.url,
-      data: notification.data || {},
+      include_player_ids: playerIds,
+      headings: { en: title },
+      contents: { en: message },
+      url,
+      data: data || {},
       chrome_web_image: "https://electroobuddy.com/favicon_io/android-chrome-192x192.png",
-      firefox_web_image: "https://electroobuddy.com/favicon_io/android-chrome-192x192.png",
-      safari_web_image: "https://electroobuddy.com/favicon_io/android-chrome-192x192.png",
     };
 
-    console.log("[OneSignal] Sending notification:", JSON.stringify(payload, null, 2));
+    console.log("[OneSignal] Sending:", JSON.stringify(payload));
 
     const response = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
@@ -54,63 +46,112 @@ async function sendOneSignalNotification(notification: OneSignalNotification): P
     });
 
     const responseText = await response.text();
-    console.log("[OneSignal] Response status:", response.status);
-    console.log("[OneSignal] Response body:", responseText);
+    console.log("[OneSignal] Response:", response.status, responseText);
 
-    if (response.ok) {
-      const result = JSON.parse(responseText);
-      console.log("[OneSignal] Send result:", result);
-      return true;
-    }
-
-    console.error("[OneSignal] Failed:", response.status, response.statusText);
-    return false;
+    return { ok: response.ok, details: responseText };
   } catch (error) {
     console.error("[OneSignal] Exception:", error);
-    return false;
+    return { ok: false, details: String(error) };
+  }
+}
+
+async function sendViaFCM(fcmTokens: string[], title: string, message: string, data?: Record<string, string>): Promise<{ ok: boolean; details: string }> {
+  const serverKey = Deno.env.get("FCM_SERVER_KEY");
+
+  if (!serverKey) {
+    return { ok: false, details: "FCM_SERVER_KEY env var not set — FCM disabled" };
+  }
+  if (!fcmTokens?.length) {
+    return { ok: false, details: "No fcmTokens provided" };
+  }
+
+  try {
+    const notificationPayload = {
+      registration_ids: fcmTokens,
+      notification: {
+        title,
+        body: message,
+        icon: "https://electroobuddy.com/favicon_io/android-chrome-192x192.png",
+        click_action: data?.url || "https://electroobuddy.com",
+      },
+      data: { ...(data || {}), body: message },
+      priority: "high",
+    };
+
+    console.log("[FCM] Sending to", fcmTokens.length, "token(s)");
+
+    const response = await fetch("https://fcm.googleapis.com/fcm/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `key=${serverKey}`,
+      },
+      body: JSON.stringify(notificationPayload),
+    });
+
+    const result = await response.json();
+    console.log("[FCM] Response:", JSON.stringify(result));
+
+    return {
+      ok: result.success > 0,
+      details: JSON.stringify(result),
+    };
+  } catch (error) {
+    console.error("[FCM] Exception:", error);
+    return { ok: false, details: String(error) };
   }
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let body: Record<string, unknown> = {};
   try {
-    const { playerIds, title, message, url, data } = await req.json();
-
-    if (!playerIds || !title || !message) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: playerIds, title, message" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const success = await sendOneSignalNotification({
-      playerIds,
-      title,
-      message,
-      url,
-      data
-    });
-
-    if (success) {
-      return new Response(
-        JSON.stringify({ success: true, sent: playerIds.length }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({ error: "Failed to send notification" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-  } catch (error) {
-    console.error("[OneSignal] Edge function error:", error);
+    body = await req.json();
+    console.log("[Edge] Received body:", JSON.stringify(body));
+  } catch (e) {
+    console.error("[Edge] Failed to parse body:", e);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "Invalid JSON body" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+
+  const { playerIds, fcmTokens, title, message, url, data } = body as any;
+  const errors: string[] = [];
+
+  if (!title) errors.push("title is required");
+  if (!message) errors.push("message is required");
+  if (!playerIds?.length && !fcmTokens?.length) errors.push("at least one of playerIds or fcmTokens is required");
+
+  if (errors.length > 0) {
+    console.error("[Edge] Validation failed:", errors.join(", "));
+    return new Response(
+      JSON.stringify({ error: errors.join(", ") }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const [oneSignalResult, fcmResult] = await Promise.all([
+    sendViaOneSignal(playerIds || [], title, message, url, data),
+    sendViaFCM(fcmTokens || [], title, message, data),
+  ]);
+
+  console.log("[Edge] OneSignal:", oneSignalResult);
+  console.log("[Edge] FCM:", fcmResult);
+
+  const success = oneSignalResult.ok || fcmResult.ok;
+  const responseBody = {
+    success,
+    oneSignal: oneSignalResult,
+    fcm: fcmResult,
+    sent: (playerIds?.length || 0) + (fcmTokens?.length || 0),
+  };
+
+  return new Response(
+    JSON.stringify(responseBody),
+    { status: success ? 200 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
 });

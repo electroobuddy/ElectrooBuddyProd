@@ -4,7 +4,7 @@ import {
   Database, HardDrive, Activity, Server, TrendingUp, TrendingDown,
   RefreshCw, CheckCircle, AlertTriangle, Clock, Zap, Users,
   ShoppingCart, Package, FileText, BarChart3, Cpu, Wifi,
-  Star, FolderOpen, Mail, MessageSquare, Loader2, UserCheck, Wrench
+  Star, FolderOpen, Mail, MessageSquare, Loader2, UserCheck, Wrench, Bell, BellOff
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -135,6 +135,7 @@ const AdminDashboard = () => {
   const [dbStats, setDbStats] = useState<DatabaseStats | null>(null);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [technicianStats, setTechnicianStats] = useState({ total: 0, active: 0, busy: 0, atCapacity: 0 });
+  const [pushStats, setPushStats] = useState({ total: 0, fcm: 0, onesignal: 0, inactive: 0 });
   const { stats: tableCounts, loading: statsLoading, error: statsError } = useAdminDashboardStats();
   const { invalidateDashboardStats } = useAdminCacheInvalidation();
 
@@ -150,7 +151,9 @@ const AdminDashboard = () => {
       supabase.rpc("get_cache_hit_ratio"),
       supabase.rpc("get_database_size"),
     ]);
-    if (e1 || e2 || e3 || e4) throw e1 || e2 || e3 || e4;
+    if (e1 && e2 && e3 && e4) {
+      console.warn("[AdminDashboard] All DB RPC calls failed — functions may not exist in Supabase");
+    }
     const totalBytes = (sizeData as any[])?.[0]?.total_bytes || 0;
     const totalMB = totalBytes / (1024 * 1024);
     setDbStats({
@@ -165,7 +168,11 @@ const AdminDashboard = () => {
 
   const fetchSystemMetrics = async () => {
     const { data, error } = await supabase.rpc("get_system_metrics");
-    if (error) throw error;
+    if (error) {
+      console.warn("[AdminDashboard] get_system_metrics failed — function may not exist in Supabase");
+      setMetrics(null);
+      return;
+    }
     setMetrics((data as any[])?.[0] || null);
   };
 
@@ -209,10 +216,52 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchStats = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true); else setLoading(true);
+  const fetchPushStats = async () => {
     try {
-      await Promise.all([fetchDatabaseStats(), fetchSystemMetrics(), fetchTechnicianStats()]);
+      const { data: subs } = await supabase
+        .from("push_subscriptions")
+        .select("subscription_type, is_active");
+
+      if (!subs) return;
+      const active = subs.filter(s => s.is_active);
+      setPushStats({
+        total: active.length,
+        fcm: active.filter(s => s.subscription_type === "fcm").length,
+        onesignal: active.filter(s => s.subscription_type === "onesignal").length,
+        inactive: subs.filter(s => !s.is_active).length,
+      });
+    } catch (error) {
+      console.error("Failed to fetch push stats:", error);
+    }
+  };
+
+  const subscribeAdmin = async () => {
+    toast.info("Requesting push permission...");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Admin not logged in");
+      return;
+    }
+    try {
+      const { subscribeToPush } = await import("@/utils/firebaseNotifications");
+      const result = await subscribeToPush(user.id);
+      if (result) {
+        toast.success("Push subscribed! You'll receive notifications.");
+        fetchPushStats();
+      } else {
+        toast.error("Push subscription failed — check browser notifications are allowed");
+      }
+    } catch (err) {
+      console.error("[Admin] Subscribe error:", err);
+      toast.error("Failed to subscribe to push");
+    }
+  };
+
+  const fetchStats = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    try {
+      await Promise.all([fetchDatabaseStats(), fetchSystemMetrics(), fetchTechnicianStats(), fetchPushStats()]);
       if (isRefresh) toast.success("Statistics refreshed");
     } catch (err) {
       console.error(err);
@@ -347,6 +396,53 @@ const AdminDashboard = () => {
               <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{item.label}</p>
             </motion.div>
           ))}
+        </div>
+      </div>
+
+      {/* Push Subscriptions */}
+      <div>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3">Push Subscriptions</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" id="push-subs-stats">
+          {[
+            { icon: Bell, label: "Total Active", count: pushStats.total, color: "blue", delay: 0.04 },
+            { icon: Bell, label: "FCM", count: pushStats.fcm, color: "green", delay: 0.06 },
+            { icon: Bell, label: "OneSignal", count: pushStats.onesignal, color: "violet", delay: 0.08 },
+            { icon: BellOff, label: "Inactive", count: pushStats.inactive, color: "orange", delay: 0.10 },
+          ].map(item => (
+            <motion.div key={item.label} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: item.delay }}
+              className={`p-4 rounded-2xl border-2 bg-white dark:bg-zinc-900 shadow-sm flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow ${
+                item.color === "blue" ? "border-blue-100 dark:border-blue-900" :
+                item.color === "green" ? "border-emerald-100 dark:border-emerald-900" :
+                item.color === "violet" ? "border-violet-100 dark:border-violet-900" :
+                "border-orange-100 dark:border-orange-900"
+              }`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                item.color === "blue" ? "bg-blue-50 dark:bg-blue-950/20 text-blue-600" :
+                item.color === "green" ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600" :
+                item.color === "violet" ? "bg-violet-50 dark:bg-violet-950/20 text-violet-600" :
+                "bg-orange-50 dark:bg-orange-950/20 text-orange-600"
+              }`}>
+                <item.icon size={18} />
+              </div>
+              <p className={`text-2xl font-bold ${
+                item.color === "blue" ? "text-blue-600" :
+                item.color === "green" ? "text-emerald-600" :
+                item.color === "violet" ? "text-violet-600" :
+                "text-orange-600"
+              }`}>{fmt(item.count)}</p>
+              <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{item.label}</p>
+            </motion.div>
+          ))}
+          <button
+            onClick={subscribeAdmin}
+            className="p-4 rounded-2xl border-2 border-dashed border-blue-300 dark:border-blue-700 flex flex-col items-center text-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors cursor-pointer"
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 dark:bg-blue-950/20 text-blue-600">
+              <Bell size={18} />
+            </div>
+            <p className="text-lg font-bold text-blue-600">Subscribe</p>
+            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Click to enable push for admin</p>
+          </button>
         </div>
       </div>
 

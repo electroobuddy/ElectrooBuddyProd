@@ -63,7 +63,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon_io/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon_io/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon_io/favicon-16x16.png" />
-    <link rel="manifest" href="/favicon_io/site.webmanifest" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <meta name="theme-color" content="#2563eb" />
 
@@ -72,6 +72,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://api.supabase.co" />
     <link rel="preconnect" href="https://www.google-analytics.com" />
+
+    <!-- OneSignal Web Push SDK -->
+    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" defer></script>
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://www.google-analytics.com" />
 
@@ -264,20 +267,7 @@
     }
     </script>
 
-    <!-- OneSignal SDK -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "01fda38a-4a53-4f72-9c10-2d4c9db304f0",
-          safari_web_id: "web.onesignal.auto.1b5ff574-1f63-4acf-ab26-dadb313db610",
-          notifyButton: {
-            enable: true,
-          },
-        });
-      });
-    </script>
+  
 </head>
 
   <body>

@@ -1,21 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  initFirebase, 
-  requestFirebasePermission, 
+import {
+  initFirebase,
+  requestFirebasePermission,
   onFirebaseMessage,
-  getFirebaseMessaging 
 } from '@/integrations/firebase/config';
-
-/**
- * Firebase Push Notification Utilities
- * Works even when website is closed - uses FCM
- */
 
 let isInitialized = false;
 
 export async function initPushNotifications(): Promise<boolean> {
   if (isInitialized) return true;
-  
   const success = initFirebase();
   if (success) {
     isInitialized = true;
@@ -27,77 +20,83 @@ export async function initPushNotifications(): Promise<boolean> {
 function listenForForegroundMessages(): void {
   onFirebaseMessage((payload) => {
     console.log('[Firebase] Foreground notification:', payload);
-    
     if (payload.notification) {
-      const notification = new Notification(
-        payload.notification.title || 'ElectroBuddy',
-        {
-          body: payload.notification.body,
-          icon: payload.notification.icon || '/favicon_io/android-chrome-192x192.png',
-          badge: '/favicon_io/android-chrome-192x192.png',
-          data: payload.data || {}
-        }
-      );
-      
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+      const n = new Notification(payload.notification.title || 'ElectroBuddy', {
+        body:  payload.notification.body,
+        icon:  payload.notification.icon || '/favicon_io/android-chrome-192x192.png',
+        badge: '/favicon_io/android-chrome-192x192.png',
+        data:  payload.data || {},
+      });
+      n.onclick = () => { window.focus(); n.close(); };
     }
   });
 }
 
+/**
+ * Subscribe a user to FCM push notifications.
+ *
+ * Key fix: we no longer skip if a token already exists in the DB.
+ * FCM tokens can expire or become invalid; we always fetch the current
+ * token from Firebase and upsert it so the DB stays fresh.
+ */
 export async function subscribeToPush(userId: string): Promise<boolean> {
   try {
+    // 1. Initialise Firebase SDK
     const success = await initPushNotifications();
     if (!success) {
       console.error('[Firebase] Failed to initialize');
       return false;
     }
 
+    // 2. Get the current FCM token (requests permission if needed)
     const token = await requestFirebasePermission(userId);
     if (!token) {
-      console.error('[Firebase] Failed to get token');
+      console.error('[Firebase] Failed to get FCM token');
       return false;
     }
 
-    const ua = navigator.userAgent;
-    const browser = /Chrome/.test(ua) ? 'chrome' : 
-                    /Firefox/.test(ua) ? 'firefox' :
-                    /Safari/.test(ua) ? 'safari' :
-                    /Edge/.test(ua) ? 'edge' : 'other';
-    const deviceType = /Mobile/.test(ua) ? 'mobile' : 
-                       /Tablet/.test(ua) ? 'tablet' : 'desktop';
+    console.log('[Firebase] Got FCM token, upserting to DB…');
 
-    console.log('[Firebase] Saving token to database');
+    const ua         = navigator.userAgent;
+    const browser    = /Edg/.test(ua)    ? 'edge'
+                     : /Chrome/.test(ua)  ? 'chrome'
+                     : /Firefox/.test(ua) ? 'firefox'
+                     : /Safari/.test(ua)  ? 'safari'
+                     : 'other';
+    const deviceType = /Mobile/.test(ua)  ? 'mobile'
+                     : /Tablet/.test(ua)  ? 'tablet'
+                     : 'desktop';
 
+    // 3. Upsert — conflict on user_id + subscription_type so each device gets
+    //    its own row, but the same browser session reuses its row.
     const { error } = await supabase
       .from('push_subscriptions')
-      .upsert({
-        user_id: userId,
-        endpoint: token,
-        p256dh: null,
-        auth: null,
-        fcm_token: token,
-        user_agent: ua,
-        browser: browser,
-        device_type: deviceType,
-        is_active: true,
-        failure_count: 0,
-        last_used_at: new Date().toISOString()
-      }, {
-        onConflict: 'endpoint'
-      });
+      .upsert(
+        {
+          user_id:           userId,
+          endpoint:          token,   // token is unique per browser/device
+          fcm_token:         token,
+          subscription_type: 'fcm',
+          user_agent:        ua,
+          browser,
+          device_type:       deviceType,
+          is_active:         true,
+          failure_count:     0,
+          last_used_at:      new Date().toISOString(),
+          updated_at:        new Date().toISOString(),
+        },
+        { onConflict: 'endpoint' }   // endpoint = fcm_token column
+      );
 
     if (error) {
       console.error('[Firebase] Failed to save token:', error);
       return false;
     }
 
-    console.log('[Firebase] Subscription saved successfully');
+    console.log('[Firebase] Subscription saved for user:', userId);
     return true;
-  } catch (error) {
-    console.error('[Firebase] Subscription error:', error);
+  } catch (err) {
+    console.error('[Firebase] subscribeToPush error:', err);
     return false;
   }
 }
@@ -109,48 +108,29 @@ export async function unsubscribeFromPush(userId: string): Promise<boolean> {
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('user_id', userId);
 
-    if (error) {
-      console.error('[Firebase] Failed to update subscription:', error);
-      return false;
-    }
-
-    console.log('[Firebase] Unsubscribed successfully');
+    if (error) { console.error('[Firebase] Unsubscribe error:', error); return false; }
+    console.log('[Firebase] Unsubscribed:', userId);
     return true;
-  } catch (error) {
-    console.error('[Firebase] Unsubscription error:', error);
+  } catch (err) {
+    console.error('[Firebase] unsubscribeFromPush error:', err);
     return false;
   }
 }
 
 export function getNotificationPermission(): NotificationPermission {
-  if (!('Notification' in window)) {
-    return 'denied';
-  }
-  return Notification.permission;
+  return 'Notification' in window ? Notification.permission : 'denied';
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
-  if (!('Notification' in window)) {
-    console.warn('[Firebase] Notifications not supported');
-    return false;
-  }
-
+  if (!('Notification' in window)) return false;
   try {
-    const permission = await Notification.requestPermission();
-    console.log('[Firebase] Permission status:', permission);
-    return permission === 'granted';
-  } catch (error) {
-    console.error('[Firebase] Permission request failed:', error);
-    return false;
-  }
+    const p = await Notification.requestPermission();
+    return p === 'granted';
+  } catch { return false; }
 }
 
 export function isPushSupported(): boolean {
-  return (
-    'serviceWorker' in navigator &&
-    'PushManager' in window &&
-    'Notification' in window
-  );
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
 export async function hasActiveSubscription(userId: string): Promise<boolean> {
@@ -162,16 +142,9 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
       .eq('is_active', true)
       .limit(1);
 
-    if (error) {
-      console.error('[Firebase] Failed to check subscription:', error);
-      return false;
-    }
-
-    return (data?.length || 0) > 0;
-  } catch (error) {
-    console.error('[Firebase] Error checking subscription:', error);
-    return false;
-  }
+    if (error) { console.error('[Firebase] hasActiveSubscription error:', error); return false; }
+    return Array.isArray(data) && data.length > 0;
+  } catch { return false; }
 }
 
 export function sendMessageToServiceWorker(message: any): void {
