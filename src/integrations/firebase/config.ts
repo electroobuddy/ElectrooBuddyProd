@@ -1,5 +1,6 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
+import { supabase } from '@/integrations/supabase/client';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -39,6 +40,14 @@ export function initFirebase(): boolean {
     if (!messaging) {
       messaging = getMessaging(app);
       console.log('[Firebase] Messaging initialized');
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/firebase-messaging-sw.js').then((registration) => {
+          console.log('[Firebase] Service worker registered:', registration.scope);
+        }).catch((err) => {
+          console.warn('[Firebase] Service worker registration failed:', err);
+        });
+      }
     }
     console.log('[Firebase] Fully initialized');
     return true;
@@ -65,7 +74,7 @@ export async function requestFirebasePermission(userId: string): Promise<string 
 
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      console.warn('[Firebase] Permission not granted');
+      console.warn('[Firebase] Permission denied:', permission);
       return null;
     }
 
@@ -75,7 +84,18 @@ export async function requestFirebasePermission(userId: string): Promise<string 
       return null;
     }
 
-    const token = await getToken(messaging, { vapidKey });
+    const token = await getToken(messaging, { vapidKey }).catch(async (err) => {
+      console.error('[Firebase] getToken failed:', err);
+      if (String(err).includes('INVALID_ARGUMENT') || String(err).includes('not a valid FCM registration token')) {
+        const { error } = await supabase
+          .from('push_subscriptions')
+          .update({ is_active: false })
+          .eq('user_id', userId)
+          .eq('subscription_type', 'fcm');
+        console.log('[Firebase] Marked invalid tokens inactive');
+      }
+      return null;
+    });
     console.log('[Firebase] FCM Token obtained');
     return token;
   } catch (error) {

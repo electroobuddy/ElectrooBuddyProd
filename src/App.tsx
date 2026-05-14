@@ -17,6 +17,8 @@ import BookingModal from "@/components/BookingModal";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AsyncErrorBoundary from "@/components/AsyncErrorBoundary";
+import { initOneSignal } from "./utils/oneSignalUtils";
+import { subscribeToPush } from "./utils/firebaseNotifications";
 
 // Lazy load heavy components
 const Index = lazy(() => import("./pages/Index"));
@@ -95,7 +97,41 @@ const AppContent = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
-
+ useEffect(() => {
+    // ── OneSignal: initialize once on app load ──
+    // Must run client-side only (typeof window check is inside initOneSignal)
+    initOneSignal();
+  }, []);
+  useEffect(() => {
+    // ── Firebase Push: subscribe logged-in users automatically ──
+    if (!user?.id) return;
+    
+    // Check if notification permission is already granted
+    const checkAndSubscribe = async () => {
+      const permission = Notification.permission;
+      
+      // If not granted, request it first
+      if (permission !== 'granted') {
+        try {
+          const result = await Notification.requestPermission();
+          if (result !== 'granted') {
+            console.log("[App] Notification permission denied, skipping FCM subscription");
+            return;
+          }
+        } catch (err) {
+          console.log("[App] Failed to request notification permission:", err);
+          return;
+        }
+      }
+      
+      // Now subscribe to Firebase FCM
+      subscribeToPush(user.id).then((success) => {
+        console.log("[App] FCM subscription result:", success ? "success" : "failed/skipped");
+      }).catch(() => {});
+    };
+    
+    checkAndSubscribe();
+  }, [user?.id]);
   useEffect(() => {
     if (!mounted || !shouldCheckModal) return;
     

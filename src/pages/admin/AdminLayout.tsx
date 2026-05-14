@@ -4,54 +4,63 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen,
   Mail, Settings, LogOut, Loader2, UserCog, Menu, X, Package,
-  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck, Tag, ShieldCheck, Bell
+  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck, Tag, ShieldCheck, Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import {
+  identifyOneSignalUser,
+  logoutOneSignalUser,
+  setOneSignalTags,
+  requestOneSignalPermission,
+  getOneSignalPermission,
+} from "@/utils/oneSignalUtils";
+import { subscribeToPush } from "@/utils/firebaseNotifications";
 
 const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000;
 
 const navItems = [
-  { label: "Dashboard",    to: "/admin/dashboard",    icon: LayoutDashboard, group: "main" },
-  { label: "Products",     to: "/admin/products",     icon: Package,         group: "store" },
-  { label: "Offers",       to: "/admin/offers",       icon: Tag,             group: "store" },
-  { label: "Categories & Coupons", to: "/admin/coupons-categories", icon: ShoppingCart, group: "store" },
-  { label: "Orders",       to: "/admin/orders",       icon: ShoppingCart,    group: "store" },
-  { label: "Payments",     to: "/admin/payments",     icon: DollarSign,      group: "store" },
-  { label: "Subscriptions", to: "/admin/subscriptions", icon: ShieldCheck,    group: "store" },
-  { label: "Shipping",     to: "/admin/shipping",     icon: Truck,           group: "store" },
-  { label: "Services",     to: "/admin/services",     icon: Wrench,          group: "services" },
-  { label: "Bookings",     to: "/admin/bookings",     icon: CalendarDays,    group: "services" },
-  { label: "Users",        to: "/admin/users",        icon: UserCog,         group: "people" },
-  { label: "Technicians",  to: "/admin/technicians",  icon: UserCheck,       group: "people" },
-  { label: "Team",         to: "/admin/team",         icon: Users,           group: "people" },
-  { label: "Testimonials", to: "/admin/testimonials", icon: Star,            group: "content" },
-  { label: "Projects",     to: "/admin/projects",     icon: FolderOpen,      group: "content" },
-  { label: "Messages",     to: "/admin/messages",     icon: Mail,            group: "content" },
-  { label: "Notifications", to: "/admin/notifications", icon: Bell,            group: "system" },
-  { label: "Settings",     to: "/admin/settings",     icon: Settings,        group: "system" },
+  { label: "Dashboard",           to: "/admin/dashboard",          icon: LayoutDashboard, group: "main"     },
+  { label: "Products",            to: "/admin/products",           icon: Package,         group: "store"    },
+  { label: "Offers",              to: "/admin/offers",             icon: Tag,             group: "store"    },
+  { label: "Categories & Coupons",to: "/admin/coupons-categories", icon: ShoppingCart,    group: "store"    },
+  { label: "Orders",              to: "/admin/orders",             icon: ShoppingCart,    group: "store"    },
+  { label: "Payments",            to: "/admin/payments",           icon: DollarSign,      group: "store"    },
+  { label: "Subscriptions",       to: "/admin/subscriptions",      icon: ShieldCheck,     group: "store"    },
+  { label: "Shipping",            to: "/admin/shipping",           icon: Truck,           group: "store"    },
+  { label: "Services",            to: "/admin/services",           icon: Wrench,          group: "services" },
+  { label: "Bookings",            to: "/admin/bookings",           icon: CalendarDays,    group: "services" },
+  { label: "Users",               to: "/admin/users",              icon: UserCog,         group: "people"   },
+  { label: "Technicians",         to: "/admin/technicians",        icon: UserCheck,       group: "people"   },
+  { label: "Team",                to: "/admin/team",               icon: Users,           group: "people"   },
+  { label: "Testimonials",        to: "/admin/testimonials",       icon: Star,            group: "content"  },
+  { label: "Projects",            to: "/admin/projects",           icon: FolderOpen,      group: "content"  },
+  { label: "Messages",            to: "/admin/messages",           icon: Mail,            group: "content"  },
+  { label: "Notifications",       to: "/admin/notifications",      icon: Bell,            group: "system"   },
+  { label: "Settings",            to: "/admin/settings",           icon: Settings,        group: "system"   },
 ];
 
 const groups = [
-  { key: "main",     label: null },
-  { key: "store",    label: "Store" },
-  { key: "services", label: "Services" },
-  { key: "people",   label: "People" },
-  { key: "content",  label: "Content" },
-  { key: "system",   label: "System" },
+  { key: "main",     label: null        },
+  { key: "store",    label: "Store"     },
+  { key: "services", label: "Services"  },
+  { key: "people",   label: "People"    },
+  { key: "content",  label: "Content"   },
+  { key: "system",   label: "System"    },
 ];
 
 const AdminLayout = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate  = useNavigate();
+  const [mobileOpen, setMobileOpen]               = useState(false);
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
-  const lastActivityTime = useRef(Date.now());
+  const lastActivityTime  = useRef(Date.now());
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const signOutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // ── Session timeout ──────────────────────────────────────────────────────
   const resetTimeouts = useCallback(() => {
     if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
     if (signOutTimeoutRef.current) clearTimeout(signOutTimeoutRef.current);
@@ -68,22 +77,75 @@ const AdminLayout = () => {
     }, ADMIN_SESSION_TIMEOUT);
   }, []);
 
+  // ── Push subscription setup ──────────────────────────────────────────────
   useEffect(() => {
     if (!user || !isAdmin) return;
+
+    // Activity tracking + session timeout
     const updateActivity = () => { lastActivityTime.current = Date.now(); resetTimeouts(); };
     const events = ["mousedown", "keydown", "scroll", "touchstart"];
     events.forEach(e => document.addEventListener(e, updateActivity));
     resetTimeouts();
+
+    // ── FCM: subscribe IMMEDIATELY, independently of OneSignal ──────────────
+    // This is the fix: don't wait for OneSignal; FCM subscription runs right
+    // away so the admin always has a token saved in push_subscriptions.
+    const setupFCM = async () => {
+      try {
+        const fcmSuccess = await subscribeToPush(user.id);
+        if (fcmSuccess) {
+          console.log('[AdminLayout] FCM subscription saved for admin:', user.id);
+        } else {
+          console.warn('[AdminLayout] FCM subscription failed — notification permission may be denied');
+        }
+      } catch (err) {
+        console.warn('[AdminLayout] FCM setup error (non-fatal):', err);
+      }
+    };
+
+    // ── OneSignal: identify + tag + optionally request permission ────────────
+    const setupOneSignal = async () => {
+      try {
+        await identifyOneSignalUser(user.id);
+        await setOneSignalTags({
+          role:    'admin',
+          email:   user.email || '',
+          user_id: user.id,
+        });
+
+        if (getOneSignalPermission() !== 'granted') {
+          const granted = await requestOneSignalPermission();
+          if (granted) {
+            console.log('[AdminLayout] OneSignal push permission granted');
+            toast.success('Push notifications enabled', {
+              description: 'You will receive real-time alerts for new bookings.',
+            });
+          }
+        } else {
+          console.log('[AdminLayout] OneSignal already subscribed');
+        }
+      } catch (err) {
+        console.warn('[AdminLayout] OneSignal setup error (non-fatal):', err);
+      }
+    };
+
+    // Run both independently — one failing doesn't block the other
+    setupFCM();
+    setupOneSignal();
+
     return () => {
       events.forEach(e => document.removeEventListener(e, updateActivity));
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
       if (signOutTimeoutRef.current) clearTimeout(signOutTimeoutRef.current);
     };
-  }, [user, isAdmin, resetTimeouts]);
+  }, [user?.id, isAdmin, resetTimeouts]);
 
   const handleAutoSignOut = async () => {
+    await logoutOneSignalUser();
     await signOut();
-    toast.info("Session expired", { description: "You have been automatically signed out due to inactivity." });
+    toast.info("Session expired", {
+      description: "You have been automatically signed out due to inactivity.",
+    });
     navigate("/admin");
   };
 
@@ -108,6 +170,13 @@ const AdminLayout = () => {
 
   if (!user || !isAdmin) return <Navigate to="/admin" replace />;
 
+  // ── Shared sign-out handler ──────────────────────────────────────────────
+  const doSignOut = async () => {
+    await logoutOneSignalUser();
+    await signOut();
+    navigate("/admin");
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950">
 
@@ -127,7 +196,7 @@ const AdminLayout = () => {
                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-colors">
                 Stay Signed In
               </button>
-              <button onClick={async () => { await signOut(); navigate("/admin"); }}
+              <button onClick={doSignOut}
                 className="flex-1 py-2.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-semibold text-sm rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
                 Sign Out
               </button>
@@ -138,7 +207,6 @@ const AdminLayout = () => {
 
       {/* ── Desktop Sidebar ── */}
       <aside className="hidden md:flex w-56 flex-col flex-shrink-0 bg-zinc-900 dark:bg-zinc-950 border-r border-zinc-800 h-screen overflow-hidden">
-
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-4 py-4 flex-shrink-0 border-b border-zinc-800">
           <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
@@ -155,7 +223,7 @@ const AdminLayout = () => {
           <NotificationBell userId={user?.id || null} />
         </div>
 
-        {/* Nav — scrollable, fixed height */}
+        {/* Nav */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 min-h-0
           [&::-webkit-scrollbar]:w-1
           [&::-webkit-scrollbar-track]:bg-transparent
@@ -163,7 +231,7 @@ const AdminLayout = () => {
           [&::-webkit-scrollbar-thumb]:rounded-full">
           {groups.map(({ key, label }) => {
             const items = navItems.filter(n => n.group === key);
-            if (items.length === 0) return null;
+            if (!items.length) return null;
             return (
               <div key={key} className="mb-1">
                 {label && (
@@ -191,10 +259,10 @@ const AdminLayout = () => {
           })}
         </nav>
 
-        {/* Sign out — always visible at bottom */}
+        {/* Sign out */}
         <div className="flex-shrink-0 px-2 py-3 border-t border-zinc-800">
           <p className="text-xs text-zinc-500 truncate px-3 mb-2">{user.email}</p>
-          <button onClick={async () => { await signOut(); navigate("/admin"); }}
+          <button onClick={doSignOut}
             className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all w-full group">
             <LogOut className="w-4 h-4 flex-shrink-0 text-zinc-500 group-hover:text-zinc-300" />
             Sign Out
@@ -219,7 +287,7 @@ const AdminLayout = () => {
         </div>
       </div>
 
-      {/* ── Mobile slide-over menu ── */}
+      {/* ── Mobile slide-over ── */}
       {mobileOpen && (
         <>
           <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
@@ -228,7 +296,7 @@ const AdminLayout = () => {
             <nav className="flex-1 overflow-y-auto py-3 min-h-0">
               {groups.map(({ key, label }) => {
                 const items = navItems.filter(n => n.group === key);
-                if (items.length === 0) return null;
+                if (!items.length) return null;
                 return (
                   <div key={key} className="mb-1">
                     {label && (
@@ -253,7 +321,7 @@ const AdminLayout = () => {
             </nav>
             <div className="flex-shrink-0 px-2 py-3 border-t border-zinc-800">
               <p className="text-xs text-zinc-500 truncate px-3 mb-2">{user.email}</p>
-              <button onClick={async () => { await signOut(); setMobileOpen(false); navigate("/admin"); }}
+              <button onClick={async () => { setMobileOpen(false); await doSignOut(); }}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-all w-full">
                 <LogOut className="w-4 h-4 flex-shrink-0 text-zinc-500" /> Sign Out
               </button>
@@ -265,11 +333,11 @@ const AdminLayout = () => {
       {/* ── Mobile bottom tab bar ── */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-zinc-900 border-t border-zinc-800 flex justify-around items-center px-1 py-1.5 safe-area-bottom">
         {[
-          { label: "Dash",     to: "/admin/dashboard",  icon: LayoutDashboard },
-          { label: "Products", to: "/admin/products",   icon: Package },
-          { label: "Orders",   to: "/admin/orders",     icon: ShoppingCart },
-          { label: "Bookings", to: "/admin/bookings",   icon: CalendarDays },
-          { label: "More",     to: "#more",             icon: Menu, isMore: true },
+          { label: "Dash",     to: "/admin/dashboard", icon: LayoutDashboard },
+          { label: "Products", to: "/admin/products",  icon: Package         },
+          { label: "Orders",   to: "/admin/orders",    icon: ShoppingCart    },
+          { label: "Bookings", to: "/admin/bookings",  icon: CalendarDays    },
+          { label: "More",     to: "#more",            icon: Menu, isMore: true },
         ].map((item: any) => {
           const active = location.pathname === item.to;
           if (item.isMore) {
@@ -302,7 +370,6 @@ const AdminLayout = () => {
         <Outlet />
       </main>
 
-      {/* Push Notification Prompt */}
       <PushNotificationPrompt userId={user?.id || null} />
     </div>
   );

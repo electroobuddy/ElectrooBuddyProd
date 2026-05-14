@@ -3,13 +3,15 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Section from "@/components/Section";
-import { CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin, Sun, Moon, Tag, Check } from "lucide-react";
-import { motion } from "framer-motion";
+import {
+  CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin,
+  Tag, Check, ArrowRight, Clock, Shield, Star,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useServicesStore } from "@/stores/servicesStore";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
 
-// Timeout wrapper for Supabase free tier optimization
 function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
     Promise.resolve(promise),
@@ -19,14 +21,13 @@ function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Pro
   ]);
 }
 
-interface CouponValidation {
-  is_valid: boolean;
-  offer_id: string | null;
-  title: string | null;
-  type: string | null;
-  value: number | null;
-  message: string;
-  discount_amount: number;
+// Returns today's date string in YYYY-MM-DD (local timezone, not UTC)
+function getTodayString(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 const BookingForm = () => {
@@ -39,26 +40,17 @@ const BookingForm = () => {
   const [done, setDone] = useState(false);
   const { user } = useAuth();
   const abortControllerRef = useRef<AbortController | null>(null);
-  const [darkMode, setDarkMode] = useState(false);
-  const [selectedServiceCharge, setSelectedServiceCharge] = useState<{ amount: string; label: string; show: boolean } | null>(null);
-  // Coupon state
+  const [selectedServiceCharge, setSelectedServiceCharge] = useState<{
+    amount: string; label: string; show: boolean;
+  } | null>(null);
+
   const [couponCode, setCouponCode] = useState(preselectedOffer);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
+  const [dateError, setDateError] = useState("");
 
-  // Dark mode effect
-  useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true' ||
-      (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setDarkMode(isDark);
-    if (isDark) document.documentElement.classList.add('dark');
-  }, []);
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
-    localStorage.setItem('darkMode', String(!darkMode));
-  };
+  const todayStr = getTodayString();
 
   const [form, setForm] = useState({
     name: "",
@@ -76,159 +68,172 @@ const BookingForm = () => {
     is_electricity_supply_on: "",
   });
 
-  // Calculate discount based on service charge and coupon
-  const calculateDiscount = (): { original: number; discount: number; final: number } => {
-    const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
-
-    if (!appliedCoupon?.success || !baseAmount) {
-      return { original: baseAmount, discount: 0, final: baseAmount };
-    }
-
-    // Use the discount_amount directly from the applied coupon response
-    const discount = appliedCoupon?.discount_amount || 0;
-
-    // Ensure discount doesn't exceed base amount
-    const finalDiscount = Math.min(discount, baseAmount);
-
-    return {
-      original: baseAmount,
-      discount: finalDiscount,
-      final: baseAmount - finalDiscount
-    };
-  };
-
-  const { original, discount, final } = calculateDiscount();
-
-  const [gettingLocation, setGettingLocation] = useState(false);
-
-  // Fetch booking services on mount
-  useEffect(() => {
-    fetchBookingServices();
-  }, [fetchBookingServices]);
-
-  // Add Custom Service option to services list
-  const servicesWithOptions = [
-    ...bookingServices,
-    { title: "Custom Service" }
-  ];
+  useEffect(() => { fetchBookingServices(); }, [fetchBookingServices]);
 
   useEffect(() => {
     if (preselected) setForm((f) => ({ ...f, service_type: preselected }));
   }, [preselected]);
 
-  // Update selected service charge when service type changes
   useEffect(() => {
     if (form.service_type && form.service_type !== "Custom Service") {
-      const chargeInfo = getServiceCharge(form.service_type);
-      setSelectedServiceCharge(chargeInfo);
+      setSelectedServiceCharge(getServiceCharge(form.service_type));
     } else {
       setSelectedServiceCharge(null);
     }
   }, [form.service_type, getServiceCharge]);
 
-  // Optimized coupon handler with 6s timeout for free tier
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) {
-      toast.error('Please enter a coupon code');
-      return;
+  // ── Date validation: reject any date before today ──
+  const handleDateChange = (val: string) => {
+    if (val < todayStr) {
+      setDateError("Please select today or a future date.");
+      setForm((f) => ({ ...f, preferred_date: val }));
+    } else {
+      setDateError("");
+      setForm((f) => ({ ...f, preferred_date: val }));
     }
+  };
 
-    if (!user) {
-      toast.error('Please login to apply coupon');
-      return;
-    }
-
+  const calculateDiscount = () => {
     const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
-    if (!baseAmount || baseAmount <= 0) {
-      toast.error('Please select a service first');
-      return;
-    }
+    if (!appliedCoupon?.success || !baseAmount) return { original: baseAmount, discount: 0, final: baseAmount };
+    const discount = Math.min(appliedCoupon?.discount_amount || 0, baseAmount);
+    return { original: baseAmount, discount, final: baseAmount - discount };
+  };
+
+  const { original, discount, final } = calculateDiscount();
+
+  const servicesWithOptions = [...bookingServices, { title: "Custom Service" }];
+
+  const handleApplyCoupon = useCallback(async () => {
+    if (!couponCode.trim()) { toast.error("Please enter a coupon code"); return; }
+    if (!user) { toast.error("Please login to apply coupon"); return; }
+    const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
+    if (!baseAmount) { toast.error("Please select a service first"); return; }
 
     setApplyingCoupon(true);
-    const tid = toast.loading('Validating coupon...');
-
+    const tid = toast.loading("Validating coupon...");
     try {
-      const rpcPromise = supabase.rpc('apply_coupon', {
+      const rpcPromise = supabase.rpc("apply_coupon", {
         p_coupon_code: couponCode.toUpperCase().trim(),
         p_user_id: user.id,
         p_cart_total: baseAmount,
-        p_cart_items: [] as any
+        p_cart_items: [] as any,
       }) as unknown as Promise<any>;
 
-      const result = await withTimeout(rpcPromise, 6000, 'coupon-validation');
+      const result = await withTimeout(rpcPromise, 6000, "coupon-validation");
 
       if (result.error) {
-        console.error('Coupon RPC error:', result.error);
         toast.error(result.error.message || "Failed to apply coupon", { id: tid });
         setAppliedCoupon(null);
         return;
       }
-
-      if (!result.data || result.data.length === 0) {
+      if (!result.data?.length) {
         toast.error("Invalid coupon code", { id: tid });
         setAppliedCoupon(null);
         return;
       }
-
       const couponResult = result.data[0];
-
-      if (couponResult?.success && typeof couponResult.discount_amount === 'number' && couponResult.discount_amount >= 0) {
+      if (couponResult?.success && typeof couponResult.discount_amount === "number") {
         setAppliedCoupon(couponResult);
         toast.success(`Coupon applied! Save ₹${couponResult.discount_amount.toFixed(2)}`, { id: tid });
       } else {
         toast.error(couponResult?.message || "Cannot apply this coupon", { id: tid });
         setAppliedCoupon(null);
       }
-    } catch (error: any) {
-      console.error('Error applying coupon:', error);
-      const isTimeout = error?.message?.includes('TIMEOUT');
+    } catch (err: any) {
       toast.error(
-        isTimeout ? 'Coupon check timed out. Please try again.' : 'Failed to apply coupon. Please try again.',
+        err?.message?.includes("TIMEOUT") ? "Coupon check timed out. Try again." : "Failed to apply coupon.",
         { id: tid }
       );
       setAppliedCoupon(null);
     } finally {
       setApplyingCoupon(false);
     }
-  };
+  }, [couponCode, user, selectedServiceCharge]);
 
-  // Auto-validate if coupon code comes from URL
   useEffect(() => {
-    console.log("Auto-validate check:", { preselectedOffer, serviceType: form.service_type });
     if (preselectedOffer && user) {
-      // Small delay to ensure all state is settled
-      const timer = setTimeout(() => {
-        handleApplyCoupon();
-      }, 100);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => handleApplyCoupon(), 100);
+      return () => clearTimeout(t);
     }
   }, [preselectedOffer, user]);
+
+  const handleGetCurrentLocation = () => {
+    setGettingLocation(true);
+    if (!navigator.geolocation) {
+      setGettingLocation(false);
+      toast.error("Geolocation not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords: { latitude, longitude } }) => {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18&accept-language=en`
+          );
+          const data = await res.json();
+          const a = data.address || {};
+          const parts = [
+            a.house_number, a.road || a.pedestrian || a.footway,
+            a.neighbourhood || a.suburb, a.city || a.town, a.state, a.postcode,
+          ].filter(Boolean);
+          const address = parts.join(", ") || data.display_name?.split(",").slice(0, 5).join(", ");
+          if (address) {
+            setForm((f) => ({ ...f, address, exact_location: address }));
+            toast.success("Location fetched!");
+          } else throw new Error("No address");
+        } catch {
+          toast.error("Couldn't resolve address. Please type it manually.");
+        }
+        setGettingLocation(false);
+      },
+      (err) => {
+        setGettingLocation(false);
+        toast.error(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission denied. Enter address manually."
+            : "Unable to get location. Enter manually."
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
 
-    // Cancel any in-flight requests
+    // Guard: reject past dates
+    if (form.preferred_date && form.preferred_date < todayStr) {
+      toast.error("Please select today or a future date.");
+      return;
+    }
+
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
-
     setSubmitting(true);
 
     const { original, discount, final } = calculateDiscount();
     const tid = toast.loading("Submitting your booking...");
 
-    // Ensure user_id is set for authenticated users, null for guests
     const insertData: any = {
       name: form.name.trim(),
       phone: form.phone.trim(),
       email: form.email.trim() || null,
       address: form.address.trim(),
-      service_type: form.service_type === "Custom Service" ? `Custom: ${form.custom_service_demand.trim()}` : form.service_type,
-      preferred_date: form.preferred_date || new Date().toISOString().split('T')[0],
-      preferred_time: form.preferred_time || '09:00',
-      description: form.service_type === "Custom Service" ? form.custom_service_demand.trim() : (form.description.trim() || null),
+      service_type:
+        form.service_type === "Custom Service"
+          ? `Custom: ${form.custom_service_demand.trim()}`
+          : form.service_type,
+      preferred_date: form.preferred_date || todayStr,
+      preferred_time: form.preferred_time || "09:00",
+      description:
+        form.service_type === "Custom Service"
+          ? form.custom_service_demand.trim()
+          : form.description.trim() || null,
       exact_location: form.exact_location?.trim() || null,
-      custom_service_demand: form.service_type === "Custom Service" ? form.custom_service_demand.trim() : null,
+      custom_service_demand:
+        form.service_type === "Custom Service" ? form.custom_service_demand.trim() : null,
       is_switch_working: form.is_switch_working || null,
       has_old_fan: form.has_old_fan || null,
       is_electricity_supply_on: form.is_electricity_supply_on || null,
@@ -242,7 +247,6 @@ const BookingForm = () => {
     };
 
     try {
-      // CRITICAL PATH: Insert booking with 8s timeout (free tier limit is ~10s)
       const { data: bookingData, error } = await withTimeout(
         supabase.from("bookings").insert(insertData).select("id, name, service_type, preferred_date").single(),
         8000,
@@ -254,81 +258,51 @@ const BookingForm = () => {
 
       const bookingId = bookingData.id;
 
-      // IMMEDIATE SUCCESS: Show success to user right away
-      toast.success("Booking submitted successfully! We'll contact you soon.", { id: tid, duration: 5000 });
+      toast.success("Booking submitted! We'll contact you soon.", { id: tid, duration: 5000 });
       setDone(true);
 
-      // Reset form immediately
       setForm({
-        name: "",
-        phone: "",
-        email: "",
-        address: "",
-        service_type: preselected,
-        preferred_date: "",
-        preferred_time: "",
-        description: "",
-        exact_location: "",
-        custom_service_demand: "",
-        is_switch_working: "",
-        has_old_fan: "",
-        is_electricity_supply_on: "",
+        name: "", phone: "", email: "", address: "", service_type: preselected,
+        preferred_date: "", preferred_time: "", description: "", exact_location: "",
+        custom_service_demand: "", is_switch_working: "", has_old_fan: "", is_electricity_supply_on: "",
       });
 
-      // BACKGROUND TASKS (fire-and-forget, never block user):
-      // These run after success is shown - failures are logged but don't affect UX
       Promise.allSettled([
-        // 1. Send notifications (6s timeout)
         withTimeout(
           sendAdminNotificationAsync({
             title: "🔔 New Booking Received",
             message: `New booking from ${form.name.trim()} for ${form.service_type}`,
             type: "new_booking",
-            bookingId: bookingId,
+            bookingId,
             customerName: form.name.trim(),
             service: form.service_type,
             metadata: {
-              customer_name: form.name.trim(),
-              customer_phone: form.phone.trim(),
-              customer_email: form.email.trim(),
-              service_type: form.service_type,
-              preferred_date: form.preferred_date,
-              preferred_time: form.preferred_time,
-              address: form.address.trim(),
-              exact_location: form.exact_location?.trim(),
-              is_guest: !user
-            }
+              customer_name: form.name.trim(), customer_phone: form.phone.trim(),
+              customer_email: form.email.trim(), service_type: form.service_type,
+              preferred_date: form.preferred_date, preferred_time: form.preferred_time,
+              address: form.address.trim(), exact_location: form.exact_location?.trim(),
+              is_guest: !user,
+            },
           }, user),
-          6000,
-          "admin-notification"
+          6000, "admin-notification"
         ).catch(() => {}),
 
-        // 2. Auto-assign technician (8s timeout)
         withTimeout(
-          supabase.functions.invoke("auto-assign-technician", {
-            body: { bookingId },
-          }) as Promise<any>,
-          8000,
-          "auto-assign"
+          supabase.functions.invoke("auto-assign-technician", { body: { bookingId } }) as Promise<any>,
+          8000, "auto-assign"
         ).then(({ data: result }: any) => {
-          if (result?.success) {
+          if (result?.success)
             toast.info(`Technician ${result.technician?.name} assigned.`, { duration: 4000 });
-          }
         }).catch(() => {}),
       ]).catch(() => {});
 
     } catch (error: any) {
-      console.error("Booking submission error:", error);
-
       const isTimeout = error?.message?.includes("TIMEOUT");
-      const isDuplicate = error?.code === "23505"; // Postgres unique_violation
-      const isNetwork = error?.message?.includes("fetch") || error?.message?.includes("network");
-
+      const isDuplicate = error?.code === "23505";
       toast.error(
-        isDuplicate ? "This booking already exists. Please check your submissions." :
-        isTimeout ? "Request timed out. Your booking may have been saved - please check before retrying." :
-        isNetwork ? "Connection issue. Please check your internet and try again." :
-        error?.message || "Failed to submit booking. Please try again.",
+        isDuplicate ? "This booking already exists." :
+        isTimeout ? "Request timed out. Please retry." :
+        error?.message || "Failed to submit. Please try again.",
         { id: tid, duration: 7000 }
       );
     } finally {
@@ -338,645 +312,188 @@ const BookingForm = () => {
   };
 
   const phoneFromSettings = "+918109308287";
+  const isFanService = form.service_type.toLowerCase().includes("fan");
 
-  const fields = [
-    { name: "name", label: "Full Name", type: "text", placeholder: "John Doe" },
-    { name: "phone", label: "Phone Number", type: "tel", placeholder: "+91 98765 43210" },
-    { name: "email", label: "Email Address", type: "email", placeholder: "your@email.com" },
-  ];
+  // ── Shared input classes ──
+  const inputCls =
+    "w-full px-4 py-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 " +
+    "text-zinc-900 dark:text-zinc-100 text-sm placeholder-zinc-400 dark:placeholder-zinc-500 " +
+    "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent " +
+    "transition-all duration-200";
 
-  const handleGetCurrentLocation = () => {
-    setGettingLocation(true);
-    if (!navigator.geolocation) {
-      setGettingLocation(false);
-      toast.error("Geolocation is not supported by your browser.");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-
-        const buildAddress = (a: any): string => {
-          // Most granular → least granular
-          const level1 = [
-            a.house_number,
-            a.house_name,
-            a.building,
-            a.amenity,
-            a.shop,
-            a.office,
-            a.tourism,
-            a.leisure,
-          ].filter(Boolean).join(", ");
-
-          const level2 = [
-            a.road,
-            a.pedestrian,
-            a.footway,
-            a.street,
-            a.path,
-            a.residential,
-          ].filter(Boolean)[0] || "";
-
-          const level3 = [
-            a.neighbourhood,
-            a.quarter,
-            a.suburb,
-            a.hamlet,
-            a.village,
-          ].filter(Boolean)[0] || "";
-
-          const level4 = [
-            a.city_district,
-            a.district,
-            a.town,
-            a.city,
-            a.county,
-            a.state_district,
-          ].filter(Boolean)[0] || "";
-
-          const level5 = a.state || "";
-          const level6 = a.postcode || "";
-
-          const parts = [level1, level2, level3, level4, level5, level6].filter(Boolean);
-          return parts.join(", ");
-        };
-
-        // Try Nominatim first with zoom=18 (street level)
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18&accept-language=en`,
-            { headers: { "Accept-Language": "en" } }
-          );
-          const data = await res.json();
-          const a = data.address || {};
-          let address = buildAddress(a);
-
-          // If result is still vague (no road/street found), use display_name first 4 parts
-          if (!a.road && !a.pedestrian && !a.footway && !a.street && !a.residential) {
-            const displayParts = (data.display_name || "").split(",").map((s: string) => s.trim());
-            // Take up to first 5 meaningful parts (skip country)
-            address = displayParts.slice(0, 5).join(", ");
-          }
-
-          if (address) {
-            setForm((prev) => ({ ...prev, address, exact_location: address }));
-            toast.success("Address fetched successfully!");
-            setGettingLocation(false);
-            return;
-          }
-        } catch (_) { }
-
-        // Fallback: try OpenCage (no key needed for low usage)
-        try {
-          const res = await fetch(
-            `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_OPENCAGE_KEY&language=en&pretty=1&no_annotations=1`
-          );
-          const data = await res.json();
-          const formatted = data.results?.[0]?.formatted;
-          if (formatted) {
-            setForm((prev) => ({ ...prev, address: formatted, exact_location: formatted }));
-            toast.success("Address fetched!");
-            setGettingLocation(false);
-            return;
-          }
-        } catch (_) { }
-
-        // Last fallback: BigDataCloud (free, no key)
-        try {
-          const res = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-          );
-          const data = await res.json();
-          const parts = [
-            data.locality,
-            data.localityInfo?.administrative?.find((x: any) => x.adminLevel === 6)?.name,
-            data.localityInfo?.administrative?.find((x: any) => x.adminLevel === 4)?.name,
-            data.city || data.principalSubdivision,
-            data.postcode,
-          ].filter(Boolean);
-
-          const address = parts.join(", ");
-          if (address) {
-            setForm((prev) => ({ ...prev, address, exact_location: address }));
-            toast.success("Address fetched!");
-            setGettingLocation(false);
-            return;
-          }
-        } catch (_) { }
-
-        // All APIs failed
-        toast.error("Couldn't resolve address. Please type it manually.");
-        setGettingLocation(false);
-      },
-      (error) => {
-        setGettingLocation(false);
-        if (error.code === error.PERMISSION_DENIED) {
-          toast.error("Location permission denied. Please allow access or enter address manually.");
-        } else if (error.code === error.TIMEOUT) {
-          toast.error("Location request timed out. Please try again.");
-        } else {
-          toast.error("Unable to get location. Please enter manually.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-  };
+  const labelCls =
+    "block text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1.5";
 
   return (
-    <div className="booking-page bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
 
-        .booking-page {
-          font-family: 'Poppins', sans-serif;
-        }
-
-        .booking-page h1,
-        .booking-page h2,
-        .booking-page h3,
-        .booking-page h4,
-        .booking-page h5,
-        .booking-page h6 {
-          font-weight: 700;
-        }
-
-        .booking-hero {
-          position: relative;
-          padding: 112px 0 96px;
-          overflow: hidden;
-          text-align: center;
-        }
-
-        /* Form Card */
-        .booking-card {
-          position: relative;
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 24px;
-          padding: 48px 44px;
-          overflow: hidden;
-          font-family: 'Poppins', sans-serif;
-          max-width: 680px;
-          margin: 0 auto;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-          transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .dark .booking-card {
-          background: #1f2937;
-          border-color: #374151;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
-
-        @media (max-width: 640px) {
-          .booking-card { padding: 32px 20px; }
-        }
-
-        .card-tl-corner {
-          position: absolute;
-          top: 0; left: 0;
-          width: 80px; height: 80px;
-          border-top: 2px solid rgba(59, 130, 246, 0.35);
-          border-left: 2px solid rgba(59, 130, 246, 0.35);
-          border-radius: 24px 0 0 0;
-          pointer-events: none;
-        }
-
-        .card-br-corner {
-          position: absolute;
-          bottom: 0; right: 0;
-          width: 80px; height: 80px;
-          border-bottom: 2px solid rgba(59, 130, 246, 0.15);
-          border-right: 2px solid rgba(59, 130, 246, 0.15);
-          border-radius: 0 0 24px 0;
-          pointer-events: none;
-        }
-
-        .card-bolt {
-          position: absolute;
-          top: -20px; right: -10px;
-          width: 140px; height: 140px;
-          opacity: 0.03;
-          pointer-events: none;
-        }
-
-        /* ─── FIELD STYLES ─── */
-        .field-group {
-          margin-bottom: 20px;
-        }
-
-        .field-label {
-          display: block;
-          font-size: 12px;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          color: #6b7280;
-          margin-bottom: 8px;
-          font-family: 'Poppins', sans-serif;
-        }
-
-        .dark .field-label {
-          color: #9ca3af;
-        }
-
-        .field-input,
-        .field-select,
-        .field-textarea {
-          width: 100%;
-          padding: 13px 16px;
-          background: #f9fafb;
-          border: 1.5px solid #e5e7eb;
-          border-radius: 12px;
-          color: #111827;
-          font-size: 14px;
-          font-family: 'Poppins', sans-serif;
-          outline: none;
-          transition: all 0.25s ease;
-          appearance: none;
-          -webkit-appearance: none;
-          box-sizing: border-box;
-        }
-
-        .dark .field-input,
-        .dark .field-select,
-        .dark .field-textarea {
-          background: #374151;
-          border-color: #4b5563;
-          color: #f9fafb;
-        }
-
-        .field-input::placeholder,
-        .field-textarea::placeholder {
-          color: #9ca3af;
-        }
-
-        .field-input:focus,
-        .field-select:focus,
-        .field-textarea:focus {
-          border-color: #3b82f6;
-          background: #fff;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .dark .field-input:focus,
-        .dark .field-select:focus,
-        .dark .field-textarea:focus {
-          background: #4b5563;
-          border-color: #60a5fa;
-          box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-        }
-
-        .field-select option {
-          background: #ffffff;
-          color: #111827;
-        }
-
-        .dark .field-select option {
-          background: #374151;
-          color: #f9fafb;
-        }
-
-        .service-charge-box {
-          margin-top: 12px;
-          padding: 16px;
-          background: linear-gradient(135deg, #fef3c7, #fde68a);
-          border: 2px solid #fbbf24;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          animation: slideDown 0.3s ease;
-        }
-
-        .dark .service-charge-box {
-          background: linear-gradient(135deg, #78350f, #92400e);
-          border-color: #b45309;
-        }
-
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .service-charge-label {
-          font-size: 14px;
-          font-weight: 600;
-          color: #92400e;
-          font-family: 'Poppins', sans-serif;
-        }
-
-        .dark .service-charge-label {
-          color: #fde68a;
-        }
-
-        .service-charge-amount {
-          font-size: 20px;
-          font-weight: 700;
-          color: #78350f;
-          font-family: 'Poppins', sans-serif;
-        }
-
-        .dark .service-charge-amount {
-          color: #fef3c7;
-        }
-
-        .field-textarea {
-          resize: none;
-          min-height: 110px;
-        }
-
-        .grid-2 {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
-        }
-
-        @media (max-width: 480px) {
-          .grid-2 { grid-template-columns: 1fr; }
-        }
-
-        /* ─── SUBMIT BUTTON ─── */
-        .submit-btn {
-          width: 100%;
-          padding: 16px;
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
-          color: #ffffff;
-          font-family: 'Poppins', sans-serif;
-          font-size: 16px;
-          font-weight: 600;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          border: none;
-          border-radius: 14px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          margin-top: 28px;
-          position: relative;
-          overflow: hidden;
-          box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
-        }
-
-        .submit-btn:hover:not(:disabled) {
-          background: linear-gradient(135deg, #2563eb, #1d4ed8);
-          box-shadow: 0 8px 24px rgba(59, 130, 246, 0.45);
-          transform: translateY(-2px);
-        }
-
-        .submit-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .form-divider {
-          height: 1px;
-          background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
-          margin: 24px 0;
-        }
-
-        .dark .form-divider {
-          background: linear-gradient(90deg, transparent, #4b5563, transparent);
-        }
-
-        .call-link-row {
-          text-align: center;
-          font-size: 14px;
-          color: #6b7280;
-          font-family: 'Poppins', sans-serif;
-        }
-
-        .dark .call-link-row {
-          color: #9ca3af;
-        }
-
-        .call-link {
-          color: #3b82f6;
-          font-weight: 600;
-          text-decoration: none;
-          transition: opacity 0.2s;
-        }
-
-        .call-link:hover { opacity: 0.75; }
-
-        /* Success State */
-        .success-box {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          padding: 40px 0;
-          gap: 16px;
-          font-family: 'Poppins', sans-serif;
-        }
-
-        .success-icon {
-          width: 72px;
-          height: 72px;
-          border-radius: 50%;
-          background: #dcfce7;
-          border: 2px solid #86efac;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #16a34a;
-          box-shadow: 0 0 32px rgba(22, 163, 74, 0.2);
-          animation: successPop 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        .dark .success-icon {
-          background: #14532d;
-          border-color: #166534;
-          color: #4ade80;
-        }
-
-        @keyframes successPop {
-          0% { transform: scale(0.5); opacity: 0; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-
-        .success-title {
-          font-family: 'Poppins', sans-serif;
-          font-size: 28px;
-          font-weight: 700;
-          color: #111827;
-        }
-
-        .dark .success-title {
-          color: #f9fafb;
-        }
-
-        .success-sub {
-          font-size: 14px;
-          color: #6b7280;
-          max-width: 320px;
-          line-height: 1.6;
-          font-family: 'Poppins', sans-serif;
-        }
-
-        .dark .success-sub {
-          color: #9ca3af;
-        }
-
-        .success-reset {
-          margin-top: 8px;
-          padding: 10px 28px;
-          border: 1px solid #e5e7eb;
-          border-radius: 100px;
-          background: #f9fafb;
-          color: #3b82f6;
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.25s;
-          font-family: 'Poppins', sans-serif;
-        }
-
-        .dark .success-reset {
-          border-color: #4b5563;
-          background: #374151;
-          color: #60a5fa;
-        }
-
-        .success-reset:hover {
-          background: #f3f4f6;
-          border-color: #d1d5db;
-        }
-
-        .dark .success-reset:hover {
-          background: #4b5563;
-          border-color: #6b7280;
-        }
-      `}</style>
-
-      {/* Dark Mode Toggle Button */}
-      <button
-        onClick={toggleDarkMode}
-        className="fixed top-24 right-4 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700"
-        aria-label="Toggle dark mode"
-      >
-        {darkMode ? (
-          <Sun className="w-6 h-6 text-yellow-500" />
-        ) : (
-          <Moon className="w-6 h-6 text-gray-700" />
-        )}
-      </button>
-
-      {/* Hero */}
-      {/* Hero */}
-      <section className="hero-gradient text-white booking-hero slide-up">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      {/* ── Hero ── */}
+      <section className="relative hero-gradient text-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800" />
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+        <div className="relative max-w-3xl mx-auto px-4 py-20 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.6 }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8"
-            >
-              <CalendarDays className="w-5 h-5" />
-              <span className="font-semibold text-sm uppercase tracking-wide">Appointments</span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
-            >
+            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-5 py-2 rounded-full mb-6 text-sm font-semibold">
+              <CalendarDays className="w-4 h-4" />
               Book a Service
-            </motion.h1>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+              Schedule Your Appointment
+            </h1>
+            <p className="text-lg text-blue-100 max-w-xl mx-auto">
+              Fill in the details below and we'll confirm your slot right away.
+            </p>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-xl max-w-3xl mx-auto opacity-90"
-            >
-              Fill in the details below and we'll confirm your slot shortly
-            </motion.p>
+            {/* Trust badges */}
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              {[
+                { icon: <Shield className="w-4 h-4" />, label: "Verified Technicians" },
+                { icon: <Clock className="w-4 h-4" />, label: "24/7 Booking" },
+                { icon: <Star className="w-4 h-4" />, label: "4.9★ Rated Service" },
+              ].map((b) => (
+                <div key={b.label} className="flex items-center gap-1.5 bg-white/10 px-4 py-1.5 rounded-full text-sm">
+                  {b.icon} {b.label}
+                </div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </section>
 
-      <Section>
+      {/* ── Form ── */}
+      <div className="max-w-2xl mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-100 dark:shadow-none overflow-hidden"
         >
-          <div className="booking-card">
-            <div className="card-tl-corner" />
-            <div className="card-br-corner" />
-
+          <AnimatePresence mode="wait">
             {done ? (
-              <div className="success-box">
-                <div className="success-icon"><CheckCircle size={32} /></div>
-                <div className="success-title">Booking Received!</div>
-                <p className="success-sub">We'll reach out to confirm your appointment. Expect a call or message soon.</p>
-                <div className="flex gap-3 mt-4">
-                  <a href="/track-booking" className="success-reset">Track Your Booking</a>
-                  <button className="success-reset" onClick={() => setDone(false)}>Book Another</button>
+              /* ── Success State ── */
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center text-center p-12 gap-5"
+              >
+                <div className="w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-700 flex items-center justify-center">
+                  <CheckCircle className="w-10 h-10 text-emerald-500" />
                 </div>
-              </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+                    Booking Received!
+                  </h2>
+                  <p className="text-zinc-500 dark:text-zinc-400 max-w-sm text-sm leading-relaxed">
+                    We'll reach out to confirm your appointment. Expect a call or message soon.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-2">
+                  <a
+                    href="/track-booking"
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors flex items-center gap-2"
+                  >
+                    Track Booking <ArrowRight className="w-4 h-4" />
+                  </a>
+                  <button
+                    onClick={() => setDone(false)}
+                    className="px-6 py-2.5 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-semibold rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Book Another
+                  </button>
+                </div>
+              </motion.div>
             ) : (
-              <form onSubmit={handleSubmit}>
-                {/* Basic fields */}
-                {fields.map((f) => (
-                  <div className="field-group" key={f.name}>
-                    <label className="field-label">{f.label}</label>
+              /* ── Form ── */
+              <motion.form
+                key="form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onSubmit={handleSubmit}
+                className="p-6 md:p-8 space-y-5"
+              >
+                {/* Section header */}
+                <div className="pb-1">
+                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Personal Details</h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">We'll use this to contact you</p>
+                </div>
+
+                {/* Name + Phone */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Full Name *</label>
                     <input
-                      type={f.type}
-                      required
-                      placeholder={f.placeholder}
-                      className="field-input"
-                      value={(form as any)[f.name]}
-                      onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
+                      type="text" required placeholder="John Doe"
+                      className={inputCls}
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
                     />
                   </div>
-                ))}
+                  <div>
+                    <label className={labelCls}>Phone Number *</label>
+                    <input
+                      type="tel" required placeholder="+91 98765 43210"
+                      className={inputCls}
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-                {/* Address with Location Picker */}
-                <div className="field-group">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="field-label mb-0">Service Address *</label>
+                {/* Email */}
+                <div>
+                  <label className={labelCls}>Email Address *</label>
+                  <input
+                    type="email" required placeholder="you@example.com"
+                    className={inputCls}
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-zinc-100 dark:border-zinc-800 pt-2">
+                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Service Details</h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">Tell us what you need</p>
+                </div>
+
+                {/* Address */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className={labelCls + " mb-0"}>Service Address *</label>
                     <button
                       type="button"
                       onClick={handleGetCurrentLocation}
                       disabled={gettingLocation}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50"
                     >
-                      {gettingLocation ? (
-                        <><Loader2 size={12} className="animate-spin" /> Getting Location...</>
-                      ) : (
-                        <><MapPin size={12} /> Use Current Location</>
-                      )}
+                      {gettingLocation
+                        ? <><Loader2 className="w-3 h-3 animate-spin" /> Locating...</>
+                        : <><MapPin className="w-3 h-3" /> Use Location</>
+                      }
                     </button>
                   </div>
                   <input
-                    type="text"
-                    required
-                    placeholder="123 Main St, City or use location picker"
-                    className="field-input"
+                    type="text" required placeholder="123 Main St, City"
+                    className={inputCls}
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                   />
                 </div>
 
-                {/* Service select */}
-                <div className="field-group">
-                  <label className="field-label">Service Type</label>
+                {/* Service Type */}
+                <div>
+                  <label className={labelCls}>Service Type *</label>
                   <select
                     required
-                    className="field-select"
+                    className={inputCls + " cursor-pointer"}
                     value={form.service_type}
                     onChange={(e) => setForm({ ...form, service_type: e.target.value })}
                   >
@@ -986,211 +503,265 @@ const BookingForm = () => {
                     ))}
                   </select>
 
-                  {/* Service Charge Display */}
-                  {selectedServiceCharge && (
-                    <div className="service-charge-box">
-                      <span className="service-charge-label">{selectedServiceCharge.label}</span>
-                      <span className="service-charge-amount">₹{selectedServiceCharge.amount}</span>
-                    </div>
-                  )}
+                  {/* Service charge badge */}
+                  <AnimatePresence>
+                    {selectedServiceCharge && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="mt-3 flex items-center justify-between px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl"
+                      >
+                        <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                          {selectedServiceCharge.label}
+                        </span>
+                        <span className="text-xl font-bold text-amber-800 dark:text-amber-300">
+                          ₹{selectedServiceCharge.amount}
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
-                {/* Coupon Code Field */}
-                <div className="field-group">
-                  <label className="field-label flex items-center gap-2">
-                    <Tag size={14} />
-                    Coupon Code
+                {/* Custom Service textarea */}
+                <AnimatePresence>
+                  {form.service_type === "Custom Service" && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <label className={labelCls}>Describe Your Requirement *</label>
+                      <textarea
+                        required rows={4}
+                        placeholder="Describe the specific electrical work you need..."
+                        className={inputCls + " resize-none"}
+                        value={form.custom_service_demand}
+                        onChange={(e) => setForm({ ...form, custom_service_demand: e.target.value })}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Fan-specific fields */}
+                <AnimatePresence>
+                  {isFanService && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/30"
+                    >
+                      <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                        Fan Installation Details
+                      </p>
+                      {[
+                        { field: "is_switch_working", label: "Is Your Switch Working?" },
+                        { field: "has_old_fan", label: "Old Fan at Installation Location?" },
+                        { field: "is_electricity_supply_on", label: "Electricity Supply On at Switch?" },
+                      ].map(({ field, label }) => (
+                        <div key={field}>
+                          <label className={labelCls}>{label} *</label>
+                          <select
+                            required
+                            className={inputCls + " cursor-pointer"}
+                            value={(form as any)[field]}
+                            onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                          >
+                            <option value="">Select...</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                          </select>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Coupon */}
+                <div>
+                  <label className={labelCls + " flex items-center gap-1.5"}>
+                    <Tag className="w-3.5 h-3.5" /> Coupon Code
                   </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Enter offer code (e.g. SUMMER20)"
-                      className="field-input flex-1"
+                      placeholder="E.g. SUMMER20"
+                      className={inputCls + " flex-1"}
                       value={couponCode}
-                      onChange={(e) => {
-                        setCouponCode(e.target.value.toUpperCase());
-                        setAppliedCoupon(null); // Reset validation when typing
-                      }}
+                      onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setAppliedCoupon(null); }}
                     />
                     <button
                       type="button"
                       onClick={handleApplyCoupon}
                       disabled={applyingCoupon || !couponCode.trim()}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                      className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap
+                        ${appliedCoupon?.success
+                          ? "bg-emerald-500 text-white"
+                          : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        }`}
                     >
-                      {applyingCoupon ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : appliedCoupon?.success ? (
-                        <Check size={14} />
-                      ) : null}
-                      {appliedCoupon?.success ? 'Applied' : 'Apply'}
+                      {applyingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        : appliedCoupon?.success ? <Check className="w-3.5 h-3.5" /> : null}
+                      {appliedCoupon?.success ? "Applied" : "Apply"}
                     </button>
                   </div>
-                  {appliedCoupon?.success && (
-                    <div className="mt-2 text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                      <Check size={14} />
-                      Coupon applied! ₹{appliedCoupon.discount_amount?.toFixed(2) || '0.00'} off
-                    </div>
-                  )}
-                  {appliedCoupon && !appliedCoupon.success && (
-                    <div className="mt-2 text-sm text-red-500">
-                      {appliedCoupon.message || 'Invalid coupon code'}
-                    </div>
-                  )}
+
+                  <AnimatePresence>
+                    {appliedCoupon?.success && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Coupon applied! ₹{appliedCoupon.discount_amount?.toFixed(2)} off
+                      </motion.p>
+                    )}
+                    {appliedCoupon && !appliedCoupon.success && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-2 text-sm text-red-500"
+                      >
+                        {appliedCoupon.message || "Invalid coupon code"}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
 
-                {/* Discount Summary */}
-                {appliedCoupon?.success && discount > 0 && (
-                  <div className="field-group">
-                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Original Amount</span>
-                        <span className="text-sm line-through text-gray-500">₹{original.toFixed(2)}</span>
+                {/* Discount summary */}
+                <AnimatePresence>
+                  {appliedCoupon?.success && discount > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="p-4 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl space-y-2"
+                    >
+                      <div className="flex justify-between text-sm text-zinc-500 dark:text-zinc-400">
+                        <span>Original Amount</span>
+                        <span className="line-through">₹{original.toFixed(2)}</span>
                       </div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-green-600 dark:text-green-400 font-medium">Discount</span>
-                        <span className="text-sm text-green-600 dark:text-green-400 font-bold">-₹{discount.toFixed(2)}</span>
+                      <div className="flex justify-between text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span>Discount</span>
+                        <span>−₹{discount.toFixed(2)}</span>
                       </div>
-                      <div className="h-px bg-green-200 dark:bg-green-800 my-2" />
-                      <div className="flex items-center justify-between">
-                        <span className="text-base font-semibold text-gray-800 dark:text-gray-200">Final Amount</span>
-                        <span className="text-lg font-bold text-green-700 dark:text-green-400">₹{final.toFixed(2)}</span>
+                      <div className="border-t border-emerald-200 dark:border-emerald-800 pt-2 flex justify-between">
+                        <span className="font-bold text-zinc-900 dark:text-white">Final Amount</span>
+                        <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">₹{final.toFixed(2)}</span>
                       </div>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                {/* Custom Service Demand Input - Show only when Custom Service is selected */}
-                {form.service_type === "Custom Service" && (
-                  <div className="field-group">
-                    <label className="field-label">Describe Your Custom Service Requirement *</label>
-                    <textarea
-                      required
-                      rows={4}
-                      placeholder="Please describe the specific electrical work you need done..."
-                      className="field-textarea"
-                      value={form.custom_service_demand}
-                      onChange={(e) => setForm({ ...form, custom_service_demand: e.target.value })}
-                    />
-                  </div>
-                )}
+                {/* Divider */}
+                <div className="border-t border-zinc-100 dark:border-zinc-800 pt-2">
+                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Appointment</h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Choose any date from today · We're available 24 hours
+                  </p>
+                </div>
 
                 {/* Date + Time */}
-                <div className="grid-2">
-                  <div className="field-group">
-                    <label className="field-label">Preferred Date</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Preferred Date *</label>
                     <input
                       type="date"
                       required
-                      className="field-input"
+                      min={todayStr}
+                      className={`${inputCls} ${dateError ? "border-red-400 focus:ring-red-400" : ""}`}
                       value={form.preferred_date}
-                      onChange={(e) => setForm({ ...form, preferred_date: e.target.value })}
+                      onChange={(e) => handleDateChange(e.target.value)}
                     />
+                    <AnimatePresence>
+                      {dateError && (
+                        <motion.p
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="mt-1.5 text-xs text-red-500 flex items-center gap-1"
+                        >
+                          {dateError}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  <div className="field-group">
-                    <label className="field-label">Preferred Time</label>
+
+                  <div>
+                    <label className={labelCls}>
+                      Preferred Time *
+                      <span className="ml-1 text-zinc-400 normal-case font-normal tracking-normal">(24hrs available)</span>
+                    </label>
                     <input
                       type="time"
                       required
-                      className="field-input"
+                      className={inputCls}
                       value={form.preferred_time}
                       onChange={(e) => setForm({ ...form, preferred_time: e.target.value })}
                     />
+                    <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Book any time — we operate round the clock
+                    </p>
                   </div>
                 </div>
 
                 {/* Description */}
-                <div className="field-group">
-                  <label className="field-label">Description <span style={{ color: "hsl(var(--muted-foreground) / 0.3)", textTransform: "lowercase", letterSpacing: 0 }}>(optional)</span></label>
+                <div>
+                  <label className={labelCls}>
+                    Description{" "}
+                    <span className="text-zinc-400 font-normal normal-case tracking-normal">(optional)</span>
+                  </label>
                   <textarea
-                    className="field-textarea"
+                    rows={3}
                     placeholder="Describe your electrical issue or requirement..."
+                    className={inputCls + " resize-none"}
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
                 </div>
 
-                {/* Exact Location */}
-                <div className="field-group">
-                  <label className="field-label">Exact Location / Landmark</label>
+                {/* Landmark */}
+                <div>
+                  <label className={labelCls}>Landmark / Exact Location</label>
                   <input
                     type="text"
-                    placeholder="Near temple, Behind shopping mall, etc."
-                    className="field-input"
+                    placeholder="Near temple, behind mall, etc."
+                    className={inputCls}
                     value={form.exact_location}
                     onChange={(e) => setForm({ ...form, exact_location: e.target.value })}
                   />
                 </div>
 
-                {/* Fan Installation Questions - Only show if service is Fan Installation */}
-                {form.service_type.toLowerCase().includes('fan') && (
-                  <>
-                    <div className="field-group">
-                      <label className="field-label">Is Your Switch Working? *</label>
-                      <select
-                        required
-                        className="field-select"
-                        value={form.is_switch_working}
-                        onChange={(e) => setForm({ ...form, is_switch_working: e.target.value })}
-                      >
-                        <option value="">Select...</option>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                      </select>
-                    </div>
-
-                    <div className="field-group">
-                      <label className="field-label">Is There an Old Fan at Installation Location? *</label>
-                      <select
-                        required
-                        className="field-select"
-                        value={form.has_old_fan}
-                        onChange={(e) => setForm({ ...form, has_old_fan: e.target.value })}
-                      >
-                        <option value="">Select...</option>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                      </select>
-                    </div>
-
-                    <div className="field-group">
-                      <label className="field-label">Is Electricity Supply On at Switch Location? *</label>
-                      <select
-                        required
-                        className="field-select"
-                        value={form.is_electricity_supply_on}
-                        onChange={(e) => setForm({ ...form, is_electricity_supply_on: e.target.value })}
-                      >
-                        <option value="">Select...</option>
-                        <option value="yes">Yes</option>
-                        <option value="no">No</option>
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                <button type="submit" className="submit-btn" disabled={submitting}>
-                  {submitting ? (
-                    <><Loader2 size={18} className="animate-spin" /> Submitting...</>
-                  ) : (
-                    <><Zap size={16} /> Submit Booking</>
-                  )}
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={submitting || !!dateError}
+                  className="w-full mt-2 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  {submitting
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+                    : <><Zap className="w-4 h-4" /> Submit Booking</>
+                  }
                 </button>
 
-                <div className="form-divider" />
-
-                <div className="call-link-row">
-                  Prefer to call? Reach us at{" "}
-                  <a href={`tel:${phoneFromSettings}`} className="call-link">
-                    <Phone size={12} style={{ display: "inline", marginRight: 4, verticalAlign: "middle" }} />
+                {/* Call link */}
+                <p className="text-center text-sm text-zinc-500 dark:text-zinc-400 pt-1">
+                  Prefer to call?{" "}
+                  <a
+                    href={`tel:${phoneFromSettings}`}
+                    className="text-blue-600 dark:text-blue-400 font-semibold hover:underline inline-flex items-center gap-1"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
                     {phoneFromSettings}
                   </a>
-                </div>
-              </form>
+                </p>
+              </motion.form>
             )}
-          </div>
+          </AnimatePresence>
         </motion.div>
-      </Section>
+      </div>
     </div>
   );
 };

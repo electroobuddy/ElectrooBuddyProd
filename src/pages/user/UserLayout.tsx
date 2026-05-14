@@ -1,9 +1,10 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Zap, LayoutDashboard, Calendar, User, LogOut, Loader2, Menu, X, Package, ShoppingBag, Wrench, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import { subscribeToPush } from "@/utils/firebaseNotifications";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
@@ -19,6 +20,25 @@ const UserLayout = () => {
   const { user, loading, signOut } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const setupFCM = async () => {
+      try {
+        const fcmSuccess = await subscribeToPush(user.id);
+        if (fcmSuccess) {
+          console.log('[UserLayout] FCM subscription saved for user:', user.id);
+        } else {
+          console.warn('[UserLayout] FCM subscription failed');
+        }
+      } catch (err) {
+        console.warn('[UserLayout] FCM setup error:', err);
+      }
+    };
+
+    setupFCM();
+  }, [user?.id]);
 
   if (loading) {
     return (
