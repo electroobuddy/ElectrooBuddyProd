@@ -103,28 +103,29 @@ async function sendViaFCM(fcmTokens: string[], title: string, message: string, d
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  let body: Record<string, unknown> = {};
   try {
-    body = await req.json();
-    console.log("[Edge] Received body:", JSON.stringify(body));
-  } catch (e) {
-    console.error("[Edge] Failed to parse body:", e);
-    return new Response(
-      JSON.stringify({ error: "Invalid JSON body" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
 
-  const { playerIds, fcmTokens, title, message, url, data } = body as any;
-  const errors: string[] = [];
+    let body: Record<string, unknown> = {};
+    try {
+      body = await req.json();
+      console.log("[Edge] Received body:", JSON.stringify(body));
+    } catch (e) {
+      console.error("[Edge] Failed to parse body:", e);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { playerIds, fcmTokens, userId, title, message, url, data } = body as any;
+    const errors: string[] = [];
 
   if (!title) errors.push("title is required");
   if (!message) errors.push("message is required");
-  if (!playerIds?.length && !fcmTokens?.length) errors.push("at least one of playerIds or fcmTokens is required");
+  if (!playerIds?.length && !fcmTokens?.length && !userId) errors.push("at least one of playerIds, fcmTokens, or userId is required");
 
   if (errors.length > 0) {
     console.error("[Edge] Validation failed:", errors.join(", "));
@@ -134,8 +135,26 @@ serve(async (req) => {
     );
   }
 
+  // If userId is provided, look up OneSignal player IDs from the database
+  let resolvedPlayerIds = playerIds || [];
+  if (userId && !resolvedPlayerIds.length) {
+    const { data: osData, error: osError } = await supabase
+      .from('push_subscriptions')
+      .select('endpoint')
+      .eq('user_id', userId)
+      .eq('subscription_type', 'onesignal')
+      .eq('is_active', true);
+
+    if (!osError && osData && osData.length > 0) {
+      resolvedPlayerIds = osData.map((r: { endpoint: string }) => r.endpoint);
+      console.log('[Edge] Found OneSignal player IDs for userId:', userId, resolvedPlayerIds);
+    } else {
+      console.log('[Edge] No OneSignal subscriptions found for userId:', userId);
+    }
+  }
+
   const [oneSignalResult, fcmResult] = await Promise.all([
-    sendViaOneSignal(playerIds || [], title, message, url, data),
+    sendViaOneSignal(resolvedPlayerIds || [], title, message, url, data),
     sendViaFCM(fcmTokens || [], title, message, data),
   ]);
 
@@ -154,4 +173,11 @@ serve(async (req) => {
     JSON.stringify(responseBody),
     { status: success ? 200 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
+  } catch (err) {
+    console.error("[Edge] Unhandled error:", err);
+    return new Response(
+      JSON.stringify({ error: "Internal error", details: String(err) }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 });

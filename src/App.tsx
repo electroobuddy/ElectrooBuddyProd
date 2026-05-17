@@ -18,7 +18,6 @@ import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AsyncErrorBoundary from "@/components/AsyncErrorBoundary";
 import { initOneSignal } from "./utils/oneSignalUtils";
-import { subscribeToPush } from "./utils/firebaseNotifications";
 
 // Lazy load heavy components
 const Index = lazy(() => import("./pages/Index"));
@@ -103,36 +102,6 @@ const AppContent = () => {
     initOneSignal();
   }, []);
   useEffect(() => {
-    // ── Firebase Push: subscribe logged-in users automatically ──
-    if (!user?.id) return;
-    
-    // Check if notification permission is already granted
-    const checkAndSubscribe = async () => {
-      const permission = Notification.permission;
-      
-      // If not granted, request it first
-      if (permission !== 'granted') {
-        try {
-          const result = await Notification.requestPermission();
-          if (result !== 'granted') {
-            console.log("[App] Notification permission denied, skipping FCM subscription");
-            return;
-          }
-        } catch (err) {
-          console.log("[App] Failed to request notification permission:", err);
-          return;
-        }
-      }
-      
-      // Now subscribe to Firebase FCM
-      subscribeToPush(user.id).then((success) => {
-        console.log("[App] FCM subscription result:", success ? "success" : "failed/skipped");
-      }).catch(() => {});
-    };
-    
-    checkAndSubscribe();
-  }, [user?.id]);
-  useEffect(() => {
     if (!mounted || !shouldCheckModal) return;
     
     // Check if modal should be shown based on localStorage with 30-minute expiry
@@ -210,7 +179,7 @@ const AppContent = () => {
             <Route path="/order-success" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><OrderSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/track-order/:orderNumber" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><OrderTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/login" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><UserAuth /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route element={<UserLayout />}>
+            <Route element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><UserLayout /></Suspense>}>
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
               <Route path="/dashboard/orders" element={<UserOrders />} />
@@ -221,8 +190,8 @@ const AppContent = () => {
             </Route>
 
             {/* Admin routes - hidden, no public links */}
-            <Route path="/admin" element={<AdminLogin />} />
-            <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><AdminLogin /></Suspense>} />
+            <Route element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><AdminLayout /></Suspense>}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/coupons-categories" element={<AdminCouponsCategories />} />
@@ -244,9 +213,9 @@ const AppContent = () => {
             </Route>
 
             {/* Technician routes - hidden, no public links */}
-            <Route path="/technician/login" element={<TechnicianLogin />} />
-            <Route path="/technician/signup" element={<TechnicianSignUp />} />
-            <Route element={<TechnicianLayout />}>
+            <Route path="/technician/login" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><TechnicianLogin /></Suspense>} />
+            <Route path="/technician/signup" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><TechnicianSignUp /></Suspense>} />
+            <Route element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><TechnicianLayout /></Suspense>}>
               <Route path="/technician/dashboard" element={<TechnicianDashboard />} />
               <Route path="/technician/bookings" element={<TechnicianBookings />} />
               <Route path="/technician/profile" element={<TechnicianProfile />} />

@@ -145,36 +145,41 @@ export async function unsubscribeFromOneSignal(userId: string): Promise<boolean>
   }
 }
 
+interface SendOneSignalNotificationParams {
+  userId: string;
+  title: string;
+  body: string;
+  type: string;
+  url?: string;
+}
+
 /**
- * Send notification via OneSignal REST API
+ * Send notification via OneSignal edge function
  */
 export async function sendOneSignalNotification(
-  playerIds: string[],
-  title: string,
-  message: string,
-  url?: string,
-  data?: Record<string, string>
+  params: SendOneSignalNotificationParams
 ): Promise<boolean> {
   try {
-    // This would typically be called from an edge function
-    // For now, we'll use a simple implementation
-    const payload = {
-      app_id: "01fda38a-4a53-4f72-9c10-2d4c9db304f0",
-      include_player_ids: playerIds,
-      headings: { en: title },
-      contents: { en: message },
-      url: url || window.location.origin,
-      data: data || {},
-      chrome_web_image: "/favicon_io/android-chrome-192x192.png",
-      firefox_web_image: "/favicon_io/android-chrome-192x192.png",
-      safari_web_image: "/favicon_io/android-chrome-192x192.png",
-    };
+    const { data, error } = await (supabase as any).functions.invoke(
+      'send-onesignal-notification',
+      {
+        body: {
+          userId: params.userId,
+          title: params.title,
+          message: params.body, // edge function expects 'message'
+          type: params.type,
+          url: params.url,
+        },
+      }
+    );
 
-    console.log('[OneSignal] Sending notification:', payload);
-    
-    // In production, this should be sent via edge function
-    // For now, just log it
-    return true;
+    if (error) {
+      console.error('[OneSignal] Edge function error:', error);
+      return false;
+    }
+
+    console.log('[OneSignal] Result:', data);
+    return data?.ok ?? false;
   } catch (error) {
     console.error('[OneSignal] Send notification error:', error);
     return false;

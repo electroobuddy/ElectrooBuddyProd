@@ -6,6 +6,7 @@ declare const Deno: { env: { get(key: string): string | undefined } };
 
 const supabaseUrl        = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SITE_URL           = Deno.env.get("SITE_URL") || "https://electroobuddy.com";
 const FIREBASE_PROJECT_ID   = Deno.env.get("FIREBASE_PROJECT_ID")   || "electroobuddy-561f5";
 const FIREBASE_CLIENT_EMAIL = Deno.env.get("FIREBASE_CLIENT_EMAIL") || "firebase-adminsdk-fbsvc@electroobuddy-561f5.iam.gserviceaccount.com";
 const FIREBASE_PRIVATE_KEY  = Deno.env.get("FIREBASE_PRIVATE_KEY")  || "";
@@ -171,13 +172,13 @@ serve(async (req: Request): Promise<Response> => {
           token,
           notification: { title, body: msgBody },
           data: {
-            url:            url            || "/dashboard/bookings",
+            url:            url            || `${SITE_URL}/dashboard/bookings`,
             type:           type           || "notification",
             notificationId: notificationId || "",
           },
           webpush: {
             fcmOptions: {
-              link: url || "/dashboard/bookings",
+              link: url || `${SITE_URL}/dashboard/bookings`,
             },
             headers:      { Urgency: "high" },
             notification: {

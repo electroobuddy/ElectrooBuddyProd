@@ -24,6 +24,7 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const siteUrl = Deno.env.get("SITE_URL") || "https://electroobuddy.com";
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Get booking details with user email
@@ -161,7 +162,7 @@ serve(async (req) => {
             userId: booking.user_id,
             title: statusMsg.title,
             body: statusMsg.message,
-            url: `/dashboard/bookings`,
+            url: `${siteUrl}/dashboard/bookings`,
             type: `booking_${newStatus}`,
             notificationId: createdNotificationId,
           },

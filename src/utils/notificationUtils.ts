@@ -1,4 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
+import { NOTIFICATION_URLS } from './siteUrl';
+import { sendOneSignalNotification } from './oneSignalNotifications';
 
 export interface NotificationData {
   title: string;
@@ -63,7 +65,7 @@ async function writePushNotification(
   urlOverride?: string
 ): Promise<void> {
   try {
-    const url = urlOverride ?? (data.type === 'new_booking' ? '/admin/bookings' : '/dashboard/bookings');
+    const url = urlOverride ?? (data.type === 'new_booking' ? NOTIFICATION_URLS.adminBookings : NOTIFICATION_URLS.userBookings);
 
     const { data: result, error } = await (supabase as any).functions.invoke(
       // FIXED: correct edge function name
@@ -103,7 +105,8 @@ async function writePushNotification(
  */
 async function userHasPushSubscription(userId: string): Promise<boolean> {
   try {
-    const { data, error } = await Promise.race([
+    // First try with RLS (might fail), then try without filter
+    let { data, error } = await Promise.race([
       supabase
         .from('push_subscriptions')
         .select('id')
@@ -112,13 +115,27 @@ async function userHasPushSubscription(userId: string): Promise<boolean> {
         .limit(1),
       timeout(4000),
     ]);
+    
     if (error) {
       console.warn('[notify] push_subscriptions query error:', error.message);
+      // Try querying all active subscriptions for this user without is_active filter
+      const { data: fallbackData } = await supabase
+        .from('push_subscriptions')
+        .select('id, is_active')
+        .eq('user_id', userId)
+        .limit(5);
+      
+      if (fallbackData && fallbackData.length > 0) {
+        console.log('[notify] Found subscription (fallback):', fallbackData);
+        return fallbackData.some(s => s.is_active !== false);
+      }
       return false;
     }
+    
     // FIXED: check array length, not truthiness of the array itself
     return Array.isArray(data) && data.length > 0;
-  } catch {
+  } catch (err) {
+    console.warn('[notify] push_subscriptions exception:', err);
     return false;
   }
 }
@@ -242,7 +259,7 @@ export function sendAdminNotificationAsync(
       const recipients: Array<[string, NotificationData, boolean, string | undefined]> = [];
 
       for (const adminId of adminIds) {
-        recipients.push([adminId, data, true, '/admin/bookings']);
+        recipients.push([adminId, data, true, NOTIFICATION_URLS.adminBookings]);
       }
 
       // Logged-in user gets a booking confirmation (different copy, user dashboard URL)
@@ -255,7 +272,7 @@ export function sendAdminNotificationAsync(
             ? `Your ${data.service ?? 'service request'} has been received. We'll be in touch shortly.`
             : data.message,
         };
-        recipients.push([user.id, userNotif, false, '/dashboard/bookings']);
+        recipients.push([user.id, userNotif, false, NOTIFICATION_URLS.userBookings]);
       }
 
       // Fallback when no admins found and no user: nothing to do
@@ -270,6 +287,43 @@ export function sendAdminNotificationAsync(
           notifyUser(uid, notifData, forceInApp, url)
         )
       );
+
+      // 4. Also send via OneSignal for admins (backup to FCM) - disabled temporarily
+      // const oneSignalTasks = adminIds.map(adminId =>
+      //   sendOneSignalNotification({
+      //     userId: adminId,
+      //     title: data.title,
+      //     body: data.message,
+      //     type: data.type,
+      //     url: NOTIFICATION_URLS.adminBookings,
+      //   }).catch(err => console.warn('[notify] OneSignal failed for admin:', adminId, err?.message))
+      // );
+      // await Promise.allSettled(oneSignalTasks);
+
+      // 5. Direct FCM fallback for admins - bypass subscription check
+      // Always try to send to admin via edge function (it has service_role, bypasses RLS)
+      const directFcmTasks = adminIds.map(async (adminId) => {
+        try {
+          console.log('[notify] === DIRECT FCM FALLBACK START for admin:', adminId, '===');
+          
+          // Call edge function directly - it has service_role and can query the database
+          console.log('[notify] Calling send-push-notification edge function for:', adminId);
+          const result: any = await (supabase as any).functions.invoke('send-push-notification', {
+            body: {
+              userId: adminId,
+              title: data.title,
+              body: data.message,
+              url: NOTIFICATION_URLS.adminBookings,
+              type: data.type,
+              notificationId: data.bookingId ?? null,
+            },
+          });
+          console.log('[notify] === DIRECT FCM RESULT for', adminId, ':', JSON.stringify(result), '===');
+        } catch (err: any) {
+          console.warn('[notify] === DIRECT FCM FAILED for admin:', adminId, 'error:', err?.message, '===');
+        }
+      });
+      await Promise.allSettled(directFcmTasks);
 
       console.log(
         `[notify] Notification fan-out complete — ` +
