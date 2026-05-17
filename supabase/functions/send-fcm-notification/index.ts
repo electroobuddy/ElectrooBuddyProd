@@ -8,6 +8,7 @@ declare const Deno: {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SITE_URL = Deno.env.get("SITE_URL") || "https://electroobuddy.com";
 
 const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") || "electroobuddy-561f5";
 const FIREBASE_CLIENT_EMAIL = Deno.env.get("FIREBASE_CLIENT_EMAIL") || "firebase-adminsdk-fbsvc@electroobuddy-561f5.iam.gserviceaccount.com";
@@ -236,10 +237,14 @@ serve(async (req: Request): Promise<Response> => {
           message: {
             token,
             notification: { title, body: msgBody },
-            data: { url: url || "/dashboard/bookings", type: type || "notification", notificationId: notificationId || "" },
+            data: { url: url || `${SITE_URL}/dashboard/bookings`, type: type || "notification", notificationId: notificationId || "" },
             webpush: {
-              fcmOptions: { imageUrl: "https://electroobuddy.com/favicon_io/android-chrome-192x192.png" },
+              fcmOptions: { link: url || `${SITE_URL}/dashboard/bookings` },
               headers: { Urgency: "high" },
+              notification: {
+                icon: `${SITE_URL}/favicon_io/android-chrome-192x192.png`,
+                badge: `${SITE_URL}/favicon_io/android-chrome-192x192.png`,
+              },
             },
             android: { priority: "high", notification: { icon: "ic_notification", color: "#2563eb" } },
           },

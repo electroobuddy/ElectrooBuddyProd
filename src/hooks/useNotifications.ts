@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { hasActiveSubscription } from "@/utils/firebaseNotifications";
+import { NOTIFICATION_URLS } from "@/utils/siteUrl";
 
 export interface Notification {
   id: string;
@@ -162,10 +163,10 @@ export const useNotifications = (userId: string | null) => {
           type:           notification.type,
           notificationId: notification.id,
           url:            notification.booking_id
-            ? "/dashboard/bookings"
+            ? NOTIFICATION_URLS.userBookings
             : notification.order_id
-              ? "/dashboard/orders"
-              : "/dashboard",
+              ? NOTIFICATION_URLS.userOrders
+              : NOTIFICATION_URLS.userDashboard,
         },
       });
     } catch (err) {
