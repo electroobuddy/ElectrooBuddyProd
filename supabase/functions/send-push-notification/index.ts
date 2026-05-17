@@ -224,19 +224,20 @@ serve(async (req: Request): Promise<Response> => {
 
         console.error(`[FCM] Send failed sub ${sub.id} — HTTP:${resp.status} code:${fcmCode} msg:${parsed?.error?.message ?? ""}`);
 
-        // Invalid/unregistered token → mark inactive so we don't retry it
+        // Only mark as invalid if it's a clear invalid token error - don't auto-invalidate
+        // to prevent losing valid subscriptions
         const isInvalid =
-          fcmCode === "INVALID_ARGUMENT"  ||
-          fcmCode === "UNREGISTERED"       ||
-          resp.status === 404              ||
+          fcmCode === "UNREGISTERED" ||
           respText.includes("not a valid FCM registration token") ||
-          respText.includes("Requested entity was not found");
+          respText.includes("DEVICE_UNREGISTERED");
 
         if (isInvalid) {
           console.warn(`[FCM] Token for sub ${sub.id} is invalid — marking inactive`);
           invalidIds.push(sub.id);
         } else {
           failedIds.push(sub.id);
+          // Just log failure but don't mark inactive - token might work later
+          console.log(`[FCM] Token for sub ${sub.id} failed but keeping active for retry`);
         }
       }
     } catch (err) {

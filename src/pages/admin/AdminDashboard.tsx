@@ -243,13 +243,24 @@ const AdminDashboard = () => {
       return;
     }
     try {
+      // Try FCM first
       const { subscribeToPush } = await import("@/utils/firebaseNotifications");
-      const result = await subscribeToPush(user.id);
-      if (result) {
-        toast.success("Push subscribed! You'll receive notifications.");
+      const fcmResult = await subscribeToPush(user.id);
+      
+      if (fcmResult) {
+        toast.success("FCM push subscribed! You'll receive notifications.");
         fetchPushStats();
       } else {
-        toast.error("Push subscription failed — check browser notifications are allowed");
+        // If FCM fails, try OneSignal
+        toast.info("FCM failed, trying OneSignal...");
+        const { subscribeToOneSignal } = await import("@/utils/oneSignalNotifications");
+        const osResult = await subscribeToOneSignal(user.id);
+        if (osResult) {
+          toast.success("OneSignal subscribed! You'll receive notifications.");
+          fetchPushStats();
+        } else {
+          toast.error("Both FCM and OneSignal failed — check browser notifications are allowed");
+        }
       }
     } catch (err) {
       console.error("[Admin] Subscribe error:", err);
