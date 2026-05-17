@@ -191,10 +191,8 @@ async function notifyUser(
 
   console.log(`[notify] notifyUser ${userId} — inApp:${shouldInApp} push:${shouldPush}`);
 
-  // Check push subscription existence only if we intend to push
-  const hasSub = shouldPush ? await userHasPushSubscription(userId) : false;
-  console.log(`[notify] User ${userId} has push subscription: ${hasSub}`);
-
+  // Always try push via edge function - it has service_role and can query DB directly
+  // Skip client-side subscription check (fails due to RLS)
   const tasks: Promise<void>[] = [];
 
   if (shouldInApp) {
@@ -204,13 +202,12 @@ async function notifyUser(
     );
   }
 
-  if (shouldPush && hasSub) {
+  if (shouldPush) {
+    // Always try the edge function - it handles subscription lookup internally
     tasks.push(
       Promise.race([writePushNotification(userId, data, urlOverride), timeout(15000)])
         .catch((err) => console.error('[notify] push failed for', userId, ':', err?.message))
     );
-  } else if (shouldPush && !hasSub) {
-    console.log(`[notify] Skipping push for ${userId} — no active subscription`);
   }
 
   await Promise.allSettled(tasks);
@@ -288,17 +285,17 @@ export function sendAdminNotificationAsync(
         )
       );
 
-      // 4. Also send via OneSignal for admins (backup to FCM) - disabled temporarily
-      // const oneSignalTasks = adminIds.map(adminId =>
-      //   sendOneSignalNotification({
-      //     userId: adminId,
-      //     title: data.title,
-      //     body: data.message,
-      //     type: data.type,
-      //     url: NOTIFICATION_URLS.adminBookings,
-      //   }).catch(err => console.warn('[notify] OneSignal failed for admin:', adminId, err?.message))
-      // );
-      // await Promise.allSettled(oneSignalTasks);
+      // 4. Also send via OneSignal for admins (backup to FCM)
+      const oneSignalTasks = adminIds.map(adminId =>
+        sendOneSignalNotification({
+          userId: adminId,
+          title: data.title,
+          body: data.message,
+          type: data.type,
+          url: NOTIFICATION_URLS.adminBookings,
+        }).catch(err => console.warn('[notify] OneSignal failed for admin:', adminId, err?.message))
+      );
+      await Promise.allSettled(oneSignalTasks);
 
       // 5. Direct FCM fallback for admins - bypass subscription check
       // Always try to send to admin via edge function (it has service_role, bypasses RLS)
