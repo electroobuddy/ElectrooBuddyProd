@@ -88,24 +88,30 @@ const AdminLayout = () => {
     resetTimeouts();
 
     // ── FCM: subscribe IMMEDIATELY, independently of OneSignal ──────────────
-    // This is the fix: don't wait for OneSignal; FCM subscription runs right
-    // away so the admin always has a token saved in push_subscriptions.
     const setupFCM = async () => {
       try {
+        console.log('[AdminLayout] Setting up FCM for admin...');
         const fcmSuccess = await subscribeToPush(user.id);
         if (fcmSuccess) {
-          console.log('[AdminLayout] FCM subscription saved for admin:', user.id);
+          console.log('[AdminLayout] ✅ FCM subscription saved for admin:', user.id);
         } else {
-          console.warn('[AdminLayout] FCM subscription failed — notification permission may be denied');
+          console.warn('[AdminLayout] ⚠️ FCM subscription failed — trying OneSignal instead');
+          // If FCM fails, try OneSignal
+          await setupOneSignal();
         }
       } catch (err) {
         console.warn('[AdminLayout] FCM setup error (non-fatal):', err);
+        // Fallback to OneSignal
+        await setupOneSignal();
       }
     };
 
     // ── OneSignal: identify + tag + optionally request permission ────────────
     const setupOneSignal = async () => {
       try {
+        console.log('[AdminLayout] Setting up OneSignal for admin...');
+        
+        // First identify the user
         await identifyOneSignalUser(user.id);
         await setOneSignalTags({
           role:    'admin',
@@ -113,16 +119,30 @@ const AdminLayout = () => {
           user_id: user.id,
         });
 
+        // Request permission and subscribe
         if (getOneSignalPermission() !== 'granted') {
           const granted = await requestOneSignalPermission();
           if (granted) {
-            console.log('[AdminLayout] OneSignal push permission granted');
+            console.log('[AdminLayout] ✅ OneSignal push permission granted');
             toast.success('Push notifications enabled', {
               description: 'You will receive real-time alerts for new bookings.',
             });
           }
         } else {
-          console.log('[AdminLayout] OneSignal already subscribed');
+          console.log('[AdminLayout] ✅ OneSignal permission already granted');
+        }
+        
+        // Always try to subscribe to OneSignal in database (this gets the player ID)
+        try {
+          const { subscribeToOneSignal } = await import('@/utils/oneSignalNotifications');
+          const osSuccess = await subscribeToOneSignal(user.id);
+          if (osSuccess) {
+            console.log('[AdminLayout] ✅ OneSignal subscription saved to DB');
+          } else {
+            console.warn('[AdminLayout] ⚠️ OneSignal DB subscription returned false');
+          }
+        } catch (osErr) {
+          console.warn('[AdminLayout] OneSignal DB subscription error:', osErr);
         }
       } catch (err) {
         console.warn('[AdminLayout] OneSignal setup error (non-fatal):', err);
