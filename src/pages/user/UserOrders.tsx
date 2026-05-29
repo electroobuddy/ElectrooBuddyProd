@@ -103,169 +103,372 @@ const UserOrders = () => {
     }
   };
 
-  // Generate Invoice PDF
-  const generateInvoice = async (order: Order) => {
+  const showInvoice = (order: Order) =>
+    order.status !== "pending" && order.status !== "cancelled";
+
+  const COMPANY = {
+    name: "Electroobuddy",
+    address: "05, Nagziri Dewas Road, Ujjain(456010), India",
+    phone: "+91 8109308287",
+    email: "electroobuddy@gmail.com",
+    gst: "23ABCDE1234F1Z5",
+    supportEmail: "support@electroobuddy.com",
+  };
+
+  // Generate Invoice
+  const generateInvoice = (order: Order) => {
     try {
-      // Ensure items array exists and is valid
-      const orderItems = Array.isArray(order.items) && order.items.length > 0 
-        ? order.items 
-        : [];
-      
-      console.log('Generating invoice for order:', order.order_number);
-      console.log('Order items:', orderItems);
-      
-      // Create invoice content
-      const invoiceContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Invoice - #${order.order_number}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            .header { text-align: center; border-bottom: 3px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px; }
-            .company-name { font-size: 28px; font-weight: bold; color: #1e40af; }
-            .invoice-title { font-size: 24px; margin-top: 10px; }
-            .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-            .detail-box { background: #f3f4f6; padding: 15px; border-radius: 8px; width: 48%; }
-            .section { margin-bottom: 25px; }
-            .section-title { font-size: 16px; font-weight: bold; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th { background: #3b82f6; color: white; padding: 12px; text-align: left; }
-            td { padding: 10px; border-bottom: 1px solid #e5e7eb; }
-            .totals { float: right; width: 300px; margin-top: 20px; }
-            .total-row { display: flex; justify-content: space-between; padding: 8px 12px; }
-            .total-row.final { background: #dbeafe; font-weight: bold; font-size: 18px; border-radius: 4px; }
-            .footer { margin-top: 50px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px; }
-            .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-            .no-items { text-align: center; padding: 20px; color: #6b7280; font-style: italic; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="company-name">Electroobuddy</div>
-            <div class="invoice-title">TAX INVOICE</div>
-          </div>
-          
-          <div class="invoice-details">
-            <div class="detail-box">
-              <strong>Invoice Details:</strong><br/>
-              Invoice #: ${order.order_number}<br/>
-              Order Date: ${new Date(order.ordered_at).toLocaleDateString('en-IN')}<br/>
-              Payment: ${order.payment_method === 'razorpay' ? 'Online (Razorpay)' : 'Cash on Delivery'}<br/>
-              Status: <span class="status-badge" style="background: ${getStatusColor(order.status)}">${order.status}</span>
-            </div>
-            <div class="detail-box">
-              <strong>Billing Address:</strong><br/>
-              ${order.customer_name || 'Customer'}<br/>
-              ${order.customer_email || ''}<br/>
-              ${order.customer_phone || ''}
-            </div>
-          </div>
-          
-          ${order.shipping_address_data ? `
-          <div class="section">
-            <div class="section-title">Shipping Address</div>
-            <p><strong>${order.shipping_address_data.full_name || ''}</strong></p>
-            <p>${order.shipping_address_data.address_line1 || ''}</p>
-            ${order.shipping_address_data.address_line2 ? `<p>${order.shipping_address_data.address_line2}</p>` : ''}
-            <p>${order.shipping_address_data.city || ''}, ${order.shipping_address_data.state || ''} ${order.shipping_address_data.postal_code || ''}</p>
-            <p>Phone: ${order.shipping_address_data.phone || 'N/A'}</p>
-          </div>
-          ` : ''}
-          
-          <div class="section">
-            <div class="section-title">Order Items</div>
-            ${orderItems.length > 0 ? `
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Item</th>
-                  <th>Price</th>
-                  <th>Qty</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${orderItems.map((item: any, index: number) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td>
-                    <strong>${item.product_name || 'Product'}</strong>
-                    ${item.product_sku ? `<br/><small style="color: #6b7280;">SKU: ${item.product_sku}</small>` : ''}
-                  </td>
-                  <td>₹${(parseFloat(item.unit_price) || 0).toFixed(2)}</td>
-                  <td>${parseInt(item.quantity) || 1}</td>
-                  <td>₹${((parseFloat(item.unit_price) || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}</td>
-                </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            ` : '<p class="no-items">No items in this order</p>'}
-          </div>
-          
-          <div class="totals">
-            <div class="total-row">
-              <span>Subtotal:</span>
-              <span>₹${(parseFloat(String(order.subtotal || 0)) || 0).toFixed(2)}</span>
-            </div>
-            <div class="total-row">
-              <span>Shipping:</span>
-              <span>₹${(parseFloat(String(order.shipping_charge || 0)) || 0).toFixed(2)}</span>
-            </div>
-            ${order.installation_total ? `
-            <div class="total-row">
-              <span>Installation:</span>
-              <span>₹${(parseFloat(String(order.installation_total)) || 0).toFixed(2)}</span>
-            </div>
-            ` : ''}
-            ${order.tax_amount ? `
-            <div class="total-row">
-              <span>Tax (GST 18%):</span>
-              <span>₹${(parseFloat(String(order.tax_amount)) || 0).toFixed(2)}</span>
-            </div>
-            ` : ''}
-            ${order.discount_amount ? `
-            <div class="total-row" style="color: #059669;">
-              <span>Discount${order.coupon_code ? ` (${order.coupon_code})` : ''}:</span>
-              <span>-₹${(parseFloat(String(order.discount_amount)) || 0).toFixed(2)}</span>
-            </div>
-            ` : ''}
-            <div class="total-row final">
-              <span>TOTAL PAID:</span>
-              <span>₹${(parseFloat(String(order.total_amount)) || 0).toFixed(2)}</span>
-            </div>
-          </div>
-          
-          <div style="clear: both;"></div>
-          
-          <div class="footer">
-            <p><strong>Thank you for shopping with Electroobuddy!</strong></p>
-            <p>For any queries, contact us at support@electroobuddy.com</p>
-            <p>This is a computer-generated invoice and does not require a signature.</p>
-            <p style="margin-top: 15px;"><strong>Electroobuddy - Your Trusted Electronics Partner</strong></p>
-          </div>
-        </body>
-        </html>
-      `;
-      
-      // Open in new window for printing/saving as PDF
-      const printWindow = window.open('', '_blank');
+      const orderItems = Array.isArray(order.items) && order.items.length > 0 ? order.items : [];
+      const invoiceNumber = `INV-ORD-${(order.order_number || order.id).slice(0, 8).toUpperCase()}`;
+      const orderDate = new Date(order.ordered_at).toLocaleDateString("en-IN", {
+        year: "numeric", month: "long", day: "numeric",
+      });
+
+      const statusColor = (status: string) => {
+        const colors: Record<string, string> = {
+          pending: "#f59e0b", confirmed: "#3b82f6", processing: "#8b5cf6",
+          shipped: "#a855f7", delivered: "#10b981", cancelled: "#ef4444",
+        };
+        return colors[status] || "#6b7280";
+      };
+
+      const invoiceHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice - ${invoiceNumber}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 40px 48px;
+      color: #1f2937;
+      background: #f8fafc;
+    }
+    .invoice-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .invoice-header {
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      padding: 32px 40px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .invoice-header .company-name {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .invoice-header .company-tagline {
+      font-size: 11px;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+    .invoice-header .invoice-title { text-align: right; }
+    .invoice-header .invoice-title h1 { font-size: 22px; font-weight: 700; }
+    .invoice-header .invoice-title p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+    .invoice-body { padding: 32px 40px; }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .info-box {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 16px 18px;
+      border: 1px solid #e2e8f0;
+    }
+    .info-box h3 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .info-box p { font-size: 13px; line-height: 1.6; color: #1e293b; }
+    .info-box .label { color: #94a3b8; font-size: 12px; }
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1e293b;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .invoice-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .invoice-meta .label { color: #94a3b8; font-size: 12px; }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      background: ${statusColor(order.status)};
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+    }
+    th {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    td {
+      padding: 10px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    td:last-child, th:last-child { text-align: right; }
+    td:nth-child(3), th:nth-child(3) { text-align: center; }
+    .pricing-box {
+      margin-top: 20px;
+      margin-left: auto;
+      width: 320px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+    .pricing-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 16px;
+      font-size: 13px;
+    }
+    .pricing-row .lbl { color: #64748b; }
+    .pricing-row .val { font-weight: 600; }
+    .pricing-row.discount .val { color: #059669; }
+    .pricing-row.final {
+      border-top: 2px solid #3b82f6;
+      padding: 12px 16px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #1e3a8a;
+    }
+    .coupon-badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .address-detail {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 16px 18px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .address-detail strong { color: #1e293b; }
+    .no-items {
+      text-align: center;
+      padding: 24px;
+      color: #94a3b8;
+      font-style: italic;
+      font-size: 13px;
+    }
+    .invoice-footer {
+      padding: 24px 40px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+    }
+    .invoice-footer p {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.8;
+    }
+    .invoice-footer .thank-you {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 6px;
+    }
+    .invoice-footer .company-foot {
+      font-weight: 600;
+      color: #64748b;
+      margin-top: 10px;
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .invoice-wrapper { box-shadow: none; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-wrapper">
+    <div class="invoice-header">
+      <div>
+        <div class="company-name">${COMPANY.name}</div>
+        <div class="company-tagline">Your Trusted Electronics Partner</div>
+      </div>
+      <div class="invoice-title">
+        <h1>TAX INVOICE</h1>
+        <p>#${invoiceNumber}</p>
+      </div>
+    </div>
+
+    <div class="invoice-body">
+      <div class="invoice-meta">
+        <div>
+          <span class="label">Invoice Date:</span>
+          <span style="font-size:13px;font-weight:600;margin-left:6px;">${orderDate}</span>
+        </div>
+        <div>
+          <span class="label">Order #:</span>
+          <span style="font-size:13px;font-weight:600;margin-left:6px;">${order.order_number}</span>
+          <span style="margin-left:12px;" class="status-badge">${order.status.toUpperCase()}</span>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-box">
+          <h3>From</h3>
+          <p><strong>${COMPANY.name}</strong><br/>
+          ${COMPANY.address}<br/>
+          Phone: ${COMPANY.phone}<br/>
+          Email: ${COMPANY.email}<br/>
+          GST: ${COMPANY.gst}</p>
+        </div>
+        <div class="info-box">
+          <h3>Bill To</h3>
+          <p><strong>${order.customer_name || "Customer"}</strong><br/>
+          ${order.customer_email ? `Email: ${order.customer_email}<br/>` : ""}
+          ${order.customer_phone ? `Phone: ${order.customer_phone}` : ""}</p>
+        </div>
+      </div>
+
+      ${order.shipping_address_data ? `
+      <div class="section-title">Shipping Address</div>
+      <div class="address-detail">
+        <strong>${order.shipping_address_data.full_name || ""}</strong><br/>
+        ${order.shipping_address_data.address_line1 || ""}
+        ${order.shipping_address_data.address_line2 ? `<br/>${order.shipping_address_data.address_line2}` : ""}
+        <br/>${[order.shipping_address_data.city, order.shipping_address_data.state, order.shipping_address_data.postal_code].filter(Boolean).join(", ")}
+        ${order.shipping_address_data.phone ? `<br/>Phone: ${order.shipping_address_data.phone}` : ""}
+      </div>` : ""}
+
+      <div class="section-title">Order Items</div>
+      ${orderItems.length > 0 ? `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th style="text-align:center;">Price</th>
+            <th style="text-align:center;">Qty</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orderItems.map((item: any, index: number) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>
+              <strong>${item.product_name || "Product"}</strong>
+              ${item.product_sku ? `<br/><span style="color:#94a3b8;font-size:11px;">SKU: ${item.product_sku}</span>` : ""}
+              ${item.installation_service ? `<br/><span style="color:#059669;font-size:11px;">✓ Installation: ₹${(parseFloat(item.installation_charge) || 0).toFixed(2)}</span>` : ""}
+            </td>
+            <td style="text-align:center;">₹${(parseFloat(item.unit_price) || 0).toFixed(2)}</td>
+            <td style="text-align:center;">${parseInt(item.quantity) || 1}</td>
+            <td>₹${((parseFloat(item.unit_price) || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}</td>
+          </tr>
+          `).join("")}
+        </tbody>
+      </table>` : '<p class="no-items">No items in this order</p>'}
+
+      <div class="pricing-box">
+        <div class="pricing-row">
+          <span class="lbl">Subtotal</span>
+          <span class="val">₹${(parseFloat(String(order.subtotal || 0)) || 0).toFixed(2)}</span>
+        </div>
+        <div class="pricing-row">
+          <span class="lbl">Shipping</span>
+          <span class="val">${order.shipping_charge === 0 ? "FREE" : "₹" + (parseFloat(String(order.shipping_charge || 0)) || 0).toFixed(2)}</span>
+        </div>
+        ${order.installation_total ? `
+        <div class="pricing-row">
+          <span class="lbl">Installation</span>
+          <span class="val">₹${(parseFloat(String(order.installation_total)) || 0).toFixed(2)}</span>
+        </div>` : ""}
+        ${order.tax_amount ? `
+        <div class="pricing-row">
+          <span class="lbl">Tax (GST 18%)</span>
+          <span class="val">₹${(parseFloat(String(order.tax_amount)) || 0).toFixed(2)}</span>
+        </div>` : ""}
+        ${order.discount_amount ? `
+        <div class="pricing-row discount">
+          <span class="lbl">Discount${order.coupon_code ? ` (${order.coupon_code})` : ""}</span>
+          <span class="val">-₹${(parseFloat(String(order.discount_amount)) || 0).toFixed(2)}</span>
+        </div>` : ""}
+        <div class="pricing-row final">
+          <span>TOTAL PAID</span>
+          <span>₹${(parseFloat(String(order.total_amount)) || 0).toFixed(2)}</span>
+        </div>
+        ${order.coupon_code ? `<div style="padding:4px 16px 12px;"><span class="coupon-badge">${order.coupon_code}</span> <span style="font-size:11px;color:#64748b;">applied</span></div>` : ""}
+      </div>
+
+      <div style="clear:both;"></div>
+
+      <div style="margin-top:20px;font-size:12px;color:#94a3b8;">
+        Payment: ${order.payment_method === "razorpay" ? "Online (Razorpay)" : "Cash on Delivery"} &middot;
+        Status: ${order.payment_status === "paid" ? "Paid" : "Unpaid"}
+      </div>
+    </div>
+
+    <div class="invoice-footer">
+      <p class="thank-you">Thank you for shopping with ${COMPANY.name}!</p>
+      <p>For queries, contact ${COMPANY.supportEmail} or call ${COMPANY.phone}</p>
+      <p>${COMPANY.address} &middot; GST: ${COMPANY.gst}</p>
+      <p>This is a computer-generated invoice and does not require a signature.</p>
+      <p class="company-foot">${COMPANY.name} — Your Trusted Electronics Partner</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const printWindow = window.open("", "_blank");
       if (printWindow) {
-        printWindow.document.write(invoiceContent);
+        printWindow.document.write(invoiceHtml);
         printWindow.document.close();
-        setTimeout(() => {
-          printWindow.print();
-        }, 250); // Small delay to ensure content is loaded
+        setTimeout(() => printWindow.print(), 300);
       } else {
-        toast.error('Unable to open invoice. Please allow popups for this site.');
+        toast.error("Unable to open invoice. Please allow popups for this site.");
       }
-      
-      toast.success('Invoice generated! Use "Save as PDF" in print dialog.');
+      toast.success("Invoice generated! Use 'Save as PDF' in print dialog.");
     } catch (error) {
-      console.error('Error generating invoice:', error);
-      toast.error('Failed to generate invoice');
+      console.error("Error generating invoice:", error);
+      toast.error("Failed to generate invoice");
     }
   };
 
@@ -402,13 +605,15 @@ const UserOrders = () => {
                     <Eye className="w-4 h-4" />
                     {selectedOrder?.id === order.id ? "Hide Details" : "View Details"}
                   </button>
-                  <button
-                    onClick={() => generateInvoice(order)}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download Invoice
-                  </button>
+                  {showInvoice(order) && (
+                    <button
+                      onClick={() => generateInvoice(order)}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download Invoice
+                    </button>
+                  )}
                 </div>
               </div>
 

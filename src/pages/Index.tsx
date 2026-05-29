@@ -1,12 +1,32 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import {
-  Zap, ArrowRight, Shield, Clock, BadgeDollarSign, HeartHandshake,
-  Users, X, Phone, Loader2, MapPin, Wrench,
-  AlignLeft, ChevronRight, Star, Instagram, Linkedin,
-  Mail, ChevronDown, MessageCircle, Award, Smile
-  , Check, ShoppingBag, Send
+  Zap,
+  ArrowRight,
+  Shield,
+  Clock,
+  BadgeDollarSign,
+  HeartHandshake,
+  Users,
+  X,
+  Phone,
+  Loader2,
+  MapPin,
+  Wrench,
+  AlignLeft,
+  ChevronRight,
+  Star,
+  Instagram,
+  Linkedin,
+  Mail,
+  ChevronDown,
+  MessageCircle,
+  Award,
+  Smile,
+  Check,
+  ShoppingBag,
+  Send,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,7 +37,11 @@ import OfferBannerSlider from "@/components/OfferBannerSlider";
 
 import RequestServiceSection from "@/components/Requestservicesection";
 import { useServicesStore } from "@/stores/servicesStore";
-import { useTeamMembers, useTestimonials, useProducts } from "@/hooks/useOptimizedData";
+import {
+  useTeamMembers,
+  useTestimonials,
+  useProducts,
+} from "@/hooks/useOptimizedData";
 import { PHONE_NUMBER } from "@/data/services";
 import { teamMembers as staticTeam } from "@/data/team";
 
@@ -53,21 +77,34 @@ export default function Index() {
   const [currentService, setCurrentService] = useState(0);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [preselectedService, setPreselectedService] = useState<string>("");
-  const [contactForm, setContactForm] = useState({ name: "", phone: "", email: "", subject: "", message: "" });
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
   const [contactSubmitting, setContactSubmitting] = useState(false);
   const [contactDone, setContactDone] = useState(false);
-  const { services, loading: servicesLoading, fetchServices } = useServicesStore();
+  const {
+    services,
+    loading: servicesLoading,
+    fetchServices,
+  } = useServicesStore();
   const { products, loading: productsLoading } = useProducts();
   const displayProducts = products.slice(0, 4);
   const [team, setTeam] = useState<any[]>([]);
   const [teamLoading, setTeamLoading] = useState(true);
+  const touchStartX = useRef<number>(0);
 
-  const counters = useMemo(() => ({
-    experience: new Date().getFullYear() - 1992,
-    clients: 5000,
-    projects: 8000
-  }), []);
-
+  const counters = useMemo(
+    () => ({
+      experience: new Date().getFullYear() - 1992,
+      clients: 5000,
+      projects: 8000,
+    }),
+    [],
+  );
 
   // Auto-rotate service showcase
   useEffect(() => {
@@ -78,10 +115,10 @@ export default function Index() {
   }, []);
 
   const whyChooseUs = [
-    { icon: Clock, title: 'Fast Response', accent: '#3b82f6' },
-    { icon: Shield, title: 'Trusted Service', accent: '#10b981' },
-    { icon: BadgeDollarSign, title: 'Affordable Pricing', accent: '#f59e0b' },
-    { icon: HeartHandshake, title: 'Customer First', accent: '#ef4444' }
+    { icon: Clock, title: "Fast Response", accent: "#3b82f6" },
+    { icon: Shield, title: "Trusted Service", accent: "#10b981" },
+    { icon: BadgeDollarSign, title: "Affordable Pricing", accent: "#f59e0b" },
+    { icon: HeartHandshake, title: "Customer First", accent: "#ef4444" },
   ];
 
   // Fetch team data from database
@@ -128,18 +165,18 @@ export default function Index() {
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      element.scrollIntoView({ behavior: "smooth" });
     }
   };
-
-
 
   const nextTestimonial = () => {
     setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
   };
 
   const prevTestimonial = () => {
-    setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+    setCurrentTestimonial(
+      (prev) => (prev - 1 + testimonials.length) % testimonials.length,
+    );
   };
 
   const toggleFAQ = (index: number) => {
@@ -148,7 +185,7 @@ export default function Index() {
 
   const handleBookService = (serviceTitle: string) => {
     setPreselectedService(serviceTitle);
-    scrollToSection('request-service');
+    scrollToSection("request-service");
   };
 
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -168,7 +205,13 @@ export default function Index() {
     } else {
       setContactDone(true);
       toast.success("Message sent! We'll get back to you shortly.");
-      setContactForm({ name: "", phone: "", email: "", subject: "", message: "" });
+      setContactForm({
+        name: "",
+        phone: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
     }
     setContactSubmitting(false);
   };
@@ -260,12 +303,9 @@ export default function Index() {
         className="hero-gradient text-white pt-8 pb-12 md:pt-12 md:pb-20 lg:pt-16 lg:pb-24"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
           <div className="grid md:grid-cols-2 items-center gap-8">
-
             {/* LEFT CONTENT */}
             <div className="text-center md:text-left">
-
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-xs sm:text-sm mb-3">
                 ⚡ Ujjain's Most Trusted Since 1992
@@ -287,14 +327,13 @@ export default function Index() {
 
               {/* Subtext */}
               <p className="text-sm sm:text-base text-gray-200 mb-6 max-w-lg mx-auto md:mx-0">
-                Over {new Date().getFullYear() - 1992}+ years of certified expertise —
-                from ACs and fans to TVs and wiring. Fast response, transparent pricing,
-                and guaranteed workmanship.
+                Over {new Date().getFullYear() - 1992}+ years of certified
+                expertise — from ACs and fans to TVs and wiring. Fast response,
+                transparent pricing, and guaranteed workmanship.
               </p>
 
               {/* Stats Row */}
               <div className="flex items-center justify-center md:justify-start gap-5 mb-6 text-xs sm:text-sm opacity-90">
-
                 <div>
                   <div className="font-bold text-base sm:text-lg">45min</div>
                   <div className="text-gray-300 text-xs">Response</div>
@@ -319,7 +358,6 @@ export default function Index() {
 
               {/* CTA BUTTONS */}
               <div className="flex flex-col sm:flex-row gap-3 items-center justify-center md:justify-start">
-
                 {/* Primary */}
                 <button
                   onClick={() => scrollToSection("request-service")}
@@ -344,106 +382,183 @@ export default function Index() {
                 >
                   Contact →
                 </button>
-
               </div>
             </div>
 
             {/* RIGHT SERVICE SHOWCASE SLIDER */}
-            <div className="relative flex justify-center md:justify-end mt-4 md:mt-0">
-              <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
-                {/* Service Card */}
-                <div className="bg-white/10 backdrop-blur-md rounded-lg shadow-xl p-6 border border-white/20">
-                  {/* Icon */}
-                  {(() => {
-                    const IconComponent = serviceShowcase[currentService].icon;
-                    return (
-                      <>
-                        <div className={`w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br ${serviceShowcase[currentService].color} flex items-center justify-center shadow-lg transition-all duration-500`}>
-                          <IconComponent size={40} className="text-white" />
-                        </div>
+            <div className="relative flex flex-col items-center md:items-end mt-4 md:mt-0">
+              <div
+                className="w-full max-w-xs sm:max-w-sm md:max-w-md"
+                style={{ perspective: "900px" }}
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = (e.clientX - rect.left) / rect.width - 0.5;
+                  const y = (e.clientY - rect.top) / rect.height - 0.5;
+                  const el =
+                    e.currentTarget.querySelector<HTMLDivElement>(".card-3d");
+                  if (el)
+                    el.style.transform = `rotateY(${x * 14}deg) rotateX(${-y * 10}deg) translateZ(10px)`;
+                }}
+                onMouseLeave={(e) => {
+                  const el =
+                    e.currentTarget.querySelector<HTMLDivElement>(".card-3d");
+                  if (el)
+                    el.style.transform =
+                      "rotateY(0deg) rotateX(0deg) translateZ(0px)";
+                }}
+                onTouchStart={(e) => {
+                  touchStartX.current = e.touches[0].clientX;
+                }}
+                onTouchEnd={(e) => {
+                  const dx = e.changedTouches[0].clientX - touchStartX.current;
+                  if (Math.abs(dx) > 40) {
+                    if (dx < 0)
+                      setCurrentService(
+                        (currentService + 1) % serviceShowcase.length,
+                      );
+                    else
+                      setCurrentService(
+                        (currentService - 1 + serviceShowcase.length) %
+                          serviceShowcase.length,
+                      );
+                  }
+                }}
+              >
+                {/* 3D Card */}
+                <div
+                  className="card-3d bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-6 border border-white/20 relative"
+                  style={{
+                    transformStyle: "preserve-3d",
+                    transition: "transform 0.15s ease",
+                    boxShadow:
+                      "0 24px 64px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.18)",
+                  }}
+                >
+                  {/* Shine overlay */}
+                  <div
+                    className="absolute inset-0 rounded-2xl pointer-events-none"
+                    style={{
+                      background:
+                        "radial-gradient(circle at 30% 25%, rgba(255,255,255,0.08) 0%, transparent 60%)",
+                    }}
+                  />
 
-                        {/* Title */}
-                        <h3 className="text-xl md:text-2xl font-bold text-white text-center mb-2 transition-all duration-500">
-                          {serviceShowcase[currentService].title}
-                        </h3>
-
-                        {/* Description */}
-                        <p className="text-sm md:text-base text-gray-200 text-center mb-4 transition-all duration-500">
-                          {serviceShowcase[currentService].description}
-                        </p>
-
-                        {/* Features */}
-                        <div className="grid grid-cols-2 gap-2 mb-4">
-                          {serviceShowcase[currentService].features.map((feature, idx) => (
-                            <div key={idx} className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 transition-all duration-500">
-                              <Check size={14} className="text-green-400 flex-shrink-0" />
-                              <span className="text-xs md:text-sm text-white">{feature}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* CTA */}
-                        <button
-                          onClick={() => handleBookService(serviceShowcase[currentService].title)}
-                          className="w-full bg-white text-blue-800 hover:bg-gray-100 px-4 py-2.5 rounded-lg font-semibold text-sm transition shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                        >
-                          Book This Service
-                          <ArrowRight size={16} />
-                        </button>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {/* Slider Nav — prev/next + dots */}
-                <div className="flex items-center justify-center gap-3 mt-4">
+                  {/* ← Prev button — inside card, left side */}
                   <button
-                    onClick={() => setCurrentService((currentService - 1 + serviceShowcase.length) % serviceShowcase.length)}
-                    className="w-9 h-9 rounded-lg bg-white/15 border border-white/30 hover:bg-white/25 text-white flex items-center justify-center transition-all duration-200"
+                    onClick={() =>
+                      setCurrentService(
+                        (currentService - 1 + serviceShowcase.length) %
+                          serviceShowcase.length,
+                      )
+                    }
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/15 border border-white/30 hover:bg-white/30 text-white flex items-center justify-center transition-all duration-200 z-10"
                     aria-label="Previous service"
                   >
                     <ChevronRight size={18} className="rotate-180" />
                   </button>
 
-                  <div className="flex gap-2">
-                    {serviceShowcase.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentService(idx)}
-                        className={`h-2 rounded-full transition-all duration-300 ${idx === currentService
-                          ? 'bg-white w-6'
-                          : 'w-2 bg-white/40 hover:bg-white/60'
-                          }`}
-                        aria-label={`Go to service ${idx + 1}`}
-                      />
-                    ))}
-                  </div>
-
+                  {/* → Next button — inside card, right side */}
                   <button
-                    onClick={() => setCurrentService((currentService + 1) % serviceShowcase.length)}
-                    className="w-9 h-9 rounded-lg bg-white/15 border border-white/30 hover:bg-white/25 text-white flex items-center justify-center transition-all duration-200"
+                    onClick={() =>
+                      setCurrentService(
+                        (currentService + 1) % serviceShowcase.length,
+                      )
+                    }
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/15 border border-white/30 hover:bg-white/30 text-white flex items-center justify-center transition-all duration-200 z-10"
                     aria-label="Next service"
                   >
                     <ChevronRight size={18} />
                   </button>
-                </div>
-              </div>
 
-              {/* Floating Badge */}
-              <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 bg-yellow-400 text-black px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold shadow-lg">
-                ⚡ 24/7 Emergency Available
+                  {/* Card content — padded so arrows don't overlap text */}
+                  <div className="px-10">
+                    {(() => {
+                      const IconComponent =
+                        serviceShowcase[currentService].icon;
+                      return (
+                        <>
+                          <div
+                            className={`w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br ${serviceShowcase[currentService].color} flex items-center justify-center transition-all duration-500`}
+                            style={{
+                              boxShadow:
+                                "0 8px 24px rgba(0,0,0,0.28), 0 0 0 4px rgba(255,255,255,0.1)",
+                            }}
+                          >
+                            <IconComponent size={40} className="text-white" />
+                          </div>
+                          <h3 className="text-xl md:text-2xl font-bold text-white text-center mb-2">
+                            {serviceShowcase[currentService].title}
+                          </h3>
+                          <p className="text-sm md:text-base text-gray-200 text-center mb-4">
+                            {serviceShowcase[currentService].description}
+                          </p>
+                          <div className="grid grid-cols-2 gap-2 mb-4">
+                            {serviceShowcase[currentService].features.map(
+                              (feature, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2"
+                                >
+                                  <Check
+                                    size={14}
+                                    className="text-green-400 flex-shrink-0"
+                                  />
+                                  <span className="text-xs md:text-sm text-white">
+                                    {feature}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                          <button
+                            onClick={() =>
+                              handleBookService(
+                                serviceShowcase[currentService].title,
+                              )
+                            }
+                            className="w-full bg-white text-blue-800 hover:bg-gray-100 px-4 py-2.5 rounded-xl font-semibold text-sm transition shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                          >
+                            Book This Service <ArrowRight size={16} />
+                          </button>
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Floating badge */}
+                  <div className="absolute bottom-3 left-3 bg-yellow-400 text-black px-3 py-1.5 rounded-md text-xs font-semibold shadow-lg">
+                    ⚡ 24/7 Emergency
+                  </div>
+                </div>
+
+                {/* Dot indicators below card */}
+                <div className="flex items-center justify-center gap-2 mt-4">
+                  {serviceShowcase.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentService(idx)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        idx === currentService
+                          ? "bg-white w-6"
+                          : "w-2 bg-white/40 hover:bg-white/60"
+                      }`}
+                      aria-label={`Go to service ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <p className="text-center text-white/40 text-xs mt-2">
+                  ← swipe to browse →
+                </p>
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
       <section className="bg-white dark:bg-gray-800 py-12 md:py-16 fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-8">
-
             <div className="stats-counter bg-blue-50 dark:bg-gray-700 p-6 md:p-8 rounded-xl text-center transition duration-300">
               <div className="text-blue-800 dark:text-blue-400 text-4xl md:text-5xl font-bold mb-2">
                 {counters.experience}+
@@ -473,16 +588,20 @@ export default function Index() {
               </div>
               <Wrench className="mt-4 h-7 w-7 md:h-8 md:w-8 text-blue-600 dark:text-blue-400 mx-auto" />
             </div>
-
           </div>
         </div>
       </section>
 
       {/* ── ABOUT SECTION ── */}
-      <section id="about" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 slide-up">
+      <section
+        id="about"
+        className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 slide-up"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">About ElectrooBuddy</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              About ElectrooBuddy
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-10 md:gap-0">
@@ -495,16 +614,20 @@ export default function Index() {
               />
             </div>
             <div className="md:w-1/2">
-              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Serving Ujjain Since 1992</h3>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+                Serving Ujjain Since 1992
+              </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Founded in 1992, ElectrooBuddy has grown from a small local repair shop to Ujjain's most trusted appliance care and repair service.
+                Founded in 1992, ElectrooBuddy has grown from a small local
+                repair shop to Ujjain's most trusted appliance care and repair
+                service.
               </p>
               <div className="mb-6 space-y-4">
                 {[
                   `${counters.experience}+ years of trusted service`,
                   `Certified and experienced technicians`,
                   `Quick response time (average 45 minutes)`,
-                  `Expanding nationwide with the same quality service`
+                  `Expanding nationwide with the same quality service`,
                 ].map((point, i) => (
                   <div key={i} className="flex items-start">
                     <div className="flex-shrink-0 mt-1">
@@ -513,13 +636,15 @@ export default function Index() {
                       </div>
                     </div>
                     <div className="ml-3">
-                      <p className="text-gray-700 dark:text-gray-300 font-medium">{point}</p>
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">
+                        {point}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
               <button
-                onClick={() => scrollToSection('services')}
+                onClick={() => scrollToSection("services")}
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition duration-300"
               >
                 Explore Our Services <ArrowRight className="ml-2 h-4 w-4" />
@@ -530,13 +655,19 @@ export default function Index() {
       </section>
 
       {/* ── SERVICES SECTION ── */}
-      <section id="services" className="py-16 md:py-20 bg-white dark:bg-gray-800 fade-in">
+      <section
+        id="services"
+        className="py-16 md:py-20 bg-white dark:bg-gray-800 fade-in"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Services</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Our Services
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
             <p className="mt-6 text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              We offer comprehensive appliance repair and maintenance services to keep your home running smoothly.
+              We offer comprehensive appliance repair and maintenance services
+              to keep your home running smoothly.
             </p>
           </div>
 
@@ -547,13 +678,15 @@ export default function Index() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             ) : (
-              services.slice(0,6).map((service, index) => (
-                <ServiceCard2
-                  key={service.id || index}
-                  service={service}
-                  onBookNow={handleBookService}
-                />
-              ))
+              services
+                .slice(0, 6)
+                .map((service, index) => (
+                  <ServiceCard2
+                    key={service.id || index}
+                    service={service}
+                    onBookNow={handleBookService}
+                  />
+                ))
             )}
           </div>
 
@@ -570,10 +703,15 @@ export default function Index() {
         </div>
       </section>
       {/* ── PRODUCTS SECTION ── */}
-      <section id="products" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+      <section
+        id="products"
+        className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Products</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Our Products
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
             <p className="mt-6 text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Quality electrical products and accessories at competitive prices.
@@ -583,7 +721,10 @@ export default function Index() {
           {productsLoading ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-card border border-border/40 rounded-xl overflow-hidden animate-pulse">
+                <div
+                  key={i}
+                  className="bg-card border border-border/40 rounded-xl overflow-hidden animate-pulse"
+                >
                   <div className="aspect-square bg-muted" />
                   <div className="p-3 sm:p-4 space-y-2">
                     <div className="h-3 bg-muted rounded w-3/4" />
@@ -612,20 +753,25 @@ export default function Index() {
       </section>
 
       {/* ── GALLERY SECTION ── */}
-      <section id="gallery" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+      <section
+        id="gallery"
+        className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Work Gallery</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Our Work Gallery
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { img: portfolio2, title: 'Professional TV Mounting' },
-              { img: portfolio1, title: 'AC Maintenance Service' },
-              { img: portfolio3, title: 'Electrical Circuit Repair' },
-              { img: portfolio4, title: 'DTH Satellite Setup' },
-              { img: portfolio5, title: 'Refrigerator Maintenance' },
-              { img: portfolio6, title: 'Ceiling Fan Installation' }
+              { img: portfolio2, title: "Professional TV Mounting" },
+              { img: portfolio1, title: "AC Maintenance Service" },
+              { img: portfolio3, title: "Electrical Circuit Repair" },
+              { img: portfolio4, title: "DTH Satellite Setup" },
+              { img: portfolio5, title: "Refrigerator Maintenance" },
+              { img: portfolio6, title: "Ceiling Fan Installation" },
             ].map((item, index) => (
               <div key={index} className="overflow-hidden rounded-lg shadow-lg">
                 <img
@@ -635,7 +781,9 @@ export default function Index() {
                   loading="lazy"
                 />
                 <div className="px-4 py-3 sm:px-6 sm:py-4 bg-white dark:bg-gray-700">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">{item.title}</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                    {item.title}
+                  </h3>
                 </div>
               </div>
             ))}
@@ -647,14 +795,21 @@ export default function Index() {
       <section className="py-16 bg-gray-50 dark:bg-gray-900 slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Our Service Area</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Our Service Area
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
-            <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">Currently serving Ujjain and surrounding areas, with plans to expand nationwide.</p>
+            <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Currently serving Ujjain and surrounding areas, with plans to
+              expand nationwide.
+            </p>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <div className="md:flex">
               <div className="md:w-1/2 p-8">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Coverage Areas</h3>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                  Coverage Areas
+                </h3>
                 <div className="space-y-4">
                   <div className="flex items-start">
                     <div className="flex-shrink-0 mt-1">
@@ -663,7 +818,9 @@ export default function Index() {
                       </div>
                     </div>
                     <div className="ml-3">
-                      <p className="text-gray-700 dark:text-gray-300 font-medium">Ujjain City (Full Coverage)</p>
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">
+                        Ujjain City (Full Coverage)
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -673,7 +830,9 @@ export default function Index() {
                       </div>
                     </div>
                     <div className="ml-3">
-                      <p className="text-gray-700 dark:text-gray-300 font-medium">Dewas Road Area</p>
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">
+                        Dewas Road Area
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -683,7 +842,9 @@ export default function Index() {
                       </div>
                     </div>
                     <div className="ml-3">
-                      <p className="text-gray-700 dark:text-gray-300 font-medium">Nagziri Region</p>
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">
+                        Nagziri Region
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -693,7 +854,9 @@ export default function Index() {
                       </div>
                     </div>
                     <div className="ml-3">
-                      <p className="text-gray-700 dark:text-gray-300 font-medium">Expanding to Indore by 2026</p>
+                      <p className="text-gray-700 dark:text-gray-300 font-medium">
+                        Expanding to Indore by 2026
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -721,30 +884,54 @@ export default function Index() {
       <section id="tips" className="py-20 bg-gray-50 dark:bg-gray-900 slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Appliance Care Tips</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Appliance Care Tips
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
-            <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Learn how to maintain your appliances and prevent common issues.</p>
+            <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Learn how to maintain your appliances and prevent common issues.
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {applianceTips.map((tip, index) => (
-              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden transition duration-300 hover:shadow-xl hover:-translate-y-1 transform">
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden transition duration-300 hover:shadow-xl hover:-translate-y-1 transform"
+              >
                 <div className="bg-blue-50 dark:bg-gray-700 h-48 flex items-center justify-center relative overflow-hidden">
-                  <i className={`fas ${tip.bgIcon} text-6xl ${tip.color} opacity-30 absolute`}></i>
-                  <i className={`fas ${tip.icon} text-5xl ${tip.color} relative z-10`}></i>
-                  <span className="absolute top-3 left-3 text-xs text-gray-500 dark:text-gray-400 font-medium">{tip.label}</span>
+                  <i
+                    className={`fas ${tip.bgIcon} text-6xl ${tip.color} opacity-30 absolute`}
+                  ></i>
+                  <i
+                    className={`fas ${tip.icon} text-5xl ${tip.color} relative z-10`}
+                  ></i>
+                  <span className="absolute top-3 left-3 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    {tip.label}
+                  </span>
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{tip.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">{tip.description}</p>
-                  <a href="/tips" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium inline-flex items-center transition duration-200">
-                    Read More <i className="fas fa-chevron-right ml-1 text-sm"></i>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                    {tip.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    {tip.description}
+                  </p>
+                  <a
+                    href="/tips"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium inline-flex items-center transition duration-200"
+                  >
+                    Read More{" "}
+                    <i className="fas fa-chevron-right ml-1 text-sm"></i>
                   </a>
                 </div>
               </div>
             ))}
           </div>
           <div className="mt-12 text-center">
-            <a href="/tips" className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition duration-300">
+            <a
+              href="/tips"
+              className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition duration-300"
+            >
               View All Tips
             </a>
           </div>
@@ -753,10 +940,15 @@ export default function Index() {
 
       {/* ── TESTIMONIALS SECTION ── */}
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-white dark:bg-gray-800 slide-up">
+      <section
+        id="testimonials"
+        className="py-20 bg-white dark:bg-gray-800 slide-up"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">What Our Clients Say</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              What Our Clients Say
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="relative max-w-5xl mx-auto">
@@ -765,26 +957,47 @@ export default function Index() {
                 if (el) {
                   el.scrollTo({
                     left: currentTestimonial * 352,
-                    behavior: 'smooth'
+                    behavior: "smooth",
                   });
                 }
               }}
               className="flex overflow-x-auto pb-6 scrollbar-hide gap-4"
-              style={{ scrollSnapType: 'x mandatory', scrollBehavior: 'smooth' }}
+              style={{
+                scrollSnapType: "x mandatory",
+                scrollBehavior: "smooth",
+              }}
             >
               {testimonials.map((testimonial, index) => (
-                <div key={index} className="testimonial-slide bg-gray-50 dark:bg-gray-700 p-8 rounded-lg shadow-md flex-shrink-0" style={{ width: '320px', scrollSnapAlign: 'start' }}>
+                <div
+                  key={index}
+                  className="testimonial-slide bg-gray-50 dark:bg-gray-700 p-8 rounded-lg shadow-md flex-shrink-0"
+                  style={{ width: "320px", scrollSnapAlign: "start" }}
+                >
                   <div className="flex items-center mb-6">
-                    <img src={testimonial.image} alt={testimonial.name} className="h-12 w-12 rounded-full" loading="lazy" />
+                    <img
+                      src={testimonial.image}
+                      alt={testimonial.name}
+                      className="h-12 w-12 rounded-full"
+                      loading="lazy"
+                    />
                     <div className="ml-4">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{testimonial.name}</h4>
-                      <p className="text-gray-600 dark:text-gray-300">{testimonial.location}</p>
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        {testimonial.name}
+                      </h4>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        {testimonial.location}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300 mb-6">{testimonial.text}</p>
+                  <p className="text-gray-700 dark:text-gray-300 mb-6">
+                    {testimonial.text}
+                  </p>
                   <div className="flex">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                      <Star
+                        key={i}
+                        className="h-5 w-5 text-yellow-400 fill-current"
+                      />
                     ))}
                   </div>
                 </div>
@@ -810,14 +1023,21 @@ export default function Index() {
               <div className="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md max-w-md">
                 <div className="flex items-center justify-center mb-4">
                   <MessageCircle className="h-8 w-8 text-blue-600 dark:text-blue-400 mr-2" />
-                  <span className="text-xl font-semibold text-gray-900 dark:text-white">4.9</span>
+                  <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                    4.9
+                  </span>
                   <div className="ml-2">
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                        <Star
+                          key={i}
+                          className="h-5 w-5 text-yellow-400 fill-current"
+                        />
                       ))}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Based on 3 reviews</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      Based on 3 reviews
+                    </p>
                   </div>
                 </div>
                 {/* FIX: flex-wrap so buttons stack on very small screens */}
@@ -847,24 +1067,33 @@ export default function Index() {
       <section className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Frequently Asked Questions</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Frequently Asked Questions
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="max-w-3xl mx-auto space-y-4">
             {faqs.slice(0, 5).map((faq, index) => (
-              <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
+              >
                 <button
                   onClick={() => toggleFAQ(index)}
                   className="w-full flex justify-between items-center p-5 md:p-6 text-left focus:outline-none gap-4"
                 >
-                  <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white">{faq.question}</h3>
+                  <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white">
+                    {faq.question}
+                  </h3>
                   <ChevronDown
-                    className={`h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${openFAQ === index ? 'rotate-180' : ''}`}
+                    className={`h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 transition-transform duration-300 ${openFAQ === index ? "rotate-180" : ""}`}
                   />
                 </button>
                 {openFAQ === index && (
                   <div className="px-5 pb-5 md:px-6 md:pb-6">
-                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">{faq.answer}</p>
+                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
+                      {faq.answer}
+                    </p>
                   </div>
                 )}
               </div>
@@ -881,7 +1110,6 @@ export default function Index() {
         </div>
       </section>
 
-
       {/* ── WHY CHOOSE US ── */}
       <Section>
         <div className="text-center mb-10 sm:mb-14">
@@ -890,10 +1118,12 @@ export default function Index() {
             Why Choose Us
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Reliable Solutions <span className="text-blue-600">You Can Trust</span>
+            Reliable Solutions{" "}
+            <span className="text-blue-600">You Can Trust</span>
           </h2>
           <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            We deliver excellence in every service with cutting-edge technology and expert technicians.
+            We deliver excellence in every service with cutting-edge technology
+            and expert technicians.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
@@ -908,15 +1138,21 @@ export default function Index() {
               transition={{ delay: i * 0.08, duration: 0.45 }}
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="text-3xl md:text-4xl font-bold text-gray-200 dark:text-gray-700">0{i + 1}</div>
+                <div className="text-3xl md:text-4xl font-bold text-gray-200 dark:text-gray-700">
+                  0{i + 1}
+                </div>
                 <div
                   className="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center"
-                  style={{ background: `linear-gradient(135deg, ${item.accent}, ${item.accent}dd)` }}
+                  style={{
+                    background: `linear-gradient(135deg, ${item.accent}, ${item.accent}dd)`,
+                  }}
                 >
                   <item.icon size={22} className="text-white" />
                 </div>
               </div>
-              <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">{item.title}</h3>
+              <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
+                {item.title}
+              </h3>
             </motion.div>
           ))}
         </div>
@@ -926,7 +1162,9 @@ export default function Index() {
       <section id="team" className="py-20 bg-gray-50 dark:bg-gray-900 slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Meet Our Team</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Meet Our Team
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           {teamLoading ? (
@@ -938,11 +1176,18 @@ export default function Index() {
               {team.map((member, index) => {
                 // Handle image URL - check for empty strings or null values
                 const photoUrl = member.photo_url || member.image_url;
-                const isValidUrl = photoUrl && photoUrl.trim() && photoUrl.startsWith('http');
-                const finalImageUrl = getTeamImage(member.name, isValidUrl ? photoUrl : null);
+                const isValidUrl =
+                  photoUrl && photoUrl.trim() && photoUrl.startsWith("http");
+                const finalImageUrl = getTeamImage(
+                  member.name,
+                  isValidUrl ? photoUrl : null,
+                );
 
                 return (
-                  <div key={member.id || index} className="team-member text-center">
+                  <div
+                    key={member.id || index}
+                    className="team-member text-center"
+                  >
                     <div className="overflow-hidden rounded-full h-40 w-40 sm:h-48 sm:w-48 mx-auto mb-4 md:mb-6">
                       <img
                         src={finalImageUrl}
@@ -953,7 +1198,8 @@ export default function Index() {
                           const target = e.currentTarget;
                           target.onerror = null; // Prevent infinite loop
                           // Fallback to local image based on name, then to default
-                          const fallbackImage = localTeamImageMap[member.name] || teamDefault;
+                          const fallbackImage =
+                            localTeamImageMap[member.name] || teamDefault;
                           if (target.src !== fallbackImage) {
                             target.src = fallbackImage;
                           } else {
@@ -962,9 +1208,15 @@ export default function Index() {
                         }}
                       />
                     </div>
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">{member.name}</h3>
-                    <p className="text-blue-600 dark:text-blue-400 font-medium mb-2 text-sm sm:text-base">{member.role}</p>
-                    <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">{member.bio}</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                      {member.name}
+                    </h3>
+                    <p className="text-blue-600 dark:text-blue-400 font-medium mb-2 text-sm sm:text-base">
+                      {member.role}
+                    </p>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">
+                      {member.bio}
+                    </p>
                   </div>
                 );
               })}
@@ -977,22 +1229,31 @@ export default function Index() {
       <RequestServiceSection preselectedService={preselectedService} />
 
       {/* ── CONTACT SECTION ── */}
-      <section id="contact" className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in">
+      <section
+        id="contact"
+        className="py-16 md:py-20 bg-gray-50 dark:bg-gray-900 fade-in"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Contact Us</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Contact Us
+            </h2>
             <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12">
             <div>
-              <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-6">Contact Information</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                Contact Information
+              </h3>
               <div className="space-y-5 md:space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
                     <MapPin className="text-blue-600 dark:text-blue-400 h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Our Office</h4>
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
+                      Our Office
+                    </h4>
                     <a
                       href="https://maps.app.goo.gl/X16Z1kxCfBUsKE9R9"
                       target="_blank"
@@ -1008,7 +1269,9 @@ export default function Index() {
                     <Phone className="text-blue-600 dark:text-blue-400 h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Phone</h4>
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
+                      Phone
+                    </h4>
                     <a
                       href={`tel:${PHONE_NUMBER}`}
                       className="text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block"
@@ -1022,7 +1285,9 @@ export default function Index() {
                     <Mail className="text-blue-600 dark:text-blue-400 h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Email</h4>
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
+                      Email
+                    </h4>
                     <a
                       href="mailto:electroobuddy@gmail.com"
                       className="text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block"
@@ -1036,9 +1301,15 @@ export default function Index() {
                     <Clock className="text-blue-600 dark:text-blue-400 h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Working Hours</h4>
-                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Mon - Sat: 8:00 AM - 9:00 PM</p>
-                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">Sunday: 24/7 Emergency Support Only</p>
+                    <h4 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
+                      Working Hours
+                    </h4>
+                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
+                      Mon - Sat: 8:00 AM - 9:00 PM
+                    </p>
+                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
+                      Sunday: 24/7 Emergency Support Only
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1060,7 +1331,9 @@ export default function Index() {
               </div>
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Send Us a Message</h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                Send Us a Message
+              </h3>
               <form className="space-y-6" onSubmit={handleContactSubmit}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1070,7 +1343,9 @@ export default function Index() {
                     type="text"
                     required
                     value={contactForm.name}
-                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setContactForm({ ...contactForm, name: e.target.value })
+                    }
                     className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
                     placeholder="Rahul Sharma"
                   />
@@ -1084,7 +1359,9 @@ export default function Index() {
                     type="tel"
                     required
                     value={contactForm.phone}
-                    onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                    onChange={(e) =>
+                      setContactForm({ ...contactForm, phone: e.target.value })
+                    }
                     className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
                     placeholder="+91 98765 43210"
                   />
@@ -1098,7 +1375,9 @@ export default function Index() {
                     type="email"
                     required
                     value={contactForm.email}
-                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setContactForm({ ...contactForm, email: e.target.value })
+                    }
                     className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
                     placeholder="rahul@example.com"
                   />
@@ -1112,7 +1391,12 @@ export default function Index() {
                     type="text"
                     required
                     value={contactForm.subject}
-                    onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
+                    onChange={(e) =>
+                      setContactForm({
+                        ...contactForm,
+                        subject: e.target.value,
+                      })
+                    }
                     className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
                     placeholder="AC not cooling"
                   />
@@ -1126,7 +1410,12 @@ export default function Index() {
                     rows={4}
                     required
                     value={contactForm.message}
-                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                    onChange={(e) =>
+                      setContactForm({
+                        ...contactForm,
+                        message: e.target.value,
+                      })
+                    }
                     className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:bg-gray-700 dark:text-white"
                     placeholder="Tell us more about your issue..."
                   ></textarea>
@@ -1138,10 +1427,16 @@ export default function Index() {
                     disabled={contactSubmitting}
                     className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {contactSubmitting
-                      ? <><Loader2 size={16} className="animate-spin" /> Sending...</>
-                      : <><Send size={15} /> Send Message</>
-                    }
+                    {contactSubmitting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />{" "}
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={15} /> Send Message
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
@@ -1153,9 +1448,12 @@ export default function Index() {
       {/* ── NEWSLETTER ── */}
       <section className="py-12 md:py-16 bg-blue-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4">Subscribe to Our Newsletter</h2>
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4">
+            Subscribe to Our Newsletter
+          </h2>
           <p className="mb-8 max-w-2xl mx-auto text-sm md:text-base opacity-90">
-            Get maintenance tips, special offers, and updates about our services directly to your inbox.
+            Get maintenance tips, special offers, and updates about our services
+            directly to your inbox.
           </p>
           {/* FIX: flex-col on mobile, flex-row on sm+ for the newsletter form */}
           <form className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
@@ -1173,7 +1471,6 @@ export default function Index() {
           </form>
         </div>
       </section>
-
     </div>
   );
 }

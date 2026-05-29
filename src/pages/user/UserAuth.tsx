@@ -15,7 +15,7 @@ const UserAuth = () => {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, isAdmin, isTechnician } = useAuth();
   const navigate = useNavigate();
 
   // Auto-fill remembered email on mount
@@ -29,7 +29,7 @@ const UserAuth = () => {
   }, []);
 
   if (user) {
-    navigate("/dashboard", { replace: true });
+    navigate(isAdmin ? "/admin/dashboard" : isTechnician ? "/technician/dashboard" : "/dashboard", { replace: true });
     return null;
   }
 
@@ -44,46 +44,6 @@ const UserAuth = () => {
         toast.error(error.message || "Login failed");
         console.error('❌ Login error:', error);
       } else {
-        console.log('✅ Login successful!');
-        
-        // Fetch and log user roles after successful login
-        const fetchUserRoles = async () => {
-          try {
-            // Get current user from auth state
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            if (user) {
-              console.log('👤 Current user:', user.email);
-              
-              const { data: rolesData, error: rolesError } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', user.id);
-              
-              if (rolesError) {
-                console.error('❌ Error fetching roles:', rolesError);
-              } else {
-                console.log('🎭 User Roles:', rolesData);
-                console.log('Roles array:', rolesData.map((r: any) => r.role));
-                
-                // Check for specific roles
-                const hasAdminRole = rolesData.some((r: any) => r.role === 'admin');
-                const hasTechnicianRole = rolesData.some((r: any) => r.role === 'technician');
-                const hasUserRole = rolesData.some((r: any) => r.role === 'user');
-                
-                console.log('📋 Role Check:');
-                console.log('  - Is Admin?', hasAdminRole);
-                console.log('  - Is Technician?', hasTechnicianRole);
-                console.log('  - Is User?', hasUserRole);
-              }
-            }
-          } catch (err) {
-            console.error('Unexpected error fetching user:', err);
-          }
-        };
-        
-        fetchUserRoles();
-        
         toast.success("Welcome back!");
         
         // Store email if remember me is checked (for convenience only)
@@ -95,7 +55,21 @@ const UserAuth = () => {
           localStorage.removeItem('electro_remember_me');
         }
         
-        navigate("/dashboard");
+        // Fetch roles to redirect based on role
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          const { data: rolesData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', currentUser.id);
+          
+          const roles = rolesData?.map((r: any) => r.role) || [];
+          if (roles.includes('admin')) navigate("/admin/dashboard");
+          else if (roles.includes('technician')) navigate("/technician/dashboard");
+          else navigate("/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       }
     } else {
       if (password.length < 6) {

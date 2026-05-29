@@ -81,6 +81,8 @@ export type Database = {
           original_amount: number | null
           final_amount: number | null
           offer_applied: boolean
+          technician_name: string | null
+          technician_phone: string | null
         }
         Insert: {
           address: string
@@ -110,6 +112,8 @@ export type Database = {
           original_amount?: number | null
           final_amount?: number | null
           offer_applied?: boolean
+          technician_name?: string | null
+          technician_phone?: string | null
         }
         Update: {
           address?: string
@@ -139,6 +143,8 @@ export type Database = {
           original_amount?: number | null
           final_amount?: number | null
           offer_applied?: boolean
+          technician_name?: string | null
+          technician_phone?: string | null
         }
         Relationships: [
           {
