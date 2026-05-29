@@ -172,7 +172,7 @@
 // export default OrderSuccess;
 
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -181,10 +181,10 @@ import {
   Mail,
   ShoppingCart,
   Share2,
-  Copy,
   Printer,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 /* ─── mini confetti canvas ────────────────────────────────────── */
 const Confetti = () => {
@@ -254,13 +254,32 @@ const OrderSuccess = () => {
   const navigate = useNavigate();
   const { orderId, amount, paymentMethod } = location.state || {};
 
-  useEffect(() => {
-    if (!orderId) navigate("/");
-  }, [orderId, navigate]);
+  const [order, setOrder] = useState<any>(null);
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!orderId) {
+      navigate("/");
+      return;
+    }
     document.title = `Order Confirmed – ${orderId} | Electrobuddy`;
-  }, [orderId]);
+
+    (async () => {
+      const { data: o, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .eq("order_number", orderId)
+        .single();
+      if (error) {
+        console.error("Failed to fetch order:", error);
+      } else {
+        setOrder(o);
+        setItems(o?.order_items || []);
+      }
+      setLoading(false);
+    })();
+  }, [orderId, navigate]);
 
   const handleShare = async () => {
     const text = `Just placed an order on Electrobuddy! Order #${orderId}`;
@@ -272,6 +291,219 @@ const OrderSuccess = () => {
       navigator.clipboard.writeText(text);
       toast.success("Order details copied to clipboard");
     }
+  };
+
+  const handlePrintReceipt = () => {
+    const win = window.open("", "_blank");
+    if (!win) return;
+
+    const shipAddr = order?.shipping_address_data as Record<string, any> | null;
+    const isPaid = order?.payment_status === "paid" || (paymentMethod === "razorpay" && order?.razorpay_payment_id);
+    const created = new Date(order?.created_at || Date.now());
+    const dateStr = created.toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" });
+    const timeStr = created.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+    const itemsRows = (items || []).map(
+      (it: any, i: number) => `
+        <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${i + 1}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${it.product_name}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${it.quantity}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">₹${Number(it.unit_price || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">₹${Number(it.total_price || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+        </tr>`
+    ).join("");
+
+    const finalAmount = Number(order?.total_amount || amount || 0);
+    const discount = Number(order?.discount_amount || 0);
+    const subTotal = Number(order?.subtotal || 0);
+    const tax = Number(order?.tax_amount || 0);
+    const shipping = Number(order?.shipping_charge || 0);
+    const instTotal = Number(order?.installation_total || 0);
+
+    win.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Receipt – ${orderId}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+          * { margin:0; padding:0; box-sizing:border-box; }
+          body {
+            font-family: 'Poppins', sans-serif;
+            background: #f3f4f6;
+            padding: 40px 20px;
+            color: #1f2937;
+          }
+          .receipt {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+          }
+          .header {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            padding: 32px 40px;
+            color: #fff;
+            text-align: center;
+          }
+          .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+          .header p { opacity: 0.9; font-size: 14px; }
+          .header .badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 16px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+          }
+          .body { padding: 32px 40px; }
+          .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+          }
+          .info-grid .field label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 2px;
+          }
+          .info-grid .field p {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+          }
+          thead th {
+            background: #f9fafb;
+            padding: 10px 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            font-weight: 600;
+            border-bottom: 2px solid #e5e7eb;
+            text-align: left;
+          }
+          thead th.right { text-align: right; }
+          thead th.center { text-align: center; }
+          tbody td { font-size: 14px; }
+          .totals {
+            border-top: 2px solid #e5e7eb;
+            padding-top: 16px;
+            margin-top: 8px;
+          }
+          .totals .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 14px;
+          }
+          .totals .row.total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e40af;
+            border-top: 2px solid #e5e7eb;
+            margin-top: 8px;
+            padding-top: 12px;
+          }
+          .footer {
+            text-align: center;
+            padding: 24px 40px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #6b7280;
+          }
+          .footer strong { color: #1f2937; }
+          @media print {
+            body { background: #fff; padding: 0; }
+            .receipt { box-shadow: none; border-radius: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt">
+          <div class="header">
+            <h1>Electrobuddy</h1>
+            <p>05 Nagziri Dewas Road, Ujjain (456010)</p>
+            <p>+91 8109308287 &nbsp;|&nbsp; electroobuddy@gmail.com</p>
+            <div class="badge">${isPaid ? "PAID" : "PENDING"}</div>
+          </div>
+          <div class="body">
+            <div class="info-grid">
+              <div class="field">
+                <label>Order Number</label>
+                <p>${orderId}</p>
+              </div>
+              <div class="field">
+                <label>Date</label>
+                <p>${dateStr} at ${timeStr}</p>
+              </div>
+              <div class="field">
+                <label>Payment Method</label>
+                <p>${paymentMethod === "razorpay" ? "Online Payment" : "Cash on Delivery"}</p>
+              </div>
+              <div class="field">
+                <label>Payment Status</label>
+                <p>${isPaid ? "Paid" : "Pending"}</p>
+              </div>
+            </div>
+
+            ${shipAddr ? `
+            <div style="margin-bottom:20px;">
+              <label style="display:block;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;font-weight:600;margin-bottom:4px;">Shipping Address</label>
+              <p style="font-size:14px;font-weight:500;">${shipAddr.name || ""}<br>${shipAddr.address || ""}, ${shipAddr.city || ""}, ${shipAddr.state || ""} – ${shipAddr.pincode || ""}<br>Phone: ${shipAddr.phone || ""}</p>
+            </div>
+            ` : ""}
+
+            <table>
+              <thead>
+                <tr>
+                  <th class="center" style="width:40px;">#</th>
+                  <th>Item</th>
+                  <th class="center" style="width:60px;">Qty</th>
+                  <th class="right" style="width:100px;">Unit Price</th>
+                  <th class="right" style="width:100px;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsRows || '<tr><td colspan="5" style="text-align:center;padding:20px;color:#9ca3af;">No items</td></tr>'}
+              </tbody>
+            </table>
+
+            <div class="totals">
+              <div class="row"><span>Subtotal</span><span>₹${subTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+              ${instTotal > 0 ? `<div class="row"><span>Installation Charges</span><span>₹${instTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : ""}
+              <div class="row"><span>Shipping</span><span>${shipping === 0 ? "FREE" : `₹${shipping.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`}</span></div>
+              <div class="row"><span>Tax</span><span>₹${tax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+              ${discount > 0 ? `<div class="row" style="color:#16a34a;"><span>Discount</span><span>−₹${discount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : ""}
+              <div class="row total"><span>Total Amount</span><span>₹${finalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+            </div>
+          </div>
+          <div class="footer">
+            <p><strong>Electrobuddy</strong> — 05 Nagziri Dewas Road, Ujjain (456010)</p>
+            <p>GST: 23ABCDE1234F1Z5 | Email: electroobuddy@gmail.com | Phone: +91 8109308287</p>
+            <p style="margin-top:8px;">Thank you for your purchase!</p>
+          </div>
+        </div>
+        <script>window.onload = function() { window.print(); window.close(); }</script>
+      </body>
+      </html>
+    `);
+    win.document.close();
   };
 
   if (!orderId) return null;
@@ -444,12 +676,12 @@ const OrderSuccess = () => {
             </button>
             <span className="w-px h-4 bg-border" />
             <button
-              onClick={() => window.print()}
+              onClick={handlePrintReceipt}
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
-              aria-label="Print confirmation"
+              aria-label="Print receipt"
             >
               <Printer className="w-4 h-4" />
-              Print
+              Print Receipt
             </button>
           </motion.div>
 
