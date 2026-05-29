@@ -117,6 +117,32 @@ export async function unsubscribeFromPush(userId: string): Promise<boolean> {
   }
 }
 
+export async function forceRefreshPushToken(userId: string): Promise<boolean> {
+  try {
+    // First delete all existing tokens for this user
+    const { error: deleteError } = await supabase
+      .from('push_subscriptions')
+      .delete()
+      .eq('user_id', userId);
+
+    if (deleteError) {
+      console.error('[Firebase] Failed to delete old tokens:', deleteError);
+    } else {
+      console.log('[Firebase] Deleted old tokens for user:', userId);
+    }
+
+    // Now get a fresh token
+    const success = await subscribeToPush(userId);
+    if (success) {
+      console.log('[Firebase] Force refresh completed - new token saved');
+    }
+    return success;
+  } catch (err) {
+    console.error('[Firebase] forceRefreshPushToken error:', err);
+    return false;
+  }
+}
+
 export function getNotificationPermission(): NotificationPermission {
   return 'Notification' in window ? Notification.permission : 'denied';
 }

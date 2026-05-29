@@ -224,13 +224,10 @@ serve(async (req: Request): Promise<Response> => {
 
         console.error(`[FCM] Send failed sub ${sub.id} — HTTP:${resp.status} code:${fcmCode} msg:${parsed?.error?.message ?? ""}`);
 
-        // Only mark as invalid if it's a clear invalid token error - don't auto-invalidate
-        // to prevent losing valid subscriptions
-        const isInvalid =
-          fcmCode === "UNREGISTERED" ||
-          respText.includes("not a valid FCM registration token") ||
-          respText.includes("DEVICE_UNREGISTERED");
-
+        // NEVER auto-invalidate tokens - let users manually refresh
+        // This prevents losing valid subscriptions due to temporary FCM errors
+        const isInvalid = false; // Disabled - never auto-invalidate
+        
         if (isInvalid) {
           console.warn(`[FCM] Token for sub ${sub.id} is invalid — marking inactive`);
           invalidIds.push(sub.id);
@@ -246,14 +243,15 @@ serve(async (req: Request): Promise<Response> => {
     }
   }
 
-  // Mark dead tokens inactive
-  if (invalidIds.length) {
-    await supabase
-      .from("push_subscriptions")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .in("id", invalidIds);
-    console.log(`[FCM] Invalidated ${invalidIds.length} dead token(s)`);
-  }
+  // Mark dead tokens inactive - DISABLED to prevent losing valid subscriptions
+  // Users should manually refresh their tokens via the Subscribe button
+  // if (invalidIds.length) {
+  //   await supabase
+  //     .from("push_subscriptions")
+  //     .update({ is_active: false, updated_at: new Date().toISOString() })
+  //     .in("id", invalidIds);
+  //   console.log(`[FCM] Invalidated ${invalidIds.length} dead token(s)`);
+  // }
 
   const result = {
     success:     successCount > 0,

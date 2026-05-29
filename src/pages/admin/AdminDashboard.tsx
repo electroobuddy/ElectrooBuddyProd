@@ -236,23 +236,23 @@ const AdminDashboard = () => {
   };
 
   const subscribeAdmin = async () => {
-    toast.info("Requesting push permission...");
+    toast.info("Refreshing push subscription...");
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast.error("Admin not logged in");
       return;
     }
     try {
-      // Try FCM first
-      const { subscribeToPush } = await import("@/utils/firebaseNotifications");
-      const fcmResult = await subscribeToPush(user.id);
+      // Use force refresh - deletes old tokens first, gets fresh ones
+      const { forceRefreshPushToken } = await import("@/utils/firebaseNotifications");
+      const fcmResult = await forceRefreshPushToken(user.id);
       
       if (fcmResult) {
-        toast.success("FCM push subscribed! You'll receive notifications.");
+        toast.success("Push subscription refreshed! You'll receive notifications.");
         fetchPushStats();
       } else {
         // If FCM fails, try OneSignal
-        toast.info("FCM failed, trying OneSignal...");
+        toast.info("FCM refresh failed, trying OneSignal...");
         const { subscribeToOneSignal } = await import("@/utils/oneSignalNotifications");
         const osResult = await subscribeToOneSignal(user.id);
         if (osResult) {
