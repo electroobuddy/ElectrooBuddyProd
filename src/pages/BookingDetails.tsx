@@ -95,14 +95,16 @@ const BookingDetails = () => {
     if (!technicianId || !booking) return;
     setAssigningTech(true);
     const today = new Date().toISOString().split("T")[0];
+    const { data: tech } = await supabase.from("technicians").select("*").eq("id", technicianId).maybeSingle();
     const { error } = await supabase.from("bookings").update({
       assigned_technician_id: technicianId, status: "assigned",
       assigned_at: new Date().toISOString(), assignment_date: today,
+      technician_name: tech?.name || null,
+      technician_phone: tech?.phone || null,
     }).eq("id", booking.id);
     if (error) { toast.error(error.message); setAssigningTech(false); return; }
     toast.success("Technician assigned");
-    const { data: tech } = await supabase.from("technicians").select("*").eq("id", technicianId).maybeSingle();
-    setBooking({ ...booking, assigned_technician_id: technicianId, status: "assigned", assigned_at: new Date().toISOString(), assignment_date: today });
+    setBooking({ ...booking, assigned_technician_id: technicianId, status: "assigned", assigned_at: new Date().toISOString(), assignment_date: today, technician_name: tech?.name || null, technician_phone: tech?.phone || null });
     if (tech) setTechnician(tech);
     setAssigningTech(false);
   };
@@ -267,15 +269,34 @@ const BookingDetails = () => {
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-emerald-900 dark:text-emerald-300">{technician.name}</p>
+                      {technician.phone && (
+                        <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                          <Phone size={10} />{technician.phone}
+                        </p>
+                      )}
                       <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
                         {b.assigned_at ? new Date(b.assigned_at).toLocaleString("en-IN") : "Assigned"}
                       </p>
                     </div>
                   </div>
-                  <button onClick={handleUnassignTechnician}
-                    className="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 rounded-lg transition-colors">
-                    Unassign
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {technician.phone && (
+                      <>
+                        <a href={`https://wa.me/${technician.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                          className="p-2 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-800 text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">
+                          <MessageCircle size={14} />
+                        </a>
+                        <a href={`tel:${technician.phone}`}
+                          className="p-2 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-950/30 text-emerald-500 hover:text-blue-600 transition-colors">
+                          <PhoneCall size={14} />
+                        </a>
+                      </>
+                    )}
+                    <button onClick={handleUnassignTechnician}
+                      className="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 rounded-lg transition-colors">
+                      Unassign
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -299,17 +320,38 @@ const BookingDetails = () => {
         </SectionCard>
       )}
 
-      {/* Technician Assignment Info - non-admin view */}
-      {!isAdmin && technician && (
+      {/* Technician Details - non-admin view */}
+      {!isAdmin && b.assigned_technician_id && (
         <SectionCard title="Technician" icon={<UserCheck size={13} />}>
           <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">
             <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/50 flex items-center justify-center">
               <UserCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div>
-              <p className="font-semibold text-sm text-emerald-900 dark:text-emerald-300">{technician.name}</p>
-              <p className="text-xs text-emerald-700 dark:text-emerald-400">Assigned technician</p>
+            <div className="flex-1">
+              <p className="font-semibold text-sm text-emerald-900 dark:text-emerald-300">
+                {b.technician_name || technician?.name || "Technician Assigned"}
+              </p>
+              {(b.technician_phone || technician?.phone) && (
+                <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                  <Phone size={10} />{b.technician_phone || technician?.phone}
+                </p>
+              )}
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                {b.assigned_at ? new Date(b.assigned_at).toLocaleString("en-IN") : "Assigned"}
+              </p>
             </div>
+            {(b.technician_phone || technician?.phone) && (
+              <div className="flex gap-1.5">
+                <a href={`https://wa.me/${(b.technician_phone || technician?.phone).replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                  className="p-2 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-950/30 text-zinc-400 hover:text-emerald-600 transition-colors border border-transparent hover:border-emerald-200">
+                  <MessageCircle size={14} />
+                </a>
+                <a href={`tel:${b.technician_phone || technician?.phone}`}
+                  className="p-2 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-950/30 text-zinc-400 hover:text-blue-600 transition-colors border border-transparent hover:border-blue-200">
+                  <PhoneCall size={14} />
+                </a>
+              </div>
+            )}
           </div>
         </SectionCard>
       )}
@@ -349,11 +391,13 @@ const BookingDetails = () => {
         </SectionCard>
       )}
 
-      {/* Invoice Download - all roles */}
-      <button onClick={() => generateBookingInvoice(b)}
-        className="w-full py-3 rounded-xl bg-white dark:bg-zinc-900 border-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 font-semibold text-sm transition-colors flex items-center justify-center gap-2">
-        <FileText size={15} /> Download Invoice
-      </button>
+      {/* Invoice Download - restricted by role + status */}
+      {(isAdmin || b.status === "completed") && (
+        <button onClick={() => generateBookingInvoice(b)}
+          className="w-full py-3 rounded-xl bg-white dark:bg-zinc-900 border-2 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+          <FileText size={15} /> Download Invoice
+        </button>
+      )}
 
       {/* ── Role-Based Actions ── */}
 

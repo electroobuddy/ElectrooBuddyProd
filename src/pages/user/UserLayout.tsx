@@ -8,7 +8,7 @@ import { subscribeToPush } from "@/utils/firebaseNotifications";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-  // { label: "My Bookings", to: "/dashboard/bookings", icon: Calendar },
+  { label: "My Bookings", to: "/dashboard/bookings", icon: Calendar },
   { label: "My Orders", to: "/dashboard/orders", icon: Package },
   { label: "Subscriptions", to: "/dashboard/subscriptions", icon: ShieldCheck },
   { label: "Products", to: "/dashboard/products", icon: ShoppingBag },

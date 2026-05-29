@@ -190,6 +190,13 @@ const AdminBookings = () => {
     try {
       const today = new Date().toISOString().split("T")[0];
       
+      // Fetch technician details to store on booking
+      const { data: tech } = await supabase
+        .from("technicians")
+        .select("name, phone")
+        .eq("id", technicianId)
+        .maybeSingle();
+      
       const { error } = await supabase
         .from("bookings")
         .update({
@@ -197,6 +204,8 @@ const AdminBookings = () => {
           status: "assigned",
           assigned_at: new Date().toISOString(),
           assignment_date: today,
+          technician_name: tech?.name || null,
+          technician_phone: tech?.phone || null,
         })
         .eq("id", bookingId);
 
@@ -207,7 +216,7 @@ const AdminBookings = () => {
       
       // Update viewing if needed
       if (viewing?.id === bookingId) {
-        setViewing({ ...viewing, assigned_technician_id: technicianId, status: "assigned" });
+        setViewing({ ...viewing, assigned_technician_id: technicianId, status: "assigned", technician_name: tech?.name || null, technician_phone: tech?.phone || null });
       }
     } catch (error: any) {
       console.error(error);
@@ -228,6 +237,8 @@ const AdminBookings = () => {
           status: "pending",
           assigned_at: null,
           assignment_date: null,
+          technician_name: null,
+          technician_phone: null,
         })
         .eq("id", bookingId);
 
@@ -237,7 +248,7 @@ const AdminBookings = () => {
       fetchData();
       
       if (viewing?.id === bookingId) {
-        setViewing({ ...viewing, assigned_technician_id: null, status: "pending" });
+        setViewing({ ...viewing, assigned_technician_id: null, status: "pending", technician_name: null, technician_phone: null });
       }
     } catch (error: any) {
       console.error(error);
@@ -471,16 +482,37 @@ const AdminBookings = () => {
                               <UserCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
                             </div>
                             <div>
-                              <p className="font-semibold text-sm text-emerald-900 dark:text-emerald-300">Assigned to Technician</p>
+                              <p className="font-semibold text-sm text-emerald-900 dark:text-emerald-300">
+                                {viewing.technician_name || "Assigned to Technician"}
+                              </p>
+                              {viewing.technician_phone && (
+                                <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+                                  <Phone size={10} />{viewing.technician_phone}
+                                </p>
+                              )}
                               <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
-                                {new Date(viewing.assigned_at).toLocaleString("en-IN")}
+                                {viewing.assigned_at ? new Date(viewing.assigned_at).toLocaleString("en-IN") : "Assigned"}
                               </p>
                             </div>
                           </div>
-                          <button onClick={() => handleUnassignTechnician(viewing.id)}
-                            className="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 rounded-lg transition-colors">
-                            Unassign
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {viewing.technician_phone && (
+                              <>
+                                <a href={`https://wa.me/${viewing.technician_phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                                  className="p-2 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-800 text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">
+                                  <MessageCircle size={14} />
+                                </a>
+                                <a href={`tel:${viewing.technician_phone}`}
+                                  className="p-2 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-950/30 text-emerald-500 hover:text-blue-600 transition-colors">
+                                  <PhoneCall size={14} />
+                                </a>
+                              </>
+                            )}
+                            <button onClick={() => handleUnassignTechnician(viewing.id)}
+                              className="px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 rounded-lg transition-colors">
+                              Unassign
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ) : (
