@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -7,6 +8,7 @@ import { toast } from "sonner";
 
 const TechnicianBookings = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -208,6 +210,12 @@ const TechnicianBookings = () => {
 
                 {/* Right: Actions */}
                 <div className="flex flex-col gap-2 lg:w-48">
+                  <button
+                    onClick={() => navigate(`/technician/bookings/${booking.id}`)}
+                    className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-semibold rounded-xl transition-colors"
+                  >
+                    View Details
+                  </button>
                   {booking.status === "assigned" || booking.status === "pending" ? (
                     <>
                       <button

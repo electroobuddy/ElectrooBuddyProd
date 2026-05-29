@@ -67,6 +67,7 @@ const AdminShippingSettings = lazy(() => import("./pages/admin/AdminShippingSett
 const AdminTechnicians = lazy(() => import("./pages/admin/AdminTechnicians"));
 const AdminOffers = lazy(() => import("./pages/admin/AdminOffers"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const BookingDetails = lazy(() => import("./pages/BookingDetails"));
 const TechnicianLogin = lazy(() => import("./pages/technician/TechnicianLogin"));
 const TechnicianLayout = lazy(() => import("./pages/technician/TechnicianLayout"));
 const TechnicianDashboard = lazy(() => import("./pages/technician/TechnicianDashboard"));
@@ -182,6 +183,7 @@ const AppContent = () => {
             <Route element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><UserLayout /></Suspense>}>
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
+              <Route path="/dashboard/bookings/:id" element={<BookingDetails />} />
               <Route path="/dashboard/orders" element={<UserOrders />} />
               <Route path="/dashboard/subscriptions" element={<UserSubscriptions />} />
               <Route path="/dashboard/products" element={<UserProducts />} />
@@ -199,6 +201,7 @@ const AppContent = () => {
               <Route path="/admin/orders" element={<AdminOrders />} />
               <Route path="/admin/services" element={<AdminServices />} />
               <Route path="/admin/bookings" element={<AdminBookings />} />
+              <Route path="/admin/bookings/:id" element={<BookingDetails />} />
               <Route path="/admin/technicians" element={<AdminTechnicians />} />
               <Route path="/admin/team" element={<AdminTeam />} />
               <Route path="/admin/testimonials" element={<AdminTestimonials />} />
@@ -218,6 +221,7 @@ const AppContent = () => {
             <Route element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><TechnicianLayout /></Suspense>}>
               <Route path="/technician/dashboard" element={<TechnicianDashboard />} />
               <Route path="/technician/bookings" element={<TechnicianBookings />} />
+              <Route path="/technician/bookings/:id" element={<BookingDetails />} />
               <Route path="/technician/profile" element={<TechnicianProfile />} />
               <Route path="/technician/settings" element={<TechnicianSettings />} />
             </Route>

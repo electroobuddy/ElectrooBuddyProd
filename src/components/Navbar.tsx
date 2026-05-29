@@ -164,7 +164,7 @@ const Navbar = memo(() => {
   const [scrolled, setScrolled] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { itemCount } = useCart();
 
   const isActive = useCallback((to: string) => location.pathname === to, [location.pathname]);
@@ -959,12 +959,12 @@ const Navbar = memo(() => {
 
             {/* Login / Dashboard */}
             <Link
-              to={user ? "/dashboard" : "/login"}
+              to={user ? (isAdmin ? "/admin/dashboard" : "/dashboard") : "/login"}
               className="login-link"
             >
               <User size={14} />
               <span className="login-label">
-                {user ? "Dashboard" : "Login"}
+                {user ? (isAdmin ? "Admin" : "Dashboard") : "Login"}
               </span>
             </Link>
 
@@ -1081,13 +1081,13 @@ const Navbar = memo(() => {
                 )}
 
                 <Link
-                  to={user ? "/dashboard" : "/login"}
+                  to={user ? (isAdmin ? "/admin/dashboard" : "/dashboard") : "/login"}
                   className="mobile-link"
                   onClick={() => setOpen(false)}
                   style={{ display: "flex", alignItems: "center", gap: 8 }}
                 >
                   <User size={14} />
-                  {user ? "My Dashboard" : "Login / Sign Up"}
+                  {user ? (isAdmin ? "Admin Dashboard" : "My Dashboard") : "Login / Sign Up"}
                 </Link>
 
                 <Link

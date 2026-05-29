@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ const statusColors: Record<string, { bg: string; text: string; label: string }> 
 
 const UserBookings = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
@@ -508,7 +509,7 @@ const UserBookings = () => {
           {bookings.map((b) => {
             const status = statusColors[b.status] || statusColors.pending;
             return (
-              <div key={b.id} className="bg-card border border-border rounded-xl p-4 sm:p-5 hover:border-primary/20 transition">
+              <button key={b.id} onClick={() => navigate(`/dashboard/bookings/${b.id}`)} className="w-full text-left bg-card border border-border rounded-xl p-4 sm:p-5 hover:border-primary/20 transition cursor-pointer">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                   <h3 className="font-heading font-bold text-foreground">{b.service_type}</h3>
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${status.bg} ${status.text} self-start`}>
@@ -556,7 +557,7 @@ const UserBookings = () => {
                     )}
                   </div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>

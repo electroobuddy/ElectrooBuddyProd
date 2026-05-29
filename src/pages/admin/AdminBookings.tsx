@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Pencil, Trash2, X, Eye, Calendar, Clock, Phone,
   MapPin, Search, Download, User, Wrench, AlignLeft, Check,
-  CalendarDays, Filter, ChevronRight, Save, CheckCircle, UserCheck, Tag
+  CalendarDays, Filter, ChevronRight, Save, CheckCircle, UserCheck, Tag, MessageCircle, PhoneCall
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,6 +43,7 @@ const inputCls = "w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:bo
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const AdminBookings = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -253,8 +255,8 @@ const AdminBookings = () => {
 
   const exportCSV = () => {
     if (!bookings.length) return;
-    const headers = ["Name", "Phone", "Address", "Service", "Date", "Time", "Description", "Status"];
-    const rows = bookings.map(b => [b.name, b.phone, b.address, b.service_type, b.preferred_date, b.preferred_time, b.description || "", b.status]);
+    const headers = ["Name", "Phone", "Address", "Service", "Date", "Time", "Description", "Status", "Original Amount", "Discount Amount", "Final Amount", "Coupon Code"];
+    const rows = bookings.map(b => [b.name, b.phone, b.address, b.service_type, b.preferred_date, b.preferred_time, b.description || "", b.status, b.original_amount || "", b.discount_amount || "", b.final_amount || "", b.coupon_code || ""]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
@@ -333,13 +335,14 @@ const AdminBookings = () => {
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden sm:table-cell">Service</th>
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden md:table-cell">Date & Time</th>
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden lg:table-cell">Amount</th>
                 <th className="px-4 py-3.5 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-16 text-center">
+                  <td colSpan={6} className="px-6 py-16 text-center">
                     <CalendarDays size={40} className="mx-auto text-zinc-200 dark:text-zinc-700 mb-3" strokeWidth={1.5} />
                     <p className="font-semibold text-zinc-500">No bookings found</p>
                   </td>
@@ -367,9 +370,32 @@ const AdminBookings = () => {
                     </p>
                   </td>
                   <td className="px-4 py-4"><StatusPill status={b.status} /></td>
+                  <td className="px-4 py-4 hidden lg:table-cell">
+                    <div className="text-xs">
+                      {b.offer_applied ? (
+                        <div className="space-y-0.5">
+                          <span className="text-zinc-400 line-through">₹{b.original_amount}</span>
+                          <span className="text-green-600 font-medium ml-1">-₹{b.discount_amount}</span>
+                          <div className="font-bold text-zinc-900 dark:text-white">₹{b.final_amount}</div>
+                        </div>
+                      ) : b.final_amount > 0 ? (
+                        <span className="font-bold text-zinc-900 dark:text-white">₹{b.final_amount}</span>
+                      ) : (
+                        <span className="text-zinc-400">—</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-4">
-                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => setViewing(b)}
+                    <div className="flex items-center justify-end gap-1.5">
+                      <a href={`https://wa.me/${b.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer"
+                        className="p-2 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-950/30 text-zinc-400 hover:text-emerald-600 transition-colors border border-transparent hover:border-emerald-200">
+                        <MessageCircle size={14} />
+                      </a>
+                      <a href={`tel:${b.phone}`}
+                        className="p-2 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-950/30 text-zinc-400 hover:text-blue-600 transition-colors border border-transparent hover:border-blue-200">
+                        <PhoneCall size={14} />
+                      </a>
+                      <button onClick={() => navigate(`/admin/bookings/${b.id}`)}
                         className="p-2 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-950/30 text-zinc-400 hover:text-blue-600 transition-colors border border-transparent hover:border-blue-200">
                         <Eye size={14} />
                       </button>
