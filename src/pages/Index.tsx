@@ -60,7 +60,7 @@ import team3 from "@/images/no-profile.png";
 import teamDefault from "@/images/team-.jpg";
 import { getTeamImage } from "@/components/about/TeamCard";
 import { applianceTips, faqs, serviceShowcase } from "@/data/faqs";
-import { testimonials } from "@/data/testimonials";
+import { testimonials as staticTestimonials } from "@/data/testimonials";
 
 // Local team image mapping for fallbacks
 const localTeamImageMap: Record<string, string> = {
@@ -95,6 +95,8 @@ export default function Index() {
   const displayProducts = products.slice(0, 4);
   const [team, setTeam] = useState<any[]>([]);
   const [teamLoading, setTeamLoading] = useState(true);
+  const [dbTestimonials, setDbTestimonials] = useState<any[]>([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const touchStartX = useRef<number>(0);
 
   const counters = useMemo(
@@ -162,6 +164,54 @@ export default function Index() {
     };
   }, []);
 
+  // Fetch testimonials from database
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchTestimonials = async () => {
+      try {
+        setTestimonialsLoading(true);
+        const { data, error } = await supabase
+          .from("testimonials")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!mounted) return;
+
+        if (error) {
+          console.error("Error fetching testimonials:", error);
+          setDbTestimonials([]);
+        } else {
+          setDbTestimonials(data || []);
+        }
+      } catch (err) {
+        console.error("Failed to load testimonials:", err);
+        if (mounted) setDbTestimonials([]);
+      } finally {
+        if (mounted) setTestimonialsLoading(false);
+      }
+    };
+
+    fetchTestimonials();
+    return () => { mounted = false; };
+  }, []);
+
+  // Use DB testimonials if available, otherwise fall back to static data
+  const displayTestimonials = dbTestimonials.length > 0
+    ? dbTestimonials.map((t) => ({
+        name: t.name || "Anonymous",
+        text: t.text,
+        rating: t.rating || 5,
+        service: t.service || "",
+        location: "Ujjain",
+        image: undefined,
+      }))
+    : staticTestimonials;
+
+  const averageRating = displayTestimonials.length > 0
+    ? (displayTestimonials.reduce((s, t) => s + (t.rating || 5), 0) / displayTestimonials.length).toFixed(1)
+    : "4.9";
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -170,12 +220,12 @@ export default function Index() {
   };
 
   const nextTestimonial = () => {
-    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    setCurrentTestimonial((prev) => (prev + 1) % displayTestimonials.length);
   };
 
   const prevTestimonial = () => {
     setCurrentTestimonial(
-      (prev) => (prev - 1 + testimonials.length) % testimonials.length,
+      (prev) => (prev - 1 + displayTestimonials.length) % displayTestimonials.length,
     );
   };
 
@@ -967,25 +1017,33 @@ export default function Index() {
                 scrollBehavior: "smooth",
               }}
             >
-              {testimonials.map((testimonial, index) => (
+              {displayTestimonials.map((testimonial, index) => (
                 <div
                   key={index}
                   className="testimonial-slide bg-gray-50 dark:bg-gray-700 p-8 rounded-lg shadow-md flex-shrink-0"
                   style={{ width: "320px", scrollSnapAlign: "start" }}
                 >
                   <div className="flex items-center mb-6">
-                    <img
-                      src={testimonial.image}
-                      alt={testimonial.name}
-                      className="h-12 w-12 rounded-full"
-                      loading="lazy"
-                    />
+                    {testimonial.image ? (
+                      <img
+                        src={testimonial.image}
+                        alt={testimonial.name}
+                        className="h-12 w-12 rounded-full"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-lg">
+                          {(testimonial.name || "?")[0].toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div className="ml-4">
                       <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                         {testimonial.name}
                       </h4>
                       <p className="text-gray-600 dark:text-gray-300">
-                        {testimonial.location}
+                        {testimonial.location || testimonial.service || "Ujjain"}
                       </p>
                     </div>
                   </div>
@@ -993,7 +1051,7 @@ export default function Index() {
                     {testimonial.text}
                   </p>
                   <div className="flex">
-                    {[...Array(testimonial.rating)].map((_, i) => (
+                    {[...Array(testimonial.rating || 5)].map((_, i) => (
                       <Star
                         key={i}
                         className="h-5 w-5 text-yellow-400 fill-current"
@@ -1024,7 +1082,7 @@ export default function Index() {
                 <div className="flex items-center justify-center mb-4">
                   <MessageCircle className="h-8 w-8 text-blue-600 dark:text-blue-400 mr-2" />
                   <span className="text-xl font-semibold text-gray-900 dark:text-white">
-                    4.9
+                    {averageRating}
                   </span>
                   <div className="ml-2">
                     <div className="flex">
@@ -1036,7 +1094,7 @@ export default function Index() {
                       ))}
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Based on 3 reviews
+                      Based on {displayTestimonials.length} review{displayTestimonials.length !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
