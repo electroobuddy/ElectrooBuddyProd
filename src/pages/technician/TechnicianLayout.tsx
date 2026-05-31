@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
+import { subscribeToPush } from "@/utils/firebaseNotifications";
 
 const navItems = [
   { label: "Dashboard",    to: "/technician/dashboard",    icon: LayoutDashboard },
@@ -53,6 +54,26 @@ const TechnicianLayout = () => {
 
     fetchTechnician();
   }, [user, navigate]);
+
+  // FCM push subscription setup
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const setupFCM = async () => {
+      try {
+        const fcmSuccess = await subscribeToPush(user.id);
+        if (fcmSuccess) {
+          console.log('[TechnicianLayout] FCM subscription saved for technician:', user.id);
+        } else {
+          console.warn('[TechnicianLayout] FCM subscription failed');
+        }
+      } catch (err) {
+        console.warn('[TechnicianLayout] FCM setup error:', err);
+      }
+    };
+
+    setupFCM();
+  }, [user?.id]);
 
   const currentPage = navItems.find(n => n.to === location.pathname)?.label || "Technician";
 

@@ -1,29 +1,59 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, ArrowRight } from "lucide-react";
-import { PHONE_NUMBER } from "@/data/services";
+import { Phone, Mail, MapPin, ArrowRight, Instagram, Linkedin, Facebook, Twitter, Youtube } from "lucide-react";
 import { motion } from "framer-motion";
-
-// Import favicon
+import { supabase } from "@/integrations/supabase/client";
 import favicon from "/favicon.png";
 
-const quickLinks = [
-  { label: "Home", to: "/" },
-  { label: "About Us", to: "/about" },
-  { label: "Services", to: "/services" },
-  { label: "Projects", to: "/projects" },
-  { label: "Contact", to: "/contact" },
-];
+interface FooterLink {
+  label: string;
+  to: string;
+}
 
-const serviceLinks = [
-  "Electrical Servicing",
-  "Device Installation",
-  "Equipment Repair",
-  "Wiring & Maintenance",
-  "Home Troubleshooting",
-];
+interface FooterSettings {
+  phone_number: string;
+  email: string;
+  address: string;
+  instagram: string;
+  linkedin: string;
+  facebook: string;
+  twitter: string;
+  youtube: string;
+  quick_links: FooterLink[];
+  service_links: string[];
+  copyright_text: string;
+  privacy_policy_url: string;
+  terms_url: string;
+}
 
-// ─── Blinking Eye Component ───────────────────────────────────────────────────
+const defaultSettings: FooterSettings = {
+  phone_number: "+917000396039",
+  email: "electroobuddy@gmail.com",
+  address: "05, Nagziri Dewas Road, Ujjain(456010), India",
+  instagram: "https://www.instagram.com/electroobuddy",
+  linkedin: "https://www.linkedin.com/company/electroobuddy",
+  facebook: "",
+  twitter: "",
+  youtube: "",
+  quick_links: [
+    { label: "Home", to: "/" },
+    { label: "About Us", to: "/about" },
+    { label: "Services", to: "/services" },
+    { label: "Projects", to: "/projects" },
+    { label: "Contact", to: "/contact" },
+  ],
+  service_links: [
+    "Electrical Servicing",
+    "Device Installation",
+    "Equipment Repair",
+    "Wiring & Maintenance",
+    "Home Troubleshooting",
+  ],
+  copyright_text: "Electroobuddy. All rights reserved.",
+  privacy_policy_url: "/privacy",
+  terms_url: "/terms",
+};
+
 const BlinkingEye = () => {
   const [blink, setBlink] = useState(false);
 
@@ -31,7 +61,7 @@ const BlinkingEye = () => {
     const schedule = () => {
       setBlink(true);
       setTimeout(() => setBlink(false), 120);
-      setTimeout(() => setBlink(true),  420);
+      setTimeout(() => setBlink(true), 420);
       setTimeout(() => setBlink(false), 540);
       const next = 3000 + Math.random() * 2000;
       setTimeout(schedule, next + 540);
@@ -131,7 +161,6 @@ const BlinkingEye = () => {
   );
 };
 
-// ─── Logo Text ────────────────────────────────────────────────────────────────
 const LogoText = () => (
   <span className="footer-logo-text">
     Electr
@@ -141,409 +170,479 @@ const LogoText = () => (
   </span>
 );
 
-const Footer = () => (
-  <>
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+const socialIcons: { key: string; icon: React.ReactNode; label: string }[] = [
+  { key: "instagram", icon: <Instagram size={18} />, label: "Instagram" },
+  { key: "linkedin", icon: <Linkedin size={18} />, label: "LinkedIn" },
+  { key: "facebook", icon: <Facebook size={18} />, label: "Facebook" },
+  { key: "twitter", icon: <Twitter size={18} />, label: "Twitter" },
+  { key: "youtube", icon: <Youtube size={18} />, label: "YouTube" },
+];
 
-      .footer-root {
-        position: relative;
-        background: hsl(var(--card));
-        overflow: hidden;
-        font-family: 'Inter', sans-serif;
-        border-top: 1px solid hsl(var(--border));
+const Footer = () => {
+  const [settings, setSettings] = useState<FooterSettings>(defaultSettings);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase.from("site_settings").select("*");
+      if (data) {
+        const loaded = { ...defaultSettings };
+        data.forEach((s: any) => {
+          if (s.key in loaded) {
+            try {
+              (loaded as any)[s.key] = JSON.parse(s.value);
+            } catch {
+              (loaded as any)[s.key] = s.value;
+            }
+          }
+        });
+        setSettings(loaded);
       }
+    };
+    fetchSettings();
+  }, []);
 
-      /* Animated grid background */
-      .footer-grid-bg {
-        position: absolute;
-        inset: 0;
-        background-image:
-          linear-gradient(hsl(var(--foreground) / 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
-        background-size: 60px 60px;
-        pointer-events: none;
-      }
+  const socialLinks = socialIcons
+    .filter((s) => settings[s.key as keyof FooterSettings])
+    .map((s) => ({
+      ...s,
+      url: settings[s.key as keyof FooterSettings] as string,
+    }));
 
-      /* Glows */
-      .footer-glow-tr {
-        position: absolute;
-        top: -120px; right: -80px;
-        width: 400px; height: 400px;
-        border-radius: 50%;
-        background: radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%);
-        pointer-events: none;
-      }
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-      .footer-glow-bl {
-        position: absolute;
-        bottom: -100px; left: -60px;
-        width: 350px; height: 350px;
-        border-radius: 50%;
-        background: radial-gradient(circle, hsl(var(--secondary) / 0.04) 0%, transparent 70%);
-        pointer-events: none;
-      }
+        .footer-root {
+          position: relative;
+          background: hsl(var(--card));
+          overflow: hidden;
+          font-family: 'Inter', sans-serif;
+          border-top: 1px solid hsl(var(--border));
+        }
 
-      .footer-inner {
-        position: relative;
-        z-index: 2;
-        max-width: 1280px;
-        margin: 0 auto;
-        padding: 72px 24px 0;
-      }
+        .footer-grid-bg {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(hsl(var(--foreground) / 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
+          background-size: 60px 60px;
+          pointer-events: none;
+        }
 
-      .footer-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 48px;
-      }
+        .footer-glow-tr {
+          position: absolute;
+          top: -120px; right: -80px;
+          width: 400px; height: 400px;
+          border-radius: 50%;
+          background: radial-gradient(circle, hsl(var(--primary) / 0.06) 0%, transparent 70%);
+          pointer-events: none;
+        }
 
-      @media (min-width: 768px) {
-        .footer-grid { grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 40px; }
-      }
+        .footer-glow-bl {
+          position: absolute;
+          bottom: -100px; left: -60px;
+          width: 350px; height: 350px;
+          border-radius: 50%;
+          background: radial-gradient(circle, hsl(var(--secondary) / 0.04) 0%, transparent 70%);
+          pointer-events: none;
+        }
 
-      /* Brand */
-      .footer-logo {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        text-decoration: none;
-        margin-bottom: 20px;
-      }
+        .footer-inner {
+          position: relative;
+          z-index: 2;
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 72px 24px 0;
+        }
 
-      .footer-logo-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
-        flex-shrink: 0;
-      }
+        .footer-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 48px;
+        }
 
-      .footer-logo-text {
-        font-family: 'Poppins', sans-serif;
-        font-size: 22px;
-        font-weight: 700;
-        letter-spacing: 0.3px;
-        color: hsl(var(--foreground));
-        line-height: 1;
-      }
+        @media (min-width: 768px) {
+          .footer-grid { grid-template-columns: 1.4fr 1fr 1fr 1.2fr; gap: 40px; }
+        }
 
-      .footer-logo-text span {
-        background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
+        .footer-logo {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          text-decoration: none;
+          margin-bottom: 20px;
+        }
 
-      .footer-brand-desc {
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        font-weight: 400;
-        color: hsl(var(--muted-foreground));
-        line-height: 1.75;
-        margin-bottom: 24px;
-        max-width: 280px;
-      }
+        .footer-logo-icon {
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--electric-blue-dark)));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+          flex-shrink: 0;
+        }
 
-      .footer-cta-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        font-family: 'Poppins', sans-serif;
-        font-size: 14px;
-        font-weight: 600;
-        color: hsl(var(--primary));
-        text-decoration: none;
-        letter-spacing: 0.2px;
-        transition: all 0.25s;
-      }
+        .footer-logo-text {
+          font-family: 'Poppins', sans-serif;
+          font-size: 22px;
+          font-weight: 700;
+          letter-spacing: 0.3px;
+          color: hsl(var(--foreground));
+          line-height: 1;
+        }
 
-      .footer-cta-link:hover { opacity: 0.75; gap: 10px; }
+        .footer-logo-text span {
+          background: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--electric-yellow-light)));
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
 
-      /* Section headings */
-      .footer-col-title {
-        font-family: 'Poppins', sans-serif;
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        color: hsl(var(--primary));
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
+        .footer-brand-desc {
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          color: hsl(var(--muted-foreground));
+          line-height: 1.75;
+          margin-bottom: 24px;
+          max-width: 280px;
+        }
 
-      .footer-col-title::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: linear-gradient(90deg, hsl(var(--primary) / 0.3), transparent);
-      }
+        .footer-cta-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          color: hsl(var(--primary));
+          text-decoration: none;
+          letter-spacing: 0.2px;
+          transition: all 0.25s;
+        }
 
-      /* Links */
-      .footer-link-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
+        .footer-cta-link:hover { opacity: 0.75; gap: 10px; }
 
-      .footer-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 9px;
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        font-weight: 400;
-        color: hsl(var(--muted-foreground));
-        text-decoration: none;
-        transition: all 0.25s ease;
-      }
+        .footer-col-title {
+          font-family: 'Poppins', sans-serif;
+          font-size: 15px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          color: hsl(var(--primary));
+          margin-bottom: 20px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
 
-      .footer-link-dot {
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: hsl(var(--primary) / 0.3);
-        flex-shrink: 0;
-        transition: all 0.25s;
-      }
+        .footer-col-title::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: linear-gradient(90deg, hsl(var(--primary) / 0.3), transparent);
+        }
 
-      .footer-link:hover {
-        color: hsl(var(--primary));
-        transform: translateX(4px);
-      }
+        .footer-link-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
 
-      .footer-link:hover .footer-link-dot {
-        background: hsl(var(--primary));
-        box-shadow: 0 0 6px hsl(var(--primary) / 0.5);
-      }
+        .footer-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          color: hsl(var(--muted-foreground));
+          text-decoration: none;
+          transition: all 0.25s ease;
+        }
 
-      /* Contact items */
-      .contact-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 14px;
-        text-decoration: none;
-        transition: all 0.25s;
-      }
+        .footer-link-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: hsl(var(--primary) / 0.3);
+          flex-shrink: 0;
+          transition: all 0.25s;
+        }
 
-      .contact-icon-box {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: hsl(var(--primary) / 0.07);
-        border: 1px solid hsl(var(--border) / 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: hsl(var(--primary));
-        flex-shrink: 0;
-        transition: all 0.25s;
-      }
+        .footer-link:hover {
+          color: hsl(var(--primary));
+          transform: translateX(4px);
+        }
 
-      .contact-item:hover .contact-icon-box {
-        background: hsl(var(--primary) / 0.15);
-        box-shadow: 0 0 12px hsl(var(--primary) / 0.2);
-      }
+        .footer-link:hover .footer-link-dot {
+          background: hsl(var(--primary));
+          box-shadow: 0 0 6px hsl(var(--primary) / 0.5);
+        }
 
-      .contact-value {
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        font-weight: 400;
-        color: hsl(var(--muted-foreground));
-        line-height: 1.5;
-        padding-top: 8px;
-        transition: color 0.25s;
-      }
+        .contact-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 14px;
+          text-decoration: none;
+          transition: all 0.25s;
+        }
 
-      .contact-item:hover .contact-value { color: hsl(var(--foreground)); }
+        .contact-icon-box {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: hsl(var(--primary) / 0.07);
+          border: 1px solid hsl(var(--border) / 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: hsl(var(--primary));
+          flex-shrink: 0;
+          transition: all 0.25s;
+        }
 
-      /* Bottom bar */
-      .footer-bottom {
-        position: relative;
-        z-index: 2;
-        max-width: 1280px;
-        margin: 0 auto;
-        padding: 24px 24px;
-        margin-top: 56px;
-        border-top: 1px solid hsl(var(--border) / 0.5);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 14px;
-      }
+        .contact-item:hover .contact-icon-box {
+          background: hsl(var(--primary) / 0.15);
+          box-shadow: 0 0 12px hsl(var(--primary) / 0.2);
+        }
 
-      @media (min-width: 768px) {
-        .footer-bottom { flex-direction: row; justify-content: space-between; gap: 0; }
-      }
+        .contact-value {
+          font-family: 'Inter', sans-serif;
+          font-size: 14px;
+          font-weight: 400;
+          color: hsl(var(--muted-foreground));
+          line-height: 1.5;
+          padding-top: 8px;
+          transition: color 0.25s;
+        }
 
-      .footer-copy {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-family: 'Inter', sans-serif;
-        font-size: 13px;
-        font-weight: 400;
-        color: hsl(var(--muted-foreground));
-      }
+        .contact-item:hover .contact-value { color: hsl(var(--foreground)); }
 
-      .footer-legal-links {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-      }
+        .social-links {
+          display: flex;
+          gap: 10px;
+          margin-top: 16px;
+        }
 
-      .footer-legal-link {
-        font-family: 'Inter', sans-serif;
-        font-size: 13px;
-        font-weight: 400;
-        color: hsl(var(--muted-foreground));
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: color 0.25s;
-      }
+        .social-link {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: hsl(var(--primary) / 0.07);
+          border: 1px solid hsl(var(--border) / 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: hsl(var(--muted-foreground));
+          text-decoration: none;
+          transition: all 0.25s;
+        }
 
-      .footer-legal-link:hover { color: hsl(var(--primary)); }
+        .social-link:hover {
+          background: hsl(var(--primary) / 0.15);
+          color: hsl(var(--primary));
+          box-shadow: 0 0 12px hsl(var(--primary) / 0.2);
+          transform: translateY(-2px);
+        }
 
-      .legal-dot {
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: hsl(var(--primary) / 0.25);
-        flex-shrink: 0;
-        transition: background 0.25s;
-      }
+        .footer-bottom {
+          position: relative;
+          z-index: 2;
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 24px 24px;
+          margin-top: 56px;
+          border-top: 1px solid hsl(var(--border) / 0.5);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 14px;
+        }
 
-      .footer-legal-link:hover .legal-dot { background: hsl(var(--primary)); }
+        @media (min-width: 768px) {
+          .footer-bottom { flex-direction: row; justify-content: space-between; gap: 0; }
+        }
 
-      /* Animated bottom bolt */
-      .footer-bottom-bolt {
-        position: absolute;
-        bottom: 0; left: 50%;
-        transform: translateX(-50%);
-        width: 600px;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.15), transparent);
-        pointer-events: none;
-      }
-    `}</style>
+        .footer-copy {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          font-weight: 400;
+          color: hsl(var(--muted-foreground));
+        }
 
-    <footer className="footer-root">
-      <div className="footer-grid-bg" />
-      <div className="footer-glow-tr" />
-      <div className="footer-glow-bl" />
+        .footer-legal-links {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
 
-      <div className="footer-inner">
-        <div className="footer-grid">
-          {/* Brand */}
-          <div>
-            <Link to="/" className="footer-logo">
-              <div className="footer-logo-icon">
-                <img src={favicon} alt="Electroo Buddy" className="w-full h-full object-contain rounded-lg" />
-              </div>
-              <LogoText />
-            </Link>
-            <p className="footer-brand-desc">
-              Your trusted electrical service partner. Professional electricians for all residential and commercial needs with 24/7 support.
-            </p>
-            <Link to="/booking" className="footer-cta-link">
-              Book a Service <ArrowRight size={14} />
-            </Link>
-          </div>
+        .footer-legal-link {
+          font-family: 'Inter', sans-serif;
+          font-size: 13px;
+          font-weight: 400;
+          color: hsl(var(--muted-foreground));
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: color 0.25s;
+        }
 
-          {/* Quick Links */}
-          <div>
-            <div className="footer-col-title">Quick Links</div>
-            <ul className="footer-link-list">
-              {quickLinks.map((l) => (
-                <li key={l.to}>
-                  <Link to={l.to} className="footer-link">
-                    <span className="footer-link-dot" />
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        .footer-legal-link:hover { color: hsl(var(--primary)); }
 
-          {/* Services */}
-          <div>
-            <div className="footer-col-title">Services</div>
-            <ul className="footer-link-list">
-              {serviceLinks.map((s) => (
-                <li key={s}>
-                  <Link to="/services" className="footer-link">
-                    <span className="footer-link-dot" />
-                    {s}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        .legal-dot {
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: hsl(var(--primary) / 0.25);
+          flex-shrink: 0;
+          transition: background 0.25s;
+        }
 
-          {/* Contact */}
-          <div>
-            <div className="footer-col-title">Contact Info</div>
+        .footer-legal-link:hover .legal-dot { background: hsl(var(--primary)); }
 
-            <div className="contact-item">
-              <div className="contact-icon-box">
-                <MapPin size={16} />
-              </div>
-              <div className="contact-value">
-                05, Nagziri Dewas Road, Ujjain(456010), India
-              </div>
+        .footer-bottom-bolt {
+          position: absolute;
+          bottom: 0; left: 50%;
+          transform: translateX(-50%);
+          width: 600px;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.15), transparent);
+          pointer-events: none;
+        }
+      `}</style>
+
+      <footer className="footer-root">
+        <div className="footer-grid-bg" />
+        <div className="footer-glow-tr" />
+        <div className="footer-glow-bl" />
+
+        <div className="footer-inner">
+          <div className="footer-grid">
+            {/* Brand */}
+            <div>
+              <Link to="/" className="footer-logo">
+                <div className="footer-logo-icon">
+                  <img src={favicon} alt="Electroo Buddy" className="w-full h-full object-contain rounded-lg" />
+                </div>
+                <LogoText />
+              </Link>
+              <p className="footer-brand-desc">
+                Your trusted electrical service partner. Professional electricians for all residential and commercial needs with 24/7 support.
+              </p>
+              <Link to="/booking" className="footer-cta-link">
+                Book a Service <ArrowRight size={14} />
+              </Link>
+
+              {/* Social Links */}
+              {socialLinks.length > 0 && (
+                <div className="social-links">
+                  {socialLinks.map((social) => (
+                    <a
+                      key={social.key}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="social-link"
+                      title={social.label}
+                    >
+                      {social.icon}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <a href={`tel:${PHONE_NUMBER}`} className="contact-item" style={{ textDecoration: 'none' }}>
-              <div className="contact-icon-box">
-                <Phone size={16} />
-              </div>
-              <div className="contact-value">
-                {PHONE_NUMBER}
-              </div>
-            </a>
+            {/* Quick Links */}
+            <div>
+              <div className="footer-col-title">Quick Links</div>
+              <ul className="footer-link-list">
+                {settings.quick_links.map((l) => (
+                  <li key={l.to}>
+                    <Link to={l.to} className="footer-link">
+                      <span className="footer-link-dot" />
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-            <a href="mailto:electroobuddy@gmail.com" className="contact-item" style={{ textDecoration: 'none' }}>
-              <div className="contact-icon-box">
-                <Mail size={16} />
+            {/* Services */}
+            <div>
+              <div className="footer-col-title">Services</div>
+              <ul className="footer-link-list">
+                {settings.service_links.map((s) => (
+                  <li key={s}>
+                    <Link to="/services" className="footer-link">
+                      <span className="footer-link-dot" />
+                      {s}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <div className="footer-col-title">Contact Info</div>
+
+              <div className="contact-item">
+                <div className="contact-icon-box">
+                  <MapPin size={16} />
+                </div>
+                <div className="contact-value">{settings.address}</div>
               </div>
-              <div className="contact-value">
-                electroobuddy@gmail.com
-              </div>
-            </a>
+
+              <a href={`tel:${settings.phone_number}`} className="contact-item" style={{ textDecoration: 'none' }}>
+                <div className="contact-icon-box">
+                  <Phone size={16} />
+                </div>
+                <div className="contact-value">{settings.phone_number}</div>
+              </a>
+
+              <a href={`mailto:${settings.email}`} className="contact-item" style={{ textDecoration: 'none' }}>
+                <div className="contact-icon-box">
+                  <Mail size={16} />
+                </div>
+                <div className="contact-value">{settings.email}</div>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Bottom bar */}
-      <div className="footer-bottom">
-        <div className="footer-copy">
-          ⚡ &copy; {new Date().getFullYear()} Electroobuddy. All rights reserved.
+        {/* Bottom bar */}
+        <div className="footer-bottom">
+          <div className="footer-copy">
+            ⚡ &copy; {new Date().getFullYear()} {settings.copyright_text}
+          </div>
+          <div className="footer-legal-links">
+            <Link to={settings.privacy_policy_url} className="footer-legal-link">
+              <span className="legal-dot" />
+              Privacy Policy
+            </Link>
+            <Link to={settings.terms_url} className="footer-legal-link">
+              <span className="legal-dot" />
+              Terms & Conditions
+            </Link>
+          </div>
+          <div className="footer-bottom-bolt" />
         </div>
-        <div className="footer-legal-links">
-          <Link to="/privacy" className="footer-legal-link">
-            <span className="legal-dot" />
-            Privacy Policy
-          </Link>
-          <Link to="/terms" className="footer-legal-link">
-            <span className="legal-dot" />
-            Terms & Conditions
-          </Link>
-        </div>
-        <div className="footer-bottom-bolt" />
-      </div>
-    </footer>
-  </>
-);
+      </footer>
+    </>
+  );
+};
 
 export default Footer;

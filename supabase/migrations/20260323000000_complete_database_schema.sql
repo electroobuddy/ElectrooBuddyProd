@@ -975,8 +975,8 @@ CREATE POLICY "Admins can view booking notifications"
 
 -- Insert default site settings
 INSERT INTO public.site_settings (key, value) VALUES
-    ('phone_number', '+918109308287'),
-    ('whatsapp_number', '918109308287')
+    ('phone_number', '+917000396039'),
+    ('whatsapp_number', '917000396039')
 ON CONFLICT (key) DO NOTHING;
 
 -- Insert default shipping settings

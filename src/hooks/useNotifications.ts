@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { hasActiveSubscription } from "@/utils/firebaseNotifications";
-import { NOTIFICATION_URLS } from "@/utils/siteUrl";
 
 export interface Notification {
   id: string;
@@ -149,31 +147,6 @@ export const useNotifications = (userId: string | null) => {
     }
   }, [userId, fetchNotifications]);
 
-  // ── Push trigger (best-effort) ───────────────────────────────────────────
-  const triggerPushNotification = useCallback(async (notification: Notification) => {
-    try {
-      const hasSubscription = await hasActiveSubscription(userId);
-      if (!hasSubscription) return;
-
-      await supabase.functions.invoke("send-fcm-notification", {
-        body: {
-          userId:         notification.user_id,
-          title:          notification.title,
-          body:           notification.message,
-          type:           notification.type,
-          notificationId: notification.id,
-          url:            notification.booking_id
-            ? NOTIFICATION_URLS.userBookings
-            : notification.order_id
-              ? NOTIFICATION_URLS.userOrders
-              : NOTIFICATION_URLS.userDashboard,
-        },
-      });
-    } catch (err) {
-      console.error("[useNotifications] triggerPushNotification error:", err);
-    }
-  }, [userId]);
-
   // ── Realtime subscription ────────────────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
@@ -220,7 +193,6 @@ export const useNotifications = (userId: string | null) => {
             setUnreadCount(c => c + 1);
 
             toast.info(n.title, { description: n.message, duration: 5000 });
-            triggerPushNotification(n);
           }
         )
         .on(
@@ -274,7 +246,7 @@ export const useNotifications = (userId: string | null) => {
       mountedRef.current = false;
       teardown();
     };
-  }, [userId, fetchNotifications, triggerPushNotification]);
+  }, [userId, fetchNotifications]);
 
   return {
     notifications,

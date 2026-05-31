@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useServicesStore } from "@/stores/servicesStore";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
+import { PHONE_NUMBER } from "@/data/services";
 
 function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -311,7 +312,7 @@ const BookingForm = () => {
     }
   };
 
-  const phoneFromSettings = "+918109308287";
+  const phoneFromSettings = PHONE_NUMBER;
   const isFanService = form.service_type.toLowerCase().includes("fan");
 
   // ── Shared input classes ──

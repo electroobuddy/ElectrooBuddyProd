@@ -185,6 +185,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { EMAIL, PHONE_NUMBER } from "@/data/services";
 
 /* ─── mini confetti canvas ────────────────────────────────────── */
 const Confetti = () => {
@@ -439,7 +440,7 @@ const OrderSuccess = () => {
           <div class="header">
             <h1>Electrobuddy</h1>
             <p>05 Nagziri Dewas Road, Ujjain (456010)</p>
-            <p>+91 8109308287 &nbsp;|&nbsp; electroobuddy@gmail.com</p>
+            <p>${PHONE_NUMBER} &nbsp;|&nbsp; ${EMAIL}</p>
             <div class="badge">${isPaid ? "PAID" : "PENDING"}</div>
           </div>
           <div class="body">
@@ -495,7 +496,7 @@ const OrderSuccess = () => {
           </div>
           <div class="footer">
             <p><strong>Electrobuddy</strong> — 05 Nagziri Dewas Road, Ujjain (456010)</p>
-            <p>GST: 23ABCDE1234F1Z5 | Email: electroobuddy@gmail.com | Phone: +91 8109308287</p>
+            <p>GST: 23ABCDE1234F1Z5 | Email: ${EMAIL} | Phone: ${PHONE_NUMBER}</p>
             <p style="margin-top:8px;">Thank you for your purchase!</p>
           </div>
         </div>

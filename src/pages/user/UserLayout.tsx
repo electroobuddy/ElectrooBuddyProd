@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
+import { Navigate, Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Zap, LayoutDashboard, Calendar, User, LogOut, Loader2, Menu, X, Package, ShoppingBag, Wrench, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -19,6 +19,7 @@ const navItems = [
 const UserLayout = () => {
   const { user, loading, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {

@@ -10,6 +10,7 @@ export function getNotificationUrl(path: string): string {
 
 export const NOTIFICATION_URLS = {
   adminBookings: getNotificationUrl('/admin/bookings'),
+  adminBookingsDetails: getNotificationUrl('/admin/bookings/:id'),
   userBookings: getNotificationUrl('/dashboard/bookings'),
   userOrders: getNotificationUrl('/dashboard/orders'),
   userDashboard: getNotificationUrl('/dashboard'),

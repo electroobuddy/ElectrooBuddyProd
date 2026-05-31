@@ -94,5 +94,6 @@ export const services: Service[] = [
   },
 ];
 
-export const PHONE_NUMBER = "+918109308287";
-export const WHATSAPP_NUMBER = "918109308287";
+export const PHONE_NUMBER = "+917000396039";
+export const WHATSAPP_NUMBER = "917000396039";
+export const EMAIL = 'electroobuddy@gmail.com';

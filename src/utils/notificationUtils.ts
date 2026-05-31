@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { NOTIFICATION_URLS } from './siteUrl';
-import { sendOneSignalNotification } from './oneSignalNotifications';
 
 export interface NotificationData {
   title: string;
@@ -284,43 +283,6 @@ export function sendAdminNotificationAsync(
           notifyUser(uid, notifData, forceInApp, url)
         )
       );
-
-      // 4. Also send via OneSignal for admins (backup to FCM)
-      const oneSignalTasks = adminIds.map(adminId =>
-        sendOneSignalNotification({
-          userId: adminId,
-          title: data.title,
-          body: data.message,
-          type: data.type,
-          url: NOTIFICATION_URLS.adminBookings,
-        }).catch(err => console.warn('[notify] OneSignal failed for admin:', adminId, err?.message))
-      );
-      await Promise.allSettled(oneSignalTasks);
-
-      // 5. Direct FCM fallback for admins - bypass subscription check
-      // Always try to send to admin via edge function (it has service_role, bypasses RLS)
-      const directFcmTasks = adminIds.map(async (adminId) => {
-        try {
-          console.log('[notify] === DIRECT FCM FALLBACK START for admin:', adminId, '===');
-          
-          // Call edge function directly - it has service_role and can query the database
-          console.log('[notify] Calling send-push-notification edge function for:', adminId);
-          const result: any = await (supabase as any).functions.invoke('send-push-notification', {
-            body: {
-              userId: adminId,
-              title: data.title,
-              body: data.message,
-              url: NOTIFICATION_URLS.adminBookings,
-              type: data.type,
-              notificationId: data.bookingId ?? null,
-            },
-          });
-          console.log('[notify] === DIRECT FCM RESULT for', adminId, ':', JSON.stringify(result), '===');
-        } catch (err: any) {
-          console.warn('[notify] === DIRECT FCM FAILED for admin:', adminId, 'error:', err?.message, '===');
-        }
-      });
-      await Promise.allSettled(directFcmTasks);
 
       console.log(
         `[notify] Notification fan-out complete — ` +

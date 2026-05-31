@@ -168,7 +168,7 @@ const AdminTechnicians = () => {
     setSaving(true);
     try {
       // Generate random password if not provided
-      const password = form.password || Math.random().toString(36).slice(-8);
+      const password = form.password || 'Buddy@123';
 
       // Use edge function to create technician with all related records atomically
       const { data: result, error: functionError } = await supabase.functions.invoke(

@@ -1,10 +1,10 @@
 import { Navigate, Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Zap, LayoutDashboard, Wrench, CalendarDays, Users, Star, FolderOpen,
   Mail, Settings, LogOut, Loader2, UserCog, Menu, X, Package,
-  ShoppingCart, DollarSign, Truck, AlertTriangle, ChevronRight, UserCheck, Tag, ShieldCheck, Bell,
+  ShoppingCart, DollarSign, Truck, ChevronRight, UserCheck, Tag, ShieldCheck, Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
@@ -17,8 +17,6 @@ import {
   getOneSignalPermission,
 } from "@/utils/oneSignalUtils";
 import { subscribeToPush } from "@/utils/firebaseNotifications";
-
-const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000;
 
 const navItems = [
   { label: "Dashboard",           to: "/admin/dashboard",          icon: LayoutDashboard, group: "main"     },
@@ -54,42 +52,13 @@ const AdminLayout = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const location = useLocation();
   const navigate  = useNavigate();
-  const [mobileOpen, setMobileOpen]               = useState(false);
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
-  const lastActivityTime  = useRef(Date.now());
-  const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const signOutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ── Session timeout ──────────────────────────────────────────────────────
-  const resetTimeouts = useCallback(() => {
-    if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
-    if (signOutTimeoutRef.current) clearTimeout(signOutTimeoutRef.current);
-    setShowTimeoutWarning(false);
-    warningTimeoutRef.current = setTimeout(() => {
-      setShowTimeoutWarning(true);
-      toast.warning("Session expiring soon", {
-        description: "Your admin session will expire in 5 minutes due to inactivity.",
-        duration: 10000,
-      });
-    }, ADMIN_SESSION_TIMEOUT - 5 * 60 * 1000);
-    signOutTimeoutRef.current = setTimeout(() => {
-      handleAutoSignOut();
-    }, ADMIN_SESSION_TIMEOUT);
-  }, []);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // ── Push subscription setup ──────────────────────────────────────────────
   useEffect(() => {
     if (!user || !isAdmin) return;
 
-    // Activity tracking + session timeout
-    const updateActivity = () => { lastActivityTime.current = Date.now(); resetTimeouts(); };
-    const events = ["mousedown", "keydown", "scroll", "touchstart"];
-    events.forEach(e => document.addEventListener(e, updateActivity));
-    resetTimeouts();
-
     // ── FCM: subscribe IMMEDIATELY, independently of OneSignal ──────────────
-    // This is the fix: don't wait for OneSignal; FCM subscription runs right
-    // away so the admin always has a token saved in push_subscriptions.
     const setupFCM = async () => {
       try {
         const fcmSuccess = await subscribeToPush(user.id);
@@ -129,31 +98,9 @@ const AdminLayout = () => {
       }
     };
 
-    // Run both independently — one failing doesn't block the other
     setupFCM();
     setupOneSignal();
-
-    return () => {
-      events.forEach(e => document.removeEventListener(e, updateActivity));
-      if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
-      if (signOutTimeoutRef.current) clearTimeout(signOutTimeoutRef.current);
-    };
-  }, [user?.id, isAdmin, resetTimeouts]);
-
-  const handleAutoSignOut = async () => {
-    await logoutOneSignalUser();
-    await signOut();
-    toast.info("Session expired", {
-      description: "You have been automatically signed out due to inactivity.",
-    });
-    navigate("/admin");
-  };
-
-  const handleStaySignedIn = () => {
-    lastActivityTime.current = Date.now();
-    resetTimeouts();
-    setShowTimeoutWarning(false);
-  };
+  }, [user?.id, isAdmin]);
 
   const currentPage = navItems.find(n => n.to === location.pathname)?.label || "Admin";
 
@@ -179,31 +126,6 @@ const AdminLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950">
-
-      {/* ── Session Timeout Warning ── */}
-      {showTimeoutWarning && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-sm w-full shadow-2xl">
-            <div className="w-12 h-12 rounded-2xl bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 flex items-center justify-center mb-4">
-              <AlertTriangle className="w-6 h-6 text-yellow-500" />
-            </div>
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Session expiring soon</h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-5">
-              Your admin session will expire in a few minutes due to inactivity.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={handleStaySignedIn}
-                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl transition-colors">
-                Stay Signed In
-              </button>
-              <button onClick={doSignOut}
-                className="flex-1 py-2.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-semibold text-sm rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Desktop Sidebar ── */}
       <aside className="hidden md:flex w-56 flex-col flex-shrink-0 bg-zinc-900 dark:bg-zinc-950 border-r border-zinc-800 h-screen overflow-hidden">

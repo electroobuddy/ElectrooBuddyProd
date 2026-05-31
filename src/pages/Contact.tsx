@@ -4,7 +4,7 @@ import Section from "@/components/Section";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { Zap, Phone, Mail, MapPin, Send, Loader2, CheckCircle, Sun, Moon } from "lucide-react";
-import { PHONE_NUMBER } from "@/data/services";
+import { EMAIL, PHONE_NUMBER } from "@/data/services";
 import { toast } from "sonner";
 
 const Contact = () => {
@@ -50,7 +50,7 @@ const Contact = () => {
   const contactItems = [
     { icon: MapPin, label: "Address", value: "05, Nagziri Dewas Road, Ujjain(456010)", href: undefined },
     { icon: Phone, label: "Phone", value: PHONE_NUMBER, href: `tel:${PHONE_NUMBER}` },
-    { icon: Mail, label: "Email", value: "electroobuddy@gmail.com", href: "mailto:electroobuddy@gmail.com" },
+    { icon: Mail, label: "Email", value: EMAIL, href: `mailto:${EMAIL}` },
   ];
 
   const inputFields = [
@@ -64,7 +64,7 @@ const Contact = () => {
     <div className="contact-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <SEO
         title="Contact Electroo Buddy - Get in Touch for Electrical Services in Ujjain"
-        description="Contact us for all your electrical needs in Ujjain. Call +91-81093-08287 or email electroobuddy@gmail.com. Fast response, expert advice, and free quotes available."
+        description={`Contact us for all your electrical needs in Ujjain. Call ${PHONE_NUMBER} or email ${EMAIL}. Fast response, expert advice, and free quotes available.`}
         keywords="contact electrician, electrical services contact, get quote, free consultation, emergency electrician contact, electrical repair contact"
         canonical="/contact"
         structuredData={{
@@ -74,8 +74,8 @@ const Contact = () => {
           "description": "Contact Electroo Buddy for professional electrical services",
           "contactPoint": {
             "@type": "ContactPoint",
-            "telephone": "+91-81093-08287",
-            "email": "electroobuddy@gmail.com",
+            "telephone": PHONE_NUMBER,
+            "email": EMAIL,
             "contactType": "customer service",
             "availableLanguage": ["English", "Hindi"]
           }

@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
+import { logoutOneSignalUser } from "@/utils/oneSignalUtils";
 
 interface AuthContextType {
   session: Session | null;
@@ -107,8 +108,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setIsAdmin(false);
+    try {
+      // 1. OneSignal cleanup (best-effort, don't block)
+      logoutOneSignalUser().catch(() => {});
+
+      // 2. Supabase auth signout (clears session from localStorage)
+      await supabase.auth.signOut();
+
+      // 3. Reset all auth state immediately
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setIsTechnician(false);
+    } catch (err) {
+      console.error('[useAuth] signOut error:', err);
+      // Even if something fails, reset state so the user is logged out in the UI
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setIsTechnician(false);
+    }
   };
 
   return (

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Package, Truck, CheckCircle, Clock, XCircle, ChevronRight, Eye, Download, FileText, Gift, CreditCard, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { COMPANY } from "@/utils/generateBookingInvoice";
 
 interface Order {
   id: string;
@@ -106,14 +107,6 @@ const UserOrders = () => {
   const showInvoice = (order: Order) =>
     order.status !== "pending" && order.status !== "cancelled";
 
-  const COMPANY = {
-    name: "Electroobuddy",
-    address: "05, Nagziri Dewas Road, Ujjain(456010), India",
-    phone: "+91 8109308287",
-    email: "electroobuddy@gmail.com",
-    gst: "23ABCDE1234F1Z5",
-    supportEmail: "support@electroobuddy.com",
-  };
 
   // Generate Invoice
   const generateInvoice = (order: Order) => {

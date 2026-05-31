@@ -1,4 +1,5 @@
 import Section from "@/components/Section";
+import { EMAIL, PHONE_NUMBER } from "@/data/services";
 import { motion } from "framer-motion";
 import { Zap } from "lucide-react";
 
@@ -192,8 +193,8 @@ const Terms = () => (
         </p>
         <p>
           <b>How to contact us</b>. You can contact us for all general enquires by telephoning our
-          customer service team at <a href="tel:9108109308287">+91 8109308287</a> or by writing to us at{" "}
-          <a href="mailto:electroobuddy@gmail.com">Electrobuddy@gmail.com</a> or Electroobuddy Repair, 05
+          customer service team at <a href={`tel:${PHONE_NUMBER}`}>{PHONE_NUMBER}</a> or by writing to us at{" "}
+          <a href={`mailto:${EMAIL}`}>{EMAIL}</a> or Electroobuddy Repair, 05
           Nagziri Dewas Road Ujjain.
         </p>
         <ul>
@@ -523,8 +524,8 @@ const Terms = () => (
         <ol style={{ listStyleType: "lower-alpha" }}>
           <li>
             <b>Phone or email</b>. Call customer services on{" "}
-            <a href="tel:9108109308287">+91 8109308287</a> or email us at{" "}
-            <a href="mailto:electroobuddy@gmail.com"><u>electroobuddy@gmail.com</u></a> Please provide
+            <a href={`tel:${PHONE_NUMBER}`}>{PHONE_NUMBER}</a> or email us at{" "}
+            <a href={`mailto:${EMAIL}`}><u>{EMAIL}</u></a> Please provide
             your name, home address, details of the order and, where available, your phone number and
             email address.
           </li>
@@ -573,8 +574,8 @@ const Terms = () => (
         <p>
           <b>How to tell us about problems</b>. If you have any questions or complaints about the product,
           please contact us. You can telephone our customer service team at{" "}
-          <a href="tel:9108109308287">+91 8109308287</a> or write to us at{" "}
-          <a href="mailto:electroobuddy@gmail.com"><u>electrobuddy@gmail.com</u></a> or Electroobuddy
+          <a href={`tel:${PHONE_NUMBER}`}>{PHONE_NUMBER}</a> or write to us at{" "}
+          <a href={`mailto:${EMAIL}`}><u>{EMAIL}</u></a> or Electroobuddy
           Repair 05 Nagziri Dewas Road Ujjain M.P.
         </p>
 
