@@ -18,6 +18,17 @@ import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AsyncErrorBoundary from "@/components/AsyncErrorBoundary";
 import { initOneSignal } from "./utils/oneSignalUtils";
+import {
+  HomeSkeleton,
+  AboutSkeleton,
+  ServicesSkeleton,
+  ProductsSkeleton,
+  ContactSkeleton,
+  AuthSkeleton,
+  AdminSkeleton,
+  DashboardSkeleton,
+  GenericSkeleton,
+} from "@/components/PageSkeleton";
 
 // Lazy load heavy components
 const Index = lazy(() => import("./pages/Index"));
@@ -157,30 +168,30 @@ const AppContent = () => {
       <main className={isAdmin || isUserPanel || isTechnicianPanel ? "" : "min-h-screen"}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Index /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/about" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><About /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/services" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Services /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/projects" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Projects /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/contact" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Contact /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/booking" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><BookingForm /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/track-booking" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><BookingTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/review" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Review /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/faq" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><FAQ /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/tips" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Tips /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/privacy" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Privacy /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/subscriptions" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Subscriptions /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/subscription-success" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><SubscriptionSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/test-fcm" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><TestFCMNotifications /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/test-onesignal" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><TestOneSignalNotifications /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/terms" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Terms /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/products" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Products /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/products/:slug" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><ProductDetails /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/cart" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Cart /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/checkout" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><Checkout /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/order-success" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><OrderSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/track-order/:orderNumber" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><OrderTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route path="/login" element={<PageTransition><Suspense fallback={<div>Loading...</div>}><AsyncErrorBoundary><UserAuth /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><UserLayout /></Suspense>}>
+            <Route path="/" element={<PageTransition><Suspense fallback={<HomeSkeleton />}><AsyncErrorBoundary><Index /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/about" element={<PageTransition><Suspense fallback={<AboutSkeleton />}><AsyncErrorBoundary><About /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/services" element={<PageTransition><Suspense fallback={<ServicesSkeleton />}><AsyncErrorBoundary><Services /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/projects" element={<PageTransition><Suspense fallback={<ServicesSkeleton />}><AsyncErrorBoundary><Projects /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/contact" element={<PageTransition><Suspense fallback={<ContactSkeleton />}><AsyncErrorBoundary><Contact /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/booking" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><BookingForm /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/track-booking" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><BookingTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/review" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><Review /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/faq" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><FAQ /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/tips" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><Tips /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/privacy" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><Privacy /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/subscriptions" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><Subscriptions /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/subscription-success" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><SubscriptionSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/test-fcm" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><TestFCMNotifications /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/test-onesignal" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><TestOneSignalNotifications /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/terms" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><Terms /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/products" element={<PageTransition><Suspense fallback={<ProductsSkeleton />}><AsyncErrorBoundary><Products /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/products/:slug" element={<PageTransition><Suspense fallback={<ProductsSkeleton />}><AsyncErrorBoundary><ProductDetails /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/cart" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><Cart /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/checkout" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><Checkout /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/order-success" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><OrderSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/track-order/:orderNumber" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><OrderTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route path="/login" element={<PageTransition><Suspense fallback={<AuthSkeleton />}><AsyncErrorBoundary><UserAuth /></AsyncErrorBoundary></Suspense></PageTransition>} />
+            <Route element={<Suspense fallback={<DashboardSkeleton />}><UserLayout /></Suspense>}>
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
               <Route path="/dashboard/bookings/:id" element={<BookingDetails />} />
@@ -192,8 +203,8 @@ const AppContent = () => {
             </Route>
 
             {/* Admin routes - hidden, no public links */}
-            <Route path="/admin" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><AdminLogin /></Suspense>} />
-            <Route element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><AdminLayout /></Suspense>}>
+            <Route path="/admin" element={<Suspense fallback={<AuthSkeleton />}><AdminLogin /></Suspense>} />
+            <Route element={<Suspense fallback={<AdminSkeleton />}><AdminLayout /></Suspense>}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/coupons-categories" element={<AdminCouponsCategories />} />
@@ -216,9 +227,9 @@ const AppContent = () => {
             </Route>
 
             {/* Technician routes - hidden, no public links */}
-            <Route path="/technician/login" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><TechnicianLogin /></Suspense>} />
-            <Route path="/technician/signup" element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><TechnicianSignUp /></Suspense>} />
-            <Route element={<Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />Loading...</div>}><TechnicianLayout /></Suspense>}>
+            <Route path="/technician/login" element={<Suspense fallback={<AuthSkeleton />}><TechnicianLogin /></Suspense>} />
+            <Route path="/technician/signup" element={<Suspense fallback={<AuthSkeleton />}><TechnicianSignUp /></Suspense>} />
+            <Route element={<Suspense fallback={<AdminSkeleton />}><TechnicianLayout /></Suspense>}>
               <Route path="/technician/dashboard" element={<TechnicianDashboard />} />
               <Route path="/technician/bookings" element={<TechnicianBookings />} />
               <Route path="/technician/bookings/:id" element={<BookingDetails />} />

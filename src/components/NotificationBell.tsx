@@ -24,10 +24,13 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
   useEffect(() => {
     if (buttonRef.current && isOpen) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownWidth = window.innerWidth < 640 ? Math.min(320, window.innerWidth - 32) : 384;
       const right = window.innerWidth - rect.right;
-      const adjustedRight = Math.max(16, right); // Keep 16px from edge minimum
+      // Ensure dropdown doesn't overflow viewport edges
+      const maxRight = window.innerWidth - dropdownWidth - 16;
+      const adjustedRight = Math.min(Math.max(16, right), Math.max(16, maxRight));
       const top = rect.bottom + 8;
-      
+
       setPosition({ top, right: adjustedRight });
     }
   }, [isOpen]);
@@ -97,18 +100,22 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              style={{ top: position.top }}
-              className="fixed z-[100] w-96 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
+              style={{
+                top: position.top,
+                right: position.right,
+                width: window.innerWidth < 640 ? Math.min(320, window.innerWidth - 32) : 384,
+              }}
+              className="fixed z-[100] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-                <div>
-                  <h3 className="font-bold text-zinc-900 dark:text-white">Notifications</h3>
+              <div className="flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-zinc-900 dark:text-white text-sm sm:text-base">Notifications</h3>
                   {unreadCount > 0 && (
                     <p className="text-xs text-zinc-500 mt-0.5">{unreadCount} unread</p>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                   <button
                     onClick={handleRefresh}
                     disabled={refreshing || loading}
@@ -120,7 +127,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+                      className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
                     >
                       <CheckCheck className="w-3.5 h-3.5" />
                       Mark all read
@@ -136,7 +143,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
               </div>
 
               {/* Notifications List */}
-              <div className="max-h-96 overflow-y-auto">
+              <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -159,7 +166,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
                             markAsRead(notification.id);
                           }
                         }}
-                        className={`p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors ${
+                        className={`p-3 sm:p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors ${
                           !notification.is_read ? "bg-blue-50/50 dark:bg-blue-950/20" : ""
                         }`}
                       >
@@ -194,7 +201,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
 
               {/* Footer */}
               {notifications.length > 0 && (
-                <div className="px-5 py-3 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
+                <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
                   <p className="text-xs text-zinc-500 text-center">
                     Showing {Math.min(notifications.length, 20)} of {notifications.length} notifications
                   </p>
