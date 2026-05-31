@@ -35,6 +35,7 @@ const navItems = [
   { label: "Testimonials",        to: "/admin/testimonials",       icon: Star,            group: "content"  },
   { label: "Projects",            to: "/admin/projects",           icon: FolderOpen,      group: "content"  },
   { label: "Messages",            to: "/admin/messages",           icon: Mail,            group: "content"  },
+  { label: "Subscribers",         to: "/admin/subscribers",        icon: Mail,            group: "content"  },
   { label: "Notifications",       to: "/admin/notifications",      icon: Bell,            group: "system"   },
   { label: "Settings",            to: "/admin/settings",           icon: Settings,        group: "system"   },
 ];

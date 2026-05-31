@@ -25,7 +25,6 @@ interface Offer {
   bg_gradient: string | null;
   status: string;
   is_active: boolean;
-  coupon_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -111,17 +110,8 @@ const OfferSlide = memo(({
 
         {/* ── Left: Offer badge ── */}
         <div className="hidden sm:flex items-center gap-1 shrink-0 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-          {offer.coupon_code ? (
-            <>
-              <Ticket size={9} className="text-yellow-300" />
-              Coupon
-            </>
-          ) : (
-            <>
-              <Sparkles size={9} className="text-yellow-300" />
-              Offer
-            </>
-          )}
+          <Sparkles size={9} className="text-yellow-300" />
+          Offer
         </div>
 
         {/* ── Centre: title + subtitle + discount ── */}
@@ -225,33 +215,39 @@ const OfferBannerSlider: React.FC<OfferBannerSliderProps> = memo(({ visibility =
   // Fetch offers with retry logic
   useEffect(() => {
     let isMounted = true;
-    let retryCount = 0;
-    const maxRetries = 2;
 
     const fetchOffers = async () => {
       if (!isMounted) return;
       
       try {
-        const { data, error } = await supabase.rpc("get_active_offers_cached", { p_visibility: visibility });
-        if (error) throw error;
-        if (isMounted) setOffers((data as any[]) || []);
-      } catch (err) {
-        console.error(`Error fetching offers (attempt ${retryCount + 1}):`, err);
+        // Simple direct query - most reliable
+        const { data, error } = await supabase
+          .from("offers")
+          .select("*")
+          .eq("is_active", true)
+          .eq("status", "active")
+          .order("priority", { ascending: false })
+          .order("created_at", { ascending: false });
         
-        if (retryCount < maxRetries) {
-          retryCount++;
-          // Fallback function
-          try {
-            const { data: fallbackData, error: fallbackError } = await supabase.rpc("get_active_offers", { p_visibility: visibility });
-            if (fallbackError) throw fallbackError;
-            if (isMounted) setOffers((fallbackData as any[]) || []);
-          } catch (fallbackErr) {
-            console.error("Fallback also failed:", fallbackErr);
-            if (isMounted) setOffers([]);
-          }
-        } else {
+        if (error) {
+          console.error("Error fetching offers:", error);
           if (isMounted) setOffers([]);
+        } else {
+          // Filter by visibility in JavaScript
+          const filtered = (data || []).filter((offer: any) => {
+            // Check visibility array contains our location
+            const visibilityMatch = Array.isArray(offer.visibility) && 
+              offer.visibility.includes(visibility);
+            
+            return visibilityMatch;
+          });
+          
+          console.log(`[OfferBannerSlider] Found ${filtered.length} offers for visibility: ${visibility}`);
+          if (isMounted) setOffers(filtered);
         }
+      } catch (err) {
+        console.error("Error fetching offers:", err);
+        if (isMounted) setOffers([]);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -263,7 +259,7 @@ const OfferBannerSlider: React.FC<OfferBannerSliderProps> = memo(({ visibility =
 
   // Memoized grab offer handler
   const handleGrabOffer = useCallback(async (offer: Offer) => {
-    const offerCode = offer.coupon_code || offer.title;
+    const offerCode = offer.title;
 
     try {
       await navigator.clipboard.writeText(offerCode);

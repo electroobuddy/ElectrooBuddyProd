@@ -41,7 +41,6 @@ interface Offer {
   bg_gradient: string | null;
   status: string;
   is_active: boolean;
-  coupon_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,7 +49,6 @@ const AdminOffers = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [services, setServices] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [coupons, setCoupons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -79,8 +77,7 @@ const AdminOffers = () => {
     cta_link: "/#request-service",
     bg_gradient: "from-blue-600 to-blue-800",
     status: "active",
-    is_active: true,
-    coupon_code: null
+    is_active: true
   };
 
   const [formData, setFormData] = useState<any>(emptyOffer);
@@ -119,18 +116,16 @@ const AdminOffers = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [offersRes, servicesRes, productsRes, couponsRes] = await Promise.all([
+      const [offersRes, servicesRes, productsRes] = await Promise.all([
         supabase.from("offers").select("*").order("priority", { ascending: false }),
         supabase.from("services").select("id, title"),
-        supabase.from("products").select("id, name"),
-        supabase.from("coupons").select("id, code, description, is_active").eq("is_active", true)
+        supabase.from("products").select("id, name")
       ]);
 
       if (offersRes.error) throw offersRes.error;
       setOffers((offersRes.data as any[]) || []);
       setServices((servicesRes.data as any[]) || []);
       setProducts((productsRes.data as any[]) || []);
-      setCoupons((couponsRes.data as any[]) || []);
     } catch (error: any) {
       toast({
         title: "Error fetching data",
@@ -233,11 +228,11 @@ const AdminOffers = () => {
         bg_gradient: formData.bg_gradient || null,
         status: formData.status || "active",
         is_active: formData.is_active ?? true,
-        coupon_code: formData.coupon_code || null,
         updated_at: new Date().toISOString()
       };
 
       console.log("[AdminOffers] Submitting data:", submitData);
+      console.log("[AdminOffers] Visibility array:", submitData.visibility);
       
       let offerId = editingItem;
 
@@ -547,35 +542,6 @@ const AdminOffers = () => {
               <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Offer Settings</h4>
               
               <div className="space-y-6">
-                <div>
-                  <Label className="mb-1.5 block text-xs flex items-center gap-1.5">
-                    <TicketPercent className="w-3.5 h-3.5 text-purple-500" />
-                    Linked Coupon Code
-                  </Label>
-                  <Select 
-                    value={formData.coupon_code || "none"} 
-                    onValueChange={(v) => setFormData({ ...formData, coupon_code: v === "none" ? null : v })}
-                  >
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder="Select a coupon to link" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No Coupon (Use offer title as code)</SelectItem>
-                      {coupons.map((coupon) => (
-                        <SelectItem key={coupon.id} value={coupon.code}>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{coupon.code}</span>
-                            <span className="text-xs text-zinc-500">- {coupon.description || 'No description'}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-zinc-400 mt-1.5">
-                    When users click "Grab Offer", this coupon code will be copied. If not set, the offer title will be used.
-                  </p>
-                </div>
-
                 <div>
                   <Label className="mb-1.5 block text-xs">Discount Type</Label>
                   <Select 

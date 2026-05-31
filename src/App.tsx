@@ -78,6 +78,7 @@ const AdminShippingSettings = lazy(() => import("./pages/admin/AdminShippingSett
 const AdminTechnicians = lazy(() => import("./pages/admin/AdminTechnicians"));
 const AdminOffers = lazy(() => import("./pages/admin/AdminOffers"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminSubscribers = lazy(() => import("./pages/admin/AdminSubscribers"));
 const BookingDetails = lazy(() => import("./pages/BookingDetails"));
 const TechnicianLogin = lazy(() => import("./pages/technician/TechnicianLogin"));
 const TechnicianLayout = lazy(() => import("./pages/technician/TechnicianLayout"));
@@ -191,7 +192,7 @@ const AppContent = () => {
             <Route path="/order-success" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><OrderSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/track-order/:orderNumber" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><OrderTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/login" element={<PageTransition><Suspense fallback={<AuthSkeleton />}><AsyncErrorBoundary><UserAuth /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route element={<Suspense fallback={<DashboardSkeleton />}><UserLayout /></Suspense>}>
+            <Route element={<Suspense fallback={<DashboardSkeleton />}><AsyncErrorBoundary><UserLayout /></AsyncErrorBoundary></Suspense>}>
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
               <Route path="/dashboard/bookings/:id" element={<BookingDetails />} />
@@ -219,6 +220,7 @@ const AppContent = () => {
               <Route path="/admin/projects" element={<AdminProjects />} />
               <Route path="/admin/messages" element={<AdminMessages />} />
               <Route path="/admin/notifications" element={<AdminNotifications />} />
+              <Route path="/admin/subscribers" element={<AdminSubscribers />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/payments" element={<AdminPayments />} />
               <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />

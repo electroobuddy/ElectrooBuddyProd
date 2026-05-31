@@ -19,13 +19,13 @@ export const BUSINESS = {
 
   // ── Social ─────────────────────────────────────────────────────────────
   social: {
-    instagram: "https://www.instagram.com/electroobuddy",
-    linkedin: "https://www.linkedin.com/company/electroobuddy",
+    instagram: "https://www.instagram.com/electroo_buddy",
+    // linkedin: "https://www.linkedin.com/company/electroobuddy",
   },
 
   // ── Business Hours ─────────────────────────────────────────────────────
   hours: {
-    weekday: "24 x 7 days",
+    weekday: "24 x 7",
     // weekday: "Mon - Sat: 8:00 AM - 9:00 PM",
     sunday: "Sunday: Emergency Support Only",
     emergency: "24/7 Emergency Available",

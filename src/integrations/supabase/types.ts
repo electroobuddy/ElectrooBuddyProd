@@ -769,6 +769,7 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           phone: string | null
@@ -778,6 +779,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -787,6 +789,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -834,6 +837,24 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           category: string
@@ -871,6 +892,7 @@ export type Database = {
           endpoint: string | null
           subscription: Json
           browser_name: string | null
+          subscription_type: string | null
           is_active: boolean | null
           created_at: string | null
           updated_at: string | null
@@ -881,6 +903,7 @@ export type Database = {
           endpoint?: string | null
           subscription: Json
           browser_name?: string | null
+          subscription_type?: string | null
           is_active?: boolean | null
           created_at?: string | null
           updated_at?: string | null
@@ -891,6 +914,7 @@ export type Database = {
           endpoint?: string | null
           subscription?: Json
           browser_name?: string | null
+          subscription_type?: string | null
           is_active?: boolean | null
           created_at?: string | null
           updated_at?: string | null

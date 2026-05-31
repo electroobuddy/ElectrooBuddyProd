@@ -12,24 +12,11 @@ import { toast } from "sonner";
 import { useServicesStore } from "@/stores/servicesStore";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
 import { PHONE_NUMBER } from "@/data/services";
-
-function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    Promise.resolve(promise),
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`TIMEOUT: ${label}`)), ms)
-    ),
-  ]);
-}
-
-// Returns today's date string in YYYY-MM-DD (local timezone, not UTC)
-function getTodayString(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
+import {
+  type BookingFormData, BLANK_FORM,
+  todayISOStr, validateBookingForm, buildBookingPayload,
+  withTimeout,
+} from "@/utils/bookingUtils";
 
 const BookingForm = () => {
   const [params] = useSearchParams();
@@ -51,23 +38,14 @@ const BookingForm = () => {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [dateError, setDateError] = useState("");
 
-  const todayStr = getTodayString();
+  const todayStr = todayISOStr();
 
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    address: "",
+  const [form, setForm] = useState<BookingFormData>({
+    ...BLANK_FORM,
     service_type: preselected,
-    preferred_date: "",
-    preferred_time: "",
-    description: "",
-    exact_location: "",
-    custom_service_demand: "",
-    is_switch_working: "",
-    has_old_fan: "",
-    is_electricity_supply_on: "",
   });
+
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => { fetchBookingServices(); }, [fetchBookingServices]);
 
@@ -83,15 +61,20 @@ const BookingForm = () => {
     }
   }, [form.service_type, getServiceCharge]);
 
+  // Validate on form change
+  useEffect(() => {
+    const errs = validateBookingForm(form, { requireEmail: true, requireTime: true });
+    setFieldErrors(errs);
+  }, [form]);
+
   // ── Date validation: reject any date before today ──
   const handleDateChange = (val: string) => {
     if (val < todayStr) {
       setDateError("Please select today or a future date.");
-      setForm((f) => ({ ...f, preferred_date: val }));
     } else {
       setDateError("");
-      setForm((f) => ({ ...f, preferred_date: val }));
     }
+    setForm((f) => ({ ...f, preferred_date: val }));
   };
 
   const calculateDiscount = () => {
@@ -204,6 +187,14 @@ const BookingForm = () => {
     e.preventDefault();
     if (submitting) return;
 
+    // Validate form
+    const errs = validateBookingForm(form, { requireEmail: true, requireTime: true });
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      toast.error("Please fix the errors in the form.");
+      return;
+    }
+
     // Guard: reject past dates
     if (form.preferred_date && form.preferred_date < todayStr) {
       toast.error("Please select today or a future date.");
@@ -217,35 +208,14 @@ const BookingForm = () => {
     const { original, discount, final } = calculateDiscount();
     const tid = toast.loading("Submitting your booking...");
 
-    const insertData: any = {
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim() || null,
-      address: form.address.trim(),
-      service_type:
-        form.service_type === "Custom Service"
-          ? `Custom: ${form.custom_service_demand.trim()}`
-          : form.service_type,
-      preferred_date: form.preferred_date || todayStr,
-      preferred_time: form.preferred_time || "09:00",
-      description:
-        form.service_type === "Custom Service"
-          ? form.custom_service_demand.trim()
-          : form.description.trim() || null,
-      exact_location: form.exact_location?.trim() || null,
-      custom_service_demand:
-        form.service_type === "Custom Service" ? form.custom_service_demand.trim() : null,
-      is_switch_working: form.is_switch_working || null,
-      has_old_fan: form.has_old_fan || null,
-      is_electricity_supply_on: form.is_electricity_supply_on || null,
-      user_id: user?.id || null,
-      coupon_code: couponCode?.trim()?.toUpperCase() || null,
-      offer_id: null,
-      discount_amount: discount > 0 ? discount : null,
-      original_amount: original > 0 ? original : null,
-      final_amount: final > 0 ? final : null,
-      offer_applied: appliedCoupon?.success || false,
-    };
+    const insertData = buildBookingPayload(form, {
+      userId: user?.id,
+      couponCode,
+      applied: appliedCoupon,
+      base: original,
+      discount,
+      final,
+    });
 
     try {
       const { data: bookingData, error } = await withTimeout(
@@ -263,9 +233,8 @@ const BookingForm = () => {
       setDone(true);
 
       setForm({
-        name: "", phone: "", email: "", address: "", service_type: preselected,
-        preferred_date: "", preferred_time: "", description: "", exact_location: "",
-        custom_service_demand: "", is_switch_working: "", has_old_fan: "", is_electricity_supply_on: "",
+        ...BLANK_FORM,
+        service_type: preselected,
       });
 
       Promise.allSettled([
@@ -432,19 +401,25 @@ const BookingForm = () => {
                     <label className={labelCls}>Full Name *</label>
                     <input
                       type="text" required placeholder="John Doe"
-                      className={inputCls}
+                      className={`${inputCls} ${fieldErrors.name ? "border-red-400 focus:ring-red-400" : ""}`}
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                     />
+                    {fieldErrors.name && (
+                      <p className="mt-1 text-xs text-red-500">{fieldErrors.name}</p>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>Phone Number *</label>
                     <input
-                      type="tel" required placeholder="+91 98765 43210"
-                      className={inputCls}
+                      type="tel" required placeholder="9876543210"
+                      className={`${inputCls} ${fieldErrors.phone ? "border-red-400 focus:ring-red-400" : ""}`}
                       value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
                     />
+                    {fieldErrors.phone && (
+                      <p className="mt-1 text-xs text-red-500">{fieldErrors.phone}</p>
+                    )}
                   </div>
                 </div>
 
@@ -453,10 +428,13 @@ const BookingForm = () => {
                   <label className={labelCls}>Email Address *</label>
                   <input
                     type="email" required placeholder="you@example.com"
-                    className={inputCls}
+                    className={`${inputCls} ${fieldErrors.email ? "border-red-400 focus:ring-red-400" : ""}`}
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                   />
+                  {fieldErrors.email && (
+                    <p className="mt-1 text-xs text-red-500">{fieldErrors.email}</p>
+                  )}
                 </div>
 
                 {/* Divider */}
@@ -483,10 +461,13 @@ const BookingForm = () => {
                   </div>
                   <input
                     type="text" required placeholder="123 Main St, City"
-                    className={inputCls}
+                    className={`${inputCls} ${fieldErrors.address ? "border-red-400 focus:ring-red-400" : ""}`}
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                   />
+                  {fieldErrors.address && (
+                    <p className="mt-1 text-xs text-red-500">{fieldErrors.address}</p>
+                  )}
                 </div>
 
                 {/* Service Type */}
@@ -494,7 +475,7 @@ const BookingForm = () => {
                   <label className={labelCls}>Service Type *</label>
                   <select
                     required
-                    className={inputCls + " cursor-pointer"}
+                    className={`${inputCls} cursor-pointer ${fieldErrors.service_type ? "border-red-400 focus:ring-red-400" : ""}`}
                     value={form.service_type}
                     onChange={(e) => setForm({ ...form, service_type: e.target.value })}
                   >
@@ -503,6 +484,9 @@ const BookingForm = () => {
                       <option key={s.title} value={s.title}>{s.title}</option>
                     ))}
                   </select>
+                  {fieldErrors.service_type && (
+                    <p className="mt-1 text-xs text-red-500">{fieldErrors.service_type}</p>
+                  )}
 
                   {/* Service charge badge */}
                   <AnimatePresence>
@@ -536,10 +520,13 @@ const BookingForm = () => {
                       <textarea
                         required rows={4}
                         placeholder="Describe the specific electrical work you need..."
-                        className={inputCls + " resize-none"}
+                        className={`${inputCls} resize-none ${fieldErrors.custom_service_demand ? "border-red-400 focus:ring-red-400" : ""}`}
                         value={form.custom_service_demand}
                         onChange={(e) => setForm({ ...form, custom_service_demand: e.target.value })}
                       />
+                      {fieldErrors.custom_service_demand && (
+                        <p className="mt-1 text-xs text-red-500">{fieldErrors.custom_service_demand}</p>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -672,19 +659,19 @@ const BookingForm = () => {
                       type="date"
                       required
                       min={todayStr}
-                      className={`${inputCls} ${dateError ? "border-red-400 focus:ring-red-400" : ""}`}
+                      className={`${inputCls} ${dateError || fieldErrors.preferred_date ? "border-red-400 focus:ring-red-400" : ""}`}
                       value={form.preferred_date}
                       onChange={(e) => handleDateChange(e.target.value)}
                     />
                     <AnimatePresence>
-                      {dateError && (
+                      {(dateError || fieldErrors.preferred_date) && (
                         <motion.p
                           initial={{ opacity: 0, y: -4 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           className="mt-1.5 text-xs text-red-500 flex items-center gap-1"
                         >
-                          {dateError}
+                          {dateError || fieldErrors.preferred_date}
                         </motion.p>
                       )}
                     </AnimatePresence>
@@ -693,12 +680,12 @@ const BookingForm = () => {
                   <div>
                     <label className={labelCls}>
                       Preferred Time *
-                      <span className="ml-1 text-zinc-400 normal-case font-normal tracking-normal">(24hrs available)</span>
+                      <span className="ml-1 text-zinc-400 normal-case font-normal tracking-normal">(24/7 available)</span>
                     </label>
                     <input
                       type="time"
                       required
-                      className={inputCls}
+                      className={`${inputCls} ${fieldErrors.preferred_time ? "border-red-400 focus:ring-red-400" : ""}`}
                       value={form.preferred_time}
                       onChange={(e) => setForm({ ...form, preferred_time: e.target.value })}
                     />
@@ -738,7 +725,7 @@ const BookingForm = () => {
                 {/* Submit */}
                 <button
                   type="submit"
-                  disabled={submitting || !!dateError}
+                  disabled={submitting || !!dateError || Object.keys(fieldErrors).length > 0}
                   className="w-full mt-2 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm uppercase tracking-wider rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0"
                 >
                   {submitting

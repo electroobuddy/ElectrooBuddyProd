@@ -5,8 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Zap, Loader2, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 
 const UserAuth = () => {
@@ -28,8 +26,15 @@ const UserAuth = () => {
     }
   }, []);
 
+  // Redirect if user is logged in (using useEffect, not during render)
+  useEffect(() => {
+    if (user) {
+      navigate(isAdmin ? "/admin/dashboard" : isTechnician ? "/technician/dashboard" : "/dashboard", { replace: true });
+    }
+  }, [user, isAdmin, isTechnician, navigate]);
+
+  // Show nothing while redirecting
   if (user) {
-    navigate(isAdmin ? "/admin/dashboard" : isTechnician ? "/technician/dashboard" : "/dashboard", { replace: true });
     return null;
   }
 
@@ -58,6 +63,22 @@ const UserAuth = () => {
         // Fetch roles to redirect based on role
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (currentUser) {
+          // Ensure email is saved in profiles
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+          
+          if (!existingProfile?.email && currentUser.email) {
+            await supabase
+              .from('profiles')
+              .upsert({
+                user_id: currentUser.id,
+                email: currentUser.email,
+              }, { onConflict: 'user_id' });
+          }
+          
           const { data: rolesData } = await supabase
             .from('user_roles')
             .select('role')
@@ -84,20 +105,35 @@ const UserAuth = () => {
       } else {
         console.log('✅ Signup successful!');
         
-        // Log the default role that was created
+        // Save email to profiles table
         setTimeout(async () => {
           try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user: newUser } } = await supabase.auth.getUser();
             
-            if (user) {
-              console.log('🆕 New user created with ID:', user.id);
-              console.log('📧 Email:', user.email);
+            if (newUser) {
+              console.log('🆕 New user created with ID:', newUser.id);
+              console.log('📧 Email:', newUser.email);
+              
+              // Insert/update profile with email
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                  user_id: newUser.id,
+                  email: newUser.email || email,
+                  full_name: newUser.user_metadata?.full_name || null,
+                }, { onConflict: 'user_id' });
+              
+              if (profileError) {
+                console.error('❌ Error saving profile:', profileError);
+              } else {
+                console.log('✅ Profile saved with email');
+              }
               
               // Fetch the role that was automatically assigned
               const { data: rolesData, error: rolesError } = await supabase
                 .from('user_roles')
                 .select('role')
-                .eq('user_id', user.id);
+                .eq('user_id', newUser.id);
               
               if (rolesError) {
                 console.error('❌ Error fetching roles after signup:', rolesError);
@@ -362,12 +398,13 @@ const UserAuth = () => {
           user-select: none;
           font-family: 'DM Sans', sans-serif;
         }
+
+        .auth-divider {
           height: 1px;
           background: linear-gradient(90deg, transparent, hsl(var(--border) / 0.3), transparent);
           margin: 20px 0;
         }
       `}</style>
-      <Navbar />
       <div className="auth-page">
         <div className="auth-grid-bg" />
         <div className="auth-glow" />
@@ -458,7 +495,6 @@ const UserAuth = () => {
           </div>
         </motion.div>
       </div>
-      <Footer />
     </>
   );
 };

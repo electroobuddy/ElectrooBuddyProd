@@ -1,10 +1,11 @@
 import { Navigate, Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Zap, LayoutDashboard, Calendar, User, LogOut, Loader2, Menu, X, Package, ShoppingBag, Wrench, ShieldCheck } from "lucide-react";
+import { Zap, LayoutDashboard, Calendar, User, LogOut, Loader2, Menu, X, Package, ShoppingBag, Wrench, ShieldCheck, ShoppingCart } from "lucide-react";
 import { useState, useEffect } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import { subscribeToPush } from "@/utils/firebaseNotifications";
+import { useCart } from "@/contexts/CartContext";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
@@ -21,6 +22,7 @@ const UserLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { itemCount } = useCart();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -86,6 +88,31 @@ const UserLayout = () => {
               </Link>
             );
           })}
+          
+          {/* Cart Link */}
+          <Link
+            to="/cart"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              location.pathname === "/cart"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            }`}
+          >
+            <div className="relative">
+              <ShoppingCart className="w-4 h-4" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </div>
+            Cart
+            {itemCount > 0 && (
+              <span className="ml-auto text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                {itemCount}
+              </span>
+            )}
+          </Link>
         </nav>
         <div className="px-3 py-4 border-t border-border">
           <p className="text-xs text-muted-foreground truncate px-3 mb-2">{user.email}</p>
@@ -108,6 +135,15 @@ const UserLayout = () => {
         </div>
         <div className="flex items-center gap-2">
           <NotificationBell userId={user?.id || null} />
+          {/* Mobile Cart Icon */}
+          <Link to="/cart" className="relative p-1.5 text-foreground hover:bg-muted rounded-lg transition-colors">
+            <ShoppingCart className="w-5 h-5" />
+            {itemCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {itemCount > 99 ? "99+" : itemCount}
+              </span>
+            )}
+          </Link>
           <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground p-1">
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -134,6 +170,24 @@ const UserLayout = () => {
                 </Link>
               );
             })}
+            {/* Mobile Menu Cart Link */}
+            <Link
+              to="/cart"
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                location.pathname === "/cart" ? "bg-primary/10 text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <div className="relative">
+                <ShoppingCart className="w-4 h-4" />
+                {itemCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </span>
+                )}
+              </div>
+              Cart
+            </Link>
             <button
               onClick={() => { signOut(); setMobileOpen(false); }}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground w-full"
@@ -146,17 +200,28 @@ const UserLayout = () => {
 
       {/* Mobile bottom nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border flex justify-around py-1.5 px-1">
-        {navItems.map((item) => {
+        {[
+          ...navItems.slice(0, 4),
+          { label: "Cart", to: "/cart", icon: ShoppingCart, isCart: true },
+          ...navItems.slice(4),
+        ].map((item: any) => {
           const active = location.pathname === item.to;
           return (
             <Link
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 py-1 ${
+              className={`flex flex-col items-center justify-center gap-0.5 min-w-0 flex-1 py-1 relative ${
                 active ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
+              <div className="relative">
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                {item.isCart && itemCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] leading-tight truncate w-full text-center font-medium">
                 {item.label.split(" ")[0]}
               </span>
