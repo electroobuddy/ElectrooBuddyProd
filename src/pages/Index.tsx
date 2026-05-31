@@ -42,7 +42,7 @@ import {
   useTestimonials,
   useProducts,
 } from "@/hooks/useOptimizedData";
-import { PHONE_NUMBER } from "@/data/services";
+import { EMAIL, PHONE_NUMBER } from "@/data/services";
 import { teamMembers as staticTeam } from "@/data/team";
 
 // Image imports
@@ -1289,10 +1289,10 @@ export default function Index() {
                       Email
                     </h4>
                     <a
-                      href="mailto:electroobuddy@gmail.com"
+                      href={`mailto:${EMAIL}`}
                       className="text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300 block"
                     >
-                      electroobuddy@gmail.com
+                      {EMAIL}
                     </a>
                   </div>
                 </div>

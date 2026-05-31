@@ -1,13 +1,14 @@
 import { toast } from "sonner";
+import { EMAIL, PHONE_NUMBER } from "@/data/services";
 
-const COMPANY = {
-  name: "Electroobuddy",
-  address: "05, Nagziri Dewas Road, Ujjain(456010), India",
-  phone: "+91 8109308287",
-  email: "electroobuddy@gmail.com",
-  supportEmail: "support@electroobuddy.com",
-};
-
+export  const COMPANY = {
+    name: "Electroobuddy",
+    address: "05, Nagziri Dewas Road, Ujjain(456010), India",
+    phone: PHONE_NUMBER,
+    email: EMAIL,
+    gst: "23ABCDE1234F1Z5",
+    supportEmail: "support@electroobuddy.com",
+  };
 export function generateBookingInvoice(booking: any) {
   try {
     const invoiceNumber = `INV-BKG-${(booking.id || "").slice(0, 8).toUpperCase()}`;

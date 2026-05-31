@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, ArrowRight } from "lucide-react";
-import { PHONE_NUMBER } from "@/data/services";
+import { EMAIL, PHONE_NUMBER } from "@/data/services";
 import { motion } from "framer-motion";
 
 // Import favicon
@@ -513,12 +513,12 @@ const Footer = () => (
               </div>
             </a>
 
-            <a href="mailto:electroobuddy@gmail.com" className="contact-item" style={{ textDecoration: 'none' }}>
+            <a href={`mailto:${EMAIL}`} className="contact-item" style={{ textDecoration: 'none' }}>
               <div className="contact-icon-box">
                 <Mail size={16} />
               </div>
               <div className="contact-value">
-                electroobuddy@gmail.com
+                {EMAIL}
               </div>
             </a>
           </div>
