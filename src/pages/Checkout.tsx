@@ -123,25 +123,7 @@ const Checkout = () => {
   const { user, loading: authLoading } = useAuth();
   const { items, total, clearCart } = useCart();
 
-  // Redirect to login if not authenticated
-  if (!authLoading && !user) {
-    toast.error('Please login to checkout');
-    navigate('/login', { state: { from: '/checkout' } });
-    return null;
-  }
-
-  // Show loading while checking auth
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // ALL useState hooks must be before any conditional returns
   const [step, setStep] = useState<Step>("address");
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("razorpay");
@@ -167,17 +149,35 @@ const Checkout = () => {
 
   const [info, setInfo] = infoState;
 
+  // Redirect to login if not authenticated (AFTER all hooks)
+  if (!authLoading && !user) {
+    toast.error('Please login to checkout');
+    navigate('/login', { state: { from: '/checkout' } });
+    return null;
+  }
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Calculate totals with coupon and tax
   const calculateTotals = async () => {
     const subtotal = total;
     
-    // Calculate shipping based on state (simplified - will use default for now)
+    // Calculate shipping based on state
     if (info.state) {
       try {
-        // For now, use simple logic - in production call the RPC function
-        // Metro cities get free shipping above ₹500, others above ₹750
-        const metroCities = ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad'];
-        const isMetro = metroCities.includes(info.state);
+        // Metro states get free shipping above ₹500, others above ₹750
+        const metroStates = ['Delhi', 'Maharashtra', 'Karnataka', 'Tamil Nadu', 'Gujarat', 'West Bengal', 'Telangana'];
+        const isMetro = metroStates.includes(info.state);
         
         if (subtotal >= (isMetro ? 500 : 750)) {
           setShippingCharge(0);
@@ -298,7 +298,10 @@ const Checkout = () => {
       throw new Error('User not authenticated. Please login to place an order.');
     }
 
-    const orderNumber = `ORD${Date.now()}`;
+    // Generate unique order number with timestamp + random suffix
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const orderNumber = `ORD${timestamp}${randomSuffix}`;
     
     try {
       // First, create the order

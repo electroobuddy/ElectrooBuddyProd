@@ -27,10 +27,18 @@ export interface BookingService {
   visit_charge_label?: string;
 }
 
+// Cache configuration
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
 export interface ServicesState {
   // Data
   services: Service[];
-  bookingServices: BookingService[]; // Simplified services for booking forms (with charge info)
+  bookingServices: BookingService[];
 
   // Loading states
   loading: boolean;
@@ -40,12 +48,17 @@ export interface ServicesState {
   error: Error | null;
   bookingServicesError: Error | null;
 
+  // Cache
+  servicesCache: CacheEntry<Service[]> | null;
+  bookingServicesCache: CacheEntry<BookingService[]> | null;
+
   // Actions
   fetchServices: () => Promise<void>;
   fetchBookingServices: () => Promise<void>;
   refreshServices: () => Promise<void>;
   getServiceByTitle: (title: string) => Service | undefined;
   getServiceCharge: (title: string) => { amount: string; label: string; show: boolean } | null;
+  clearCache: () => void;
 }
 
 // Helper to get icon name based on service title
@@ -82,6 +95,12 @@ const transformStaticServices = (): Service[] => {
   }));
 };
 
+// Check if cache is valid
+const isCacheValid = <T>(cache: CacheEntry<T> | null): boolean => {
+  if (!cache) return false;
+  return Date.now() - cache.timestamp < CACHE_DURATION_MS;
+};
+
 export const useServicesStore = create<ServicesState>((set, get) => ({
   // Initial state
   services: [],
@@ -90,9 +109,17 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
   bookingServicesLoading: false,
   error: null,
   bookingServicesError: null,
+  servicesCache: null,
+  bookingServicesCache: null,
 
   // Fetch full services for display
   fetchServices: async () => {
+    // Return cached data if valid
+    if (isCacheValid(get().servicesCache)) {
+      set({ services: get().servicesCache!.data, loading: false });
+      return;
+    }
+
     // Prevent multiple simultaneous fetches
     if (get().loading) return;
 
@@ -107,7 +134,13 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       if (error) throw error;
 
       const services = data && data.length > 0 ? data : transformStaticServices();
-      set({ services, loading: false });
+      
+      // Update cache
+      set({ 
+        services, 
+        loading: false,
+        servicesCache: { data: services, timestamp: Date.now() }
+      });
     } catch (err: any) {
       console.error('Error fetching services:', err);
       // Fallback to static services on error
@@ -121,32 +154,42 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
 
   // Fetch simplified services for booking forms (with charge info)
   fetchBookingServices: async () => {
+    // Return cached data if valid
+    if (isCacheValid(get().bookingServicesCache)) {
+      set({ bookingServices: get().bookingServicesCache!.data, bookingServicesLoading: false });
+      return;
+    }
+
     // Prevent multiple simultaneous fetches
     if (get().bookingServicesLoading) return;
 
     set({ bookingServicesLoading: true, bookingServicesError: null });
 
     try {
+      // First try to get services with charge columns
       const { data, error } = await supabase
         .from('services')
-        .select('title, service_charge, show_visit_charge, visit_charge_label')
+        .select('*')
         .order('sort_order');
 
-      if (error) {
-        // If columns don't exist, fallback to just titles
-        const { data: basicData } = await supabase
-          .from('services')
-          .select('title')
-          .order('sort_order');
-        const bookingServices = (basicData || []) as unknown as BookingService[];
-        set({ bookingServices, bookingServicesLoading: false });
-        return;
-      }
+      if (error) throw error;
 
-      const bookingServices = (data || []) as unknown as BookingService[];
-      set({ bookingServices, bookingServicesLoading: false });
+      // Map to booking service format, handling missing columns gracefully
+      const bookingServices: BookingService[] = (data || []).map((s: any) => ({
+        title: s.title,
+        service_charge: s.service_charge || null,
+        show_visit_charge: s.show_visit_charge || false,
+        visit_charge_label: s.visit_charge_label || 'Visit Charge',
+      }));
+
+      set({ 
+        bookingServices, 
+        bookingServicesLoading: false,
+        bookingServicesCache: { data: bookingServices, timestamp: Date.now() }
+      });
     } catch (err: any) {
       console.error('Error fetching booking services:', err);
+      // Fallback to empty array
       set({
         bookingServices: [],
         bookingServicesLoading: false,
@@ -155,8 +198,10 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
     }
   },
 
-  // Refresh both service types
+  // Refresh both service types (bypass cache)
   refreshServices: async () => {
+    // Clear cache first
+    set({ servicesCache: null, bookingServicesCache: null });
     await Promise.all([
       get().fetchServices(),
       get().fetchBookingServices()
@@ -179,6 +224,11 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       };
     }
     return null;
+  },
+
+  // Clear cache
+  clearCache: () => {
+    set({ servicesCache: null, bookingServicesCache: null });
   }
 }));
 

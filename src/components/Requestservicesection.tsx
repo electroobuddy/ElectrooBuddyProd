@@ -57,8 +57,20 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   useEffect(() => { fetchBookingServices(); }, [fetchBookingServices]);
 
   useEffect(() => {
-    if (preselectedService) setForm(p => ({ ...p, service_type: preselectedService }));
-  }, [preselectedService]);
+    if (preselectedService) {
+      // Try to find an exact match first, then a partial match
+      const services = [...bookingServices, { title: "Custom Service" }];
+      const exactMatch = services.find(s => s.title === preselectedService);
+      const partialMatch = services.find(s => 
+        s.title.toLowerCase().includes(preselectedService.toLowerCase()) ||
+        preselectedService.toLowerCase().includes(s.title.toLowerCase())
+      );
+      
+      // Use the matched service title, or fall back to the original value
+      const matchedService = exactMatch || partialMatch;
+      setForm(p => ({ ...p, service_type: matchedService?.title || preselectedService }));
+    }
+  }, [preselectedService, bookingServices]);
 
   // Re-validate whenever form changes
   useEffect(() => { setErrors(validateBookingForm(form)); }, [form]);

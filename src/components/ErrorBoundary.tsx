@@ -38,7 +38,7 @@ class ErrorBoundary extends Component<Props, State> {
     }
 
     // Log to external service in production
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.PROD) {
       // TODO: Add error logging service (Sentry, LogRocket, etc.)
       console.warn('Production error detected - consider adding error logging service');
     }
@@ -77,7 +77,7 @@ class ErrorBoundary extends Component<Props, State> {
               We're sorry, but something unexpected happened. Our team has been notified.
             </p>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <details className="mb-6 text-left">
                 <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Error Details (Development Only)

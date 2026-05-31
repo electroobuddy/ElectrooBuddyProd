@@ -892,6 +892,7 @@ export type Database = {
           endpoint: string | null
           subscription: Json
           browser_name: string | null
+          subscription_type: string | null
           is_active: boolean | null
           created_at: string | null
           updated_at: string | null
@@ -902,6 +903,7 @@ export type Database = {
           endpoint?: string | null
           subscription: Json
           browser_name?: string | null
+          subscription_type?: string | null
           is_active?: boolean | null
           created_at?: string | null
           updated_at?: string | null
@@ -912,6 +914,7 @@ export type Database = {
           endpoint?: string | null
           subscription?: Json
           browser_name?: string | null
+          subscription_type?: string | null
           is_active?: boolean | null
           created_at?: string | null
           updated_at?: string | null

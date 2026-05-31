@@ -13,17 +13,29 @@ export interface CartItem {
   quantity: number;
   installation_service: boolean;
   installation_charge: number;
+  original_installation_charge?: number;
+}
+
+// Product type for addToCart
+export interface CartProduct {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  main_image_url?: string;
+  installation_charge?: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: any, quantity: number, installation?: boolean) => void;
+  addToCart: (product: CartProduct, quantity: number, installation?: boolean) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   toggleInstallation: (productId: string) => void;
   clearCart: () => void;
   total: number;
   itemCount: number;
+  loading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -45,7 +57,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load cart from localStorage or database on mount
+  // Load cart when user changes (login/logout/refresh)
   useEffect(() => {
     loadCart();
   }, [user]);
@@ -69,7 +81,8 @@ export const CartProvider = ({ children }: CartProviderProps) => {
               main_image_url,
               installation_charge
             )
-          `);
+          `)
+          .eq("user_id", user.id);
 
         if (error) throw error;
 
@@ -82,10 +95,13 @@ export const CartProvider = ({ children }: CartProviderProps) => {
           price: item.products.price,
           quantity: item.quantity,
           installation_service: item.installation_service,
-          installation_charge: item.installation_service ? item.products.installation_charge : 0,
+          installation_charge: item.installation_service ? (item.products.installation_charge || 0) : 0,
         }));
 
         setItems(cartItems);
+
+        // Also sync any localStorage cart to database
+        await syncLocalStorageToDatabase(cartItems);
       } else {
         // Load from localStorage for guest users
         const savedCart = localStorage.getItem("cart");
@@ -100,92 +116,184 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }
   };
 
+  // Sync localStorage cart items to database when user logs in
+  const syncLocalStorageToDatabase = async (existingDbItems: CartItem[]) => {
+    const localCart = localStorage.getItem("cart");
+    if (!localCart) return;
+
+    try {
+      const localItems: CartItem[] = JSON.parse(localCart);
+      if (localItems.length === 0) return;
+
+      // Add local items that don't exist in database
+      for (const localItem of localItems) {
+        const existsInDb = existingDbItems.some(
+          (dbItem) => dbItem.product_id === localItem.product_id && 
+                     dbItem.installation_service === localItem.installation_service
+        );
+
+        if (!existsInDb) {
+          await supabase.from("cart_items").insert({
+            user_id: user!.id,
+            product_id: localItem.product_id,
+            quantity: localItem.quantity,
+            installation_service: localItem.installation_service,
+          });
+        }
+      }
+
+      // Clear localStorage after sync
+      localStorage.removeItem("cart");
+
+      // Reload cart from database
+      const { data } = await supabase
+        .from("cart_items")
+        .select(`
+          id,
+          product_id,
+          quantity,
+          installation_service,
+          products (
+            id,
+            name,
+            slug,
+            price,
+            main_image_url,
+            installation_charge
+          )
+        `)
+        .eq("user_id", user!.id);
+
+      if (data) {
+        const syncedItems: CartItem[] = data.map((item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
+          product_name: item.products.name,
+          product_slug: item.products.slug,
+          product_image: item.products.main_image_url,
+          price: item.products.price,
+          quantity: item.quantity,
+          installation_service: item.installation_service,
+          installation_charge: item.installation_service ? (item.products.installation_charge || 0) : 0,
+        }));
+        setItems(syncedItems);
+      }
+    } catch (error) {
+      console.error("Error syncing cart to database:", error);
+    }
+  };
+
+  // Save cart to database for logged-in users
+  const saveCartToDatabase = async (newItems: CartItem[]) => {
+    if (!user) return;
+
+    try {
+      // Delete existing cart items for this user
+      await supabase.from("cart_items").delete().eq("user_id", user.id);
+
+      // Insert new items
+      if (newItems.length > 0) {
+        const insertData = newItems.map((item) => ({
+          user_id: user.id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          installation_service: item.installation_service,
+        }));
+
+        const { error } = await supabase.from("cart_items").insert(insertData);
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error("Error saving cart to database:", error);
+    }
+  };
+
   const saveCart = async (newItems: CartItem[]) => {
     if (user) {
       // Save to database for logged-in users
-      // TODO: Implement database sync
-      localStorage.setItem("cart", JSON.stringify(newItems));
+      await saveCartToDatabase(newItems);
     } else {
       // Save to localStorage for guest users
       localStorage.setItem("cart", JSON.stringify(newItems));
     }
   };
 
-  const addToCart = (product: any, quantity: number, installation: boolean = false) => {
-    setItems((prevItems) => {
-      const existingItemIndex = prevItems.findIndex(
-        (item) => item.product_id === product.id && item.installation_service === installation
-      );
+  const addToCart = async (product: any, quantity: number, installation: boolean = false) => {
+    const existingItemIndex = items.findIndex(
+      (item) => item.product_id === product.id && item.installation_service === installation
+    );
 
-      let newItems;
-      if (existingItemIndex > -1) {
-        // Update quantity if item already exists
-        newItems = [...prevItems];
-        newItems[existingItemIndex].quantity += quantity;
-      } else {
-        // Add new item
-        const newItem: CartItem = {
-          id: Date.now().toString(),
-          product_id: product.id,
-          product_name: product.name,
-          product_slug: product.slug,
-          product_image: product.main_image_url,
-          price: product.price,
-          quantity: quantity,
-          installation_service: installation,
-          installation_charge: installation ? (product.installation_charge || 0) : 0,
-        };
-        newItems = [...prevItems, newItem];
-      }
+    let newItems;
+    if (existingItemIndex > -1) {
+      // Update quantity if item already exists
+      newItems = [...items];
+      newItems[existingItemIndex].quantity += quantity;
+    } else {
+      // Add new item
+      const newItem: CartItem = {
+        id: user ? crypto.randomUUID() : Date.now().toString(),
+        product_id: product.id,
+        product_name: product.name,
+        product_slug: product.slug,
+        product_image: product.main_image_url,
+        price: product.price,
+        quantity: quantity,
+        installation_service: installation,
+        installation_charge: installation ? (product.installation_charge || 0) : 0,
+        original_installation_charge: product.installation_charge || 0,
+      };
+      newItems = [...items, newItem];
+    }
 
-      saveCart(newItems);
-      toast.success(`${quantity} x ${product.name} added to cart`);
-      return newItems;
-    });
+    setItems(newItems);
+    await saveCart(newItems);
+    toast.success(`${quantity} x ${product.name} added to cart`);
   };
 
-  const removeFromCart = (productId: string) => {
-    setItems((prevItems) => {
-      const newItems = prevItems.filter((item) => item.product_id !== productId);
-      saveCart(newItems);
-      toast.success("Item removed from cart");
-      return newItems;
-    });
+  const removeFromCart = async (productId: string) => {
+    const newItems = items.filter((item) => item.product_id !== productId);
+    setItems(newItems);
+    await saveCart(newItems);
+    toast.success("Item removed from cart");
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = async (productId: string, quantity: number) => {
     if (quantity < 1) return;
 
-    setItems((prevItems) => {
-      const newItems = prevItems.map((item) =>
-        item.product_id === productId ? { ...item, quantity } : item
-      );
-      saveCart(newItems);
-      return newItems;
-    });
+    const newItems = items.map((item) =>
+      item.product_id === productId ? { ...item, quantity } : item
+    );
+    setItems(newItems);
+    await saveCart(newItems);
   };
 
-  const toggleInstallation = (productId: string) => {
-    setItems((prevItems) => {
-      const newItems = prevItems.map((item) => {
-        if (item.product_id === productId) {
-          const newInstallationState = !item.installation_service;
-          return {
-            ...item,
-            installation_service: newInstallationState,
-            installation_charge: newInstallationState ? item.installation_charge : 0,
-          };
-        }
-        return item;
-      });
-      saveCart(newItems);
-      return newItems;
+  const toggleInstallation = async (productId: string) => {
+    const newItems = items.map((item) => {
+      if (item.product_id === productId) {
+        const newInstallationState = !item.installation_service;
+        return {
+          ...item,
+          installation_service: newInstallationState,
+          // When turning ON, use the original charge; when OFF, keep original stored
+          installation_charge: newInstallationState 
+            ? (item.original_installation_charge || item.installation_charge || 0) 
+            : 0,
+          original_installation_charge: item.original_installation_charge || item.installation_charge,
+        };
+      }
+      return item;
     });
+    setItems(newItems);
+    await saveCart(newItems);
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
     setItems([]);
-    localStorage.removeItem("cart");
+    if (user) {
+      await supabase.from("cart_items").delete().eq("user_id", user.id);
+    } else {
+      localStorage.removeItem("cart");
+    }
     toast.success("Cart cleared");
   };
 
@@ -207,6 +315,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         clearCart,
         total,
         itemCount,
+        loading,
       }}
     >
       {children}

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { Truck, Settings, Save, RotateCcw, CheckCircle, AlertCircle, Package } from "lucide-react";
+import { Truck, Settings, Save, RotateCcw, CheckCircle, AlertCircle, Package, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminShippingSettings = () => {
   const [loading, setLoading] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [config, setConfig] = useState({
     enabled: false,
     auto_create_shipment: true,
@@ -168,15 +169,27 @@ const AdminShippingSettings = () => {
               <label className="block text-sm font-medium mb-2">
                 Shiprocket Password *
               </label>
-              <input
-                type="password"
-                value={config.password}
-                onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                placeholder="••••••••"
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={config.password}
+                  onChange={(e) => setConfig({ ...config, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2 pr-10 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Your Shiprocket account password
+              </p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                ⚠️ Password is stored securely. Only admins can view this page.
               </p>
             </div>
 

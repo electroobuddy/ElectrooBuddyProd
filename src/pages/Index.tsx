@@ -95,6 +95,7 @@ export default function Index() {
     services,
     loading: servicesLoading,
     fetchServices,
+    fetchBookingServices,
   } = useServicesStore();
   const { products, loading: productsLoading } = useProducts();
   const displayProducts = products.slice(0, 4);
@@ -368,10 +369,11 @@ export default function Index() {
     }
   };
 
-  // Fetch services on mount
+  // Fetch services and booking services on mount
   useEffect(() => {
     fetchServices();
-  }, [fetchServices]);
+    fetchBookingServices();
+  }, [fetchServices, fetchBookingServices]);
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen index-page">

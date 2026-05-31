@@ -40,7 +40,7 @@ const statusColors: Record<string, string> = {
 };
 
 const AdminUsers = () => {
-  const { users: initialUsers, loading: initialLoading } = useAdminUsers();
+  const { users: initialUsers, loading: initialLoading, refetch } = useAdminUsers();
   const [users, setUsers] = useState<UserProfile[]>(initialUsers);
   const [loading, setLoading] = useState(initialLoading);
   const [refreshing, setRefreshing] = useState(false);
@@ -122,10 +122,10 @@ const AdminUsers = () => {
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{users.length} registered users</p>
         </div>
-        <button onClick={() => {
+        <button onClick={async () => {
           setRefreshing(true);
-          invalidateUsers();
-          setTimeout(() => setRefreshing(false), 500);
+          await refetch();
+          setRefreshing(false);
         }} disabled={refreshing}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-all disabled:opacity-60">
           <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />

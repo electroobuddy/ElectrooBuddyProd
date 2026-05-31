@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingCart, Star, Plus, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 
@@ -24,10 +24,11 @@ interface ProductCardProps {
   index?: number;
 }
 
-const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
+const ProductCard = memo(({ product, index = 0 }: ProductCardProps) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const discount =
     product.compare_at_price && product.compare_at_price > product.price
@@ -57,42 +58,43 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: Math.min(index * 0.06, 0.3), duration: 0.4 }}
-      className="h-full w-full"
-    >
+    <div className="h-full w-full">
       <Link to={`/products/${product.slug}`} className="block group h-full">
-        <div className="h-full bg-card border border-border/40 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
+        <div className="h-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col">
 
           {/* ── Image ── */}
-          <div className="aspect-square overflow-hidden bg-muted relative flex-shrink-0">
+          <div className="aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-800 relative flex-shrink-0">
+            {/* Loading skeleton */}
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-700 animate-pulse" />
+            )}
+            
             {product.main_image_url ? (
               <img
                 src={product.main_image_url}
                 alt={product.name}
                 loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                onLoad={() => setImageLoaded(true)}
+                className={`w-full h-full object-cover group-hover:scale-110 transition-all duration-500 ${
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                }`}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <ShoppingCart size={24} className="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 text-muted-foreground opacity-20" />
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700">
+                <ShoppingCart size={40} className="text-zinc-300 dark:text-zinc-600" />
               </div>
             )}
 
-            {/* Top-left badges */}
-            <div className="absolute top-1 left-1 xs:top-1.5 xs:left-1.5 sm:top-2 sm:left-2 flex flex-col gap-0.5 xs:gap-1">
+            {/* Top badges */}
+            <div className="absolute top-2 left-2 flex flex-col gap-1.5">
               {product.is_featured && (
-                <span className="bg-yellow-500 text-white text-[8px] xs:text-[9px] sm:text-[10px] font-bold px-1.5 xs:px-2 py-0.5 xs:py-1 rounded-full flex items-center gap-0.5 shadow-sm">
-                  <Star size={7} className="w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 fill-current" />
-                  <span className="hidden xs:inline">Featured</span>
-                  <span className="xs:hidden">★</span>
+                <span className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                  <Star size={10} className="fill-current" />
+                  Featured
                 </span>
               )}
               {discount && (
-                <span className="bg-green-600 text-white text-[8px] xs:text-[9px] sm:text-[10px] font-bold px-1.5 xs:px-2 py-0.5 xs:py-1 rounded-full shadow-sm">
+                <span className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
                   {discount}% OFF
                 </span>
               )}
@@ -100,82 +102,78 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
 
             {/* Out of stock overlay */}
             {outOfStock && (
-              <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] flex items-center justify-center">
-                <span className="bg-red-500 text-white text-[9px] xs:text-[10px] sm:text-xs font-bold px-2 xs:px-2.5 sm:px-3 py-0.5 xs:py-1 sm:py-1.5 rounded-full shadow-md">
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                <span className="bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
                   Out of Stock
                 </span>
               </div>
             )}
+
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
 
           {/* ── Info ── */}
-          <div className="p-2.5 xs:p-3 sm:p-4 flex flex-col flex-1 gap-1.5 sm:gap-2">
+          <div className="p-3 sm:p-4 flex flex-col flex-1 gap-2">
 
-            {/* Name */}
-            <h3 className="font-semibold text-[11px] xs:text-xs sm:text-sm md:text-base line-clamp-2 leading-snug flex-1 text-foreground">
-              {product.name}
-            </h3>
-
-            {/* Category tag */}
+            {/* Category */}
             {product.category && (
-              <span className="text-[8px] xs:text-[9px] sm:text-[10px] text-muted-foreground bg-muted px-1.5 xs:px-2 py-0.5 rounded inline-block w-fit">
+              <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md inline-block w-fit uppercase tracking-wide">
                 {product.category}
               </span>
             )}
 
+            {/* Name */}
+            <h3 className="font-semibold text-sm sm:text-base line-clamp-2 leading-snug flex-1 text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {product.name}
+            </h3>
+
             {/* Price */}
-            <div className="flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 flex-wrap">
-              <span className="text-xs xs:text-sm sm:text-base md:text-lg font-bold text-primary">
-                ₹{product.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white">
+                ₹{product.price.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
               </span>
               {product.compare_at_price && (
-                <span className="text-[9px] xs:text-[10px] sm:text-xs text-muted-foreground line-through">
-                  ₹{product.compare_at_price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                <span className="text-xs text-zinc-400 line-through">
+                  ₹{product.compare_at_price.toLocaleString("en-IN", { minimumFractionDigits: 0 })}
                 </span>
               )}
             </div>
 
             {/* ── Buttons ── */}
             {!outOfStock ? (
-              <div className="flex gap-1 xs:gap-1.5 sm:gap-2 mt-auto pt-1.5 xs:pt-2">
-                {/* Add to Cart */}
+              <div className="flex gap-2 mt-auto pt-2">
                 <button
                   onClick={handleAddToCart}
-                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 xs:py-2 sm:py-2.5 rounded-lg text-[9px] xs:text-[10px] sm:text-xs font-semibold transition-all duration-200 min-h-[36px] xs:min-h-[40px] ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
                     added
-                      ? "bg-green-500 text-white"
-                      : "bg-muted hover:bg-green-600 hover:text-white text-foreground border border-border"
+                      ? "bg-emerald-500 text-white"
+                      : "bg-zinc-100 dark:bg-zinc-800 hover:bg-emerald-500 hover:text-white text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
                   }`}
                   title="Add to Cart"
                 >
                   {added ? (
                     <>
-                      <Check size={10} className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" /> 
-                      <span className="hidden xs:inline">Added</span>
-                      <span className="xs:hidden">✓</span>
+                      <Check size={14} /> Added
                     </>
                   ) : (
                     <>
-                      <Plus size={10} className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" /> 
-                      <span className="hidden xs:inline">Add to Cart</span>
-                      <span className="xs:hidden">Cart</span>
+                      <Plus size={14} /> Add to Cart
                     </>
                   )}
                 </button>
 
-                {/* Buy Now */}
                 <button
                   onClick={handleBuyNow}
-                  className="flex-1 flex items-center justify-center gap-1 py-1.5 xs:py-2 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[9px] xs:text-[10px] sm:text-xs font-semibold transition-colors min-h-[36px] xs:min-h-[40px]"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl text-xs font-semibold transition-all duration-200 shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30"
                 >
-                  <ShoppingCart size={10} className="w-2.5 h-2.5 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5" />
-                  <span className="hidden xs:inline">Buy Now</span>
-                  <span className="xs:hidden">Buy</span>
+                  <ShoppingCart size={14} />
+                  Buy Now
                 </button>
               </div>
             ) : (
-              <div className="mt-auto pt-1.5 xs:pt-2">
-                <div className="w-full py-1.5 xs:py-2 sm:py-2.5 bg-muted text-muted-foreground rounded-lg text-[9px] xs:text-[10px] sm:text-xs font-semibold text-center min-h-[36px] xs:min-h-[40px] flex items-center justify-center">
+              <div className="mt-auto pt-2">
+                <div className="w-full py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 rounded-xl text-xs font-semibold text-center border border-zinc-200 dark:border-zinc-700">
                   Out of Stock
                 </div>
               </div>
@@ -183,8 +181,10 @@ const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";
 
 export default ProductCard;

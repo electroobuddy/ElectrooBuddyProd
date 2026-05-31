@@ -5,8 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Zap, Loader2, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 
 const UserAuth = () => {
@@ -28,8 +26,15 @@ const UserAuth = () => {
     }
   }, []);
 
+  // Redirect if user is logged in (using useEffect, not during render)
+  useEffect(() => {
+    if (user) {
+      navigate(isAdmin ? "/admin/dashboard" : isTechnician ? "/technician/dashboard" : "/dashboard", { replace: true });
+    }
+  }, [user, isAdmin, isTechnician, navigate]);
+
+  // Show nothing while redirecting
   if (user) {
-    navigate(isAdmin ? "/admin/dashboard" : isTechnician ? "/technician/dashboard" : "/dashboard", { replace: true });
     return null;
   }
 
@@ -393,12 +398,13 @@ const UserAuth = () => {
           user-select: none;
           font-family: 'DM Sans', sans-serif;
         }
+
+        .auth-divider {
           height: 1px;
           background: linear-gradient(90deg, transparent, hsl(var(--border) / 0.3), transparent);
           margin: 20px 0;
         }
       `}</style>
-      <Navbar />
       <div className="auth-page">
         <div className="auth-grid-bg" />
         <div className="auth-glow" />
@@ -489,7 +495,6 @@ const UserAuth = () => {
           </div>
         </motion.div>
       </div>
-      <Footer />
     </>
   );
 };

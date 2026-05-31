@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { cacheManager, fetchWithCache } from '@/lib/cache-manager';
 import { CACHE_CONFIG } from '@/lib/optimization-config';
+import { useProductsStore } from '@/stores/productsStore';
 
 /**
  * Hook for fetching services with caching
@@ -136,6 +137,7 @@ export function useTestimonials() {
 
 /**
  * Hook for fetching products with pagination and caching
+ * Now uses the productsStore for better performance
  */
 export function useProducts(filters?: {
   category?: string;
@@ -143,85 +145,18 @@ export function useProducts(filters?: {
   searchTerm?: string;
   sortBy?: string;
 }) {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
+  const { products, loading, error, hasMore, fetchProducts, loadMore: storeLoadMore } = useProductsStore();
+  const [initialized, setInitialized] = useState(false);
 
-  const fetchProducts = useCallback(async (pageNum = 1, append = false) => {
-    try {
-      setLoading(true);
-      
-      // Build cache key based on filters
-      const filterKey = filters 
-        ? JSON.stringify(filters)
-        : 'all';
-      const cacheKey = `products-page-${pageNum}-${filterKey}`;
-
-      const data = await fetchWithCache(
-        cacheKey,
-        async () => {
-          let query = supabase
-            .from('products')
-            .select('*')
-            .eq('is_active', true);
-
-          // Apply filters
-          if (filters?.category && filters.category !== 'all') {
-            query = query.eq('category', filters.category);
-          }
-          if (filters?.brand && filters.brand !== 'all') {
-            query = query.eq('brand', filters.brand);
-          }
-          if (filters?.searchTerm) {
-            query = query.or(`name.ilike.%${filters.searchTerm}%,short_description.ilike.%${filters.searchTerm}%`);
-          }
-
-          // Apply sorting
-          if (filters?.sortBy === 'price-low') {
-            query = query.order('price', { ascending: true });
-          } else if (filters?.sortBy === 'price-high') {
-            query = query.order('price', { ascending: false });
-          } else if (filters?.sortBy === 'name') {
-            query = query.order('name', { ascending: true });
-          } else {
-            query = query.order('is_featured', { ascending: false })
-                        .order('created_at', { ascending: false });
-          }
-
-          // Pagination
-          const start = (pageNum - 1) * 12;
-          const end = start + 11;
-          query = query.range(start, end);
-
-          const { data, error } = await query;
-          if (error) throw error;
-          return data || [];
-        },
-        CACHE_CONFIG.PRODUCTS
-      );
-
-      setProducts(prev => append ? [...prev, ...data] : data);
-      setHasMore(data.length === 12);
-      setError(null);
-    } catch (err: any) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
-
+  // Fetch products when filters change
   useEffect(() => {
-    setPage(1);
-    fetchProducts(1, false);
-  }, [filters]);
+    fetchProducts(filters, true);
+    setInitialized(true);
+  }, [filters?.category, filters?.brand, filters?.searchTerm, filters?.sortBy]);
 
-  const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchProducts(nextPage, true);
-  };
+  const loadMore = useCallback(() => {
+    storeLoadMore(filters);
+  }, [filters, storeLoadMore]);
 
   return { products, loading, error, hasMore, loadMore };
 }
@@ -317,28 +252,34 @@ export function useAdminDashboardStats() {
         const data = await fetchWithCache(
           'admin-dashboard-stats',
           async () => {
-            // Fetch table counts
+            // Fetch all table counts in parallel
             const tables = [
               'products', 'orders', 'bookings', 
               'services', 'projects', 'testimonials', 'contact_messages'
             ] as const;
 
-            const counts: Record<string, number> = {};
-
-            for (const table of tables) {
+            // Create parallel queries for all tables
+            const queries = tables.map(async (table) => {
               try {
                 const { count, error } = await supabase
                   .from(table)
                   .select('*', { count: 'exact', head: true });
                 
-                if (!error && count !== null) {
-                  counts[table] = count;
-                }
+                return { table, count: error ? 0 : (count || 0) };
               } catch (tableError) {
                 console.warn(`Failed to fetch count for table ${table}:`, tableError);
-                // Continue with other tables even if one fails
+                return { table, count: 0 };
               }
-            }
+            });
+
+            // Execute all queries in parallel
+            const results = await Promise.all(queries);
+            
+            // Convert to counts object
+            const counts: Record<string, number> = {};
+            results.forEach(({ table, count }) => {
+              counts[table] = count;
+            });
 
             return counts;
           },
@@ -527,76 +468,85 @@ export function useAdminUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch all data in parallel
-        const [profilesData, rolesData, bookingsData] = await Promise.all([
-          fetchWithCache(
-            'admin-users-profiles',
-            async () => {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('created_at', { ascending: false });
-              if (error) throw error;
-              return data || [];
-            },
-            CACHE_CONFIG.ADMIN_STATS
-          ),
-          fetchWithCache(
-            'admin-users-roles',
-            async () => {
-              const { data, error } = await supabase
-                .from('user_roles')
-                .select('*');
-              if (error) throw error;
-              return data || [];
-            },
-            CACHE_CONFIG.ADMIN_STATS
-          ),
-          fetchWithCache(
-            'admin-users-bookings',
-            async () => {
-              const { data, error } = await supabase
-                .from('bookings')
-                .select('user_id, name')
-                .not('user_id', 'is', null);
-              if (error) throw error;
-              return data || [];
-            },
-            CACHE_CONFIG.ADMIN_STATS
-          )
-        ]);
-
-        // Process data
-        const roleMap: Record<string, string> = {};
-        (rolesData || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
-
-        const nameMap: Record<string, string> = {};
-        (bookingsData || []).forEach((b: any) => { if (b.user_id && !nameMap[b.user_id]) nameMap[b.user_id] = b.name; });
-
-        const combined = (profilesData || []).map((p: any) => ({
-          ...p,
-          role: roleMap[p.user_id] || "user",
-          booking_name: nameMap[p.user_id] || "",
-        }));
-
-        setUsers(combined);
-        setError(null);
-      } catch (err: any) {
-        setError(err);
-      } finally {
-        setLoading(false);
+  const fetchUsers = async (bypassCache = false) => {
+    try {
+      setLoading(true);
+      
+      // Clear cache if bypass requested
+      if (bypassCache) {
+        cacheManager.clearByPattern('admin-users');
       }
-    };
+      
+      // Fetch all data in parallel
+      const [profilesData, rolesData, bookingsData] = await Promise.all([
+        fetchWithCache(
+          'admin-users-profiles',
+          async () => {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+          },
+          bypassCache ? 0 : CACHE_CONFIG.ADMIN_STATS
+        ),
+        fetchWithCache(
+          'admin-users-roles',
+          async () => {
+            const { data, error } = await supabase
+              .from('user_roles')
+              .select('*');
+            if (error) throw error;
+            return data || [];
+          },
+          bypassCache ? 0 : CACHE_CONFIG.ADMIN_STATS
+        ),
+        fetchWithCache(
+          'admin-users-bookings',
+          async () => {
+            const { data, error } = await supabase
+              .from('bookings')
+              .select('user_id, name')
+              .not('user_id', 'is', null);
+            if (error) throw error;
+            return data || [];
+          },
+          bypassCache ? 0 : CACHE_CONFIG.ADMIN_STATS
+        )
+      ]);
 
+      // Process data
+      const roleMap: Record<string, string> = {};
+      (rolesData || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+
+      const nameMap: Record<string, string> = {};
+      (bookingsData || []).forEach((b: any) => { if (b.user_id && !nameMap[b.user_id]) nameMap[b.user_id] = b.name; });
+
+      const combined = (profilesData || []).map((p: any) => ({
+        ...p,
+        role: roleMap[p.user_id] || "user",
+        booking_name: nameMap[p.user_id] || "",
+      }));
+
+      setUsers(combined);
+      setError(null);
+    } catch (err: any) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUsers();
   }, []);
 
-  return { users, loading, error };
+  const refetch = async () => {
+    await fetchUsers(true);
+  };
+
+  return { users, loading, error, refetch };
 }
 
 /**

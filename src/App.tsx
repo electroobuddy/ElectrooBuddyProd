@@ -192,7 +192,7 @@ const AppContent = () => {
             <Route path="/order-success" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><OrderSuccess /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/track-order/:orderNumber" element={<PageTransition><Suspense fallback={<GenericSkeleton />}><AsyncErrorBoundary><OrderTracking /></AsyncErrorBoundary></Suspense></PageTransition>} />
             <Route path="/login" element={<PageTransition><Suspense fallback={<AuthSkeleton />}><AsyncErrorBoundary><UserAuth /></AsyncErrorBoundary></Suspense></PageTransition>} />
-            <Route element={<Suspense fallback={<DashboardSkeleton />}><UserLayout /></Suspense>}>
+            <Route element={<Suspense fallback={<DashboardSkeleton />}><AsyncErrorBoundary><UserLayout /></AsyncErrorBoundary></Suspense>}>
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/dashboard/bookings" element={<UserBookings />} />
               <Route path="/dashboard/bookings/:id" element={<BookingDetails />} />
