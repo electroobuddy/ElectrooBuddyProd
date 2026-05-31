@@ -10,6 +10,11 @@ import { PHONE_NUMBER } from "@/data/services";
 import { BUSINESS, YEARS_OF_EXPERIENCE } from "@/data/business";
 import { useServicesStore } from "@/stores/servicesStore";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
+import {
+  type BookingFormData, type FormErrors, BLANK_FORM,
+  todayISOStr, maxDateISOStr, validateBookingForm, buildBookingPayload,
+  makeBookingHash, withTimeout, SESSION_LIMIT,
+} from "@/utils/bookingUtils";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -17,146 +22,10 @@ interface Props {
   preselectedOffer?: string;
 }
 
-interface FormState {
-  name: string;
-  phone: string;
-  email: string;
-  address: string;
-  exact_location: string;
-  service_type: string;
-  preferred_date: string;
-  preferred_time: string;
-  description: string;
-  // Service-specific questions
-  custom_service_demand: string;
-  is_switch_working: string;
-  has_old_fan: string;
-  is_electricity_supply_on: string;
-}
-
-type FieldKey = keyof FormState;
-type FormErrors = Partial<Record<FieldKey, string>>;
+type FieldKey = keyof BookingFormData;
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
-const BLANK: FormState = {
-  name: "", phone: "", email: "", address: "",
-  exact_location: "", service_type: "",
-  preferred_date: "", preferred_time: "", description: "",
-  custom_service_demand: "", is_switch_working: "", has_old_fan: "", is_electricity_supply_on: "",
-};
-
-const OPEN_HOUR        = BUSINESS.hours.openHour;
-const CLOSE_HOUR       = BUSINESS.hours.closeHour;
-const MIN_ADVANCE_HOURS = 2;  // must book at least 2h ahead
-const SESSION_LIMIT    = 3;   // max submissions per page load
-
-// ─── Validation ─────────────────────────────────────────────────────────────────
-const PHONE_RE = /^[6-9]\d{9}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Returns today midnight in IST as a Date */
-function todayIST(): Date {
-  const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-/** YYYY-MM-DD string for today in IST */
-function todayISOStr(): string {
-  const d = todayIST();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-/** YYYY-MM-DD string for today + 3 months */
-function maxDateISOStr(): string {
-  const d = todayIST();
-  d.setMonth(d.getMonth() + 3);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-/** True when selected slot is at least MIN_ADVANCE_HOURS from now */
-function isSlotFarEnough(dateStr: string, timeStr: string): boolean {
-  if (!dateStr) return true;
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const [h = 9, min = 0] = timeStr ? timeStr.split(":").map(Number) : [];
-  const slot = new Date(y, m - 1, d, h, min, 0);
-  const nowIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-  return slot.getTime() - nowIST.getTime() >= MIN_ADVANCE_HOURS * 3_600_000;
-}
-
-function validate(form: FormState): FormErrors {
-  const err: FormErrors = {};
-
-  // Name
-  const name = form.name.trim();
-  if (!name)                                  err.name = "Full name is required";
-  else if (name.length < 2)                   err.name = "At least 2 characters required";
-  else if (name.length > 80)                  err.name = "Name is too long";
-  else if (!/^[a-zA-Z\s'.]+$/.test(name))     err.name = "Only letters, spaces, apostrophes and dots";
-
-  // Phone
-  const phone = form.phone.trim();
-  if (!phone)                                 err.phone = "Phone number is required";
-  else if (!PHONE_RE.test(phone))             err.phone = "Enter a valid 10-digit Indian mobile number";
-
-  // Email (optional, validated when provided)
-  if (form.email.trim() && !EMAIL_RE.test(form.email.trim()))
-    err.email = "Enter a valid email address";
-
-  // Service
-  if (!form.service_type)                     err.service_type = "Please select a service";
-
-  // Address
-  const addr = form.address.trim();
-  if (!addr)                                  err.address = "Service address is required";
-  else if (addr.length < 10)                  err.address = "Please provide a complete address (min. 10 chars)";
-  else if (addr.length > 300)                 err.address = "Address is too long";
-
-  // Date — block past dates
-  if (form.preferred_date) {
-    const [y, m, d] = form.preferred_date.split("-").map(Number);
-    const selected = new Date(y, m - 1, d);
-    if (selected < todayIST()) {
-      err.preferred_date = "Preferred date cannot be in the past";
-    } else if (!isSlotFarEnough(form.preferred_date, form.preferred_time)) {
-      err.preferred_date = `Please book at least ${MIN_ADVANCE_HOURS} hours in advance`;
-    }
-  }
-
-  // Time — only check when date is also selected
-  if (form.preferred_date && form.preferred_time) {
-    const [h] = form.preferred_time.split(":").map(Number);
-    if (h < OPEN_HOUR || h >= CLOSE_HOUR) {
-      err.preferred_time = `We operate ${OPEN_HOUR}:00 AM – ${CLOSE_HOUR % 12}:00 PM`;
-    }
-  }
-
-  // Custom Service — required & min length
-  if (form.service_type === "Custom Service") {
-    const customDemand = form.custom_service_demand.trim();
-    if (!customDemand)               err.custom_service_demand = "Please describe your custom requirement";
-    else if (customDemand.length < 20) err.custom_service_demand = "Please provide more detail (min. 20 characters)";
-  }
-
-  // Fan Installation — required questions
-  if (form.service_type === "Fan Installation") {
-    if (!form.is_switch_working)      err.is_switch_working = "Please answer this question";
-    if (!form.has_old_fan)            err.has_old_fan = "Please answer this question";
-    if (!form.is_electricity_supply_on) err.is_electricity_supply_on = "Please answer this question";
-  }
-
-  return err;
-}
-
-// ─── Utility ────────────────────────────────────────────────────────────────────
-function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    Promise.resolve(p),
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`TIMEOUT: ${label}`)), ms)
-    ),
-  ]);
-}
+// Using shared constants from bookingUtils.ts
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 export default function RequestServiceSection({ preselectedService, preselectedOffer }: Props) {
@@ -165,7 +34,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
 
   const [done, setDone]                 = useState(false);
   const [submitting, setSubmitting]     = useState(false);
-  const [form, setForm]                 = useState<FormState>({ ...BLANK, service_type: preselectedService || "" });
+  const [form, setForm]                 = useState<BookingFormData>({ ...BLANK_FORM, service_type: preselectedService || "" });
   const [touched, setTouched]           = useState<Partial<Record<FieldKey, boolean>>>({});
   const [errors, setErrors]             = useState<FormErrors>({});
   const [couponCode, setCouponCode]     = useState(preselectedOffer || "");
@@ -192,7 +61,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   }, [preselectedService]);
 
   // Re-validate whenever form changes
-  useEffect(() => { setErrors(validate(form)); }, [form]);
+  useEffect(() => { setErrors(validateBookingForm(form)); }, [form]);
 
   // Cleanup on unmount
   useEffect(() => () => { controllerRef.current?.abort(); }, []);
@@ -287,8 +156,8 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     if (submitting) return;
 
     // Touch all → reveal every error
-    setTouched(Object.fromEntries(Object.keys(BLANK).map(k => [k, true])) as any);
-    const errs = validate(form);
+    setTouched(Object.fromEntries(Object.keys(BLANK_FORM).map(k => [k, true])) as any);
+    const errs = validateBookingForm(form);
 
     if (Object.keys(errs).length > 0) {
       toast.error("Please fix the errors highlighted below.");
@@ -304,7 +173,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     }
 
     // Duplicate guard — same phone + service + date
-    const hash = `${form.phone.trim()}|${form.service_type}|${form.preferred_date}`;
+    const hash = makeBookingHash(form.phone.trim(), form.service_type, form.preferred_date);
     if (lastHashRef.current === hash) {
       toast.warning("This request looks like a duplicate. Check your previous submission.");
       return;
@@ -315,34 +184,14 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     setSubmitting(true);
     const tid = toast.loading("Submitting your request…");
 
-    const payload: any = {
-      name:            form.name.trim(),
-      phone:           form.phone.trim(),
-      email:           form.email.trim() || null,
-      address:         form.address.trim(),
-      service_type:    form.service_type === "Custom Service"
-                         ? `Custom: ${form.custom_service_demand.trim()}`
-                         : form.service_type,
-      preferred_date:  form.preferred_date  || null,
-      preferred_time:  form.preferred_time  || null,
-      description:     form.service_type === "Custom Service"
-                         ? form.custom_service_demand.trim()
-                         : (form.description.trim() || null),
-      exact_location:  form.exact_location.trim() || null,
-      // Service-specific questions
-      custom_service_demand: form.service_type === "Custom Service" ? form.custom_service_demand.trim() : null,
-      is_switch_working:     form.is_switch_working || null,
-      has_old_fan:           form.has_old_fan || null,
-      is_electricity_supply_on: form.is_electricity_supply_on || null,
-      // Coupon fields
-      coupon_code:     couponCode || null,
-      offer_id:        null,
-      discount_amount: discount > 0 ? discount : null,
-      original_amount: base     > 0 ? base     : null,
-      final_amount:    final    > 0 ? final    : null,
-      offer_applied:   applied?.success || false,
-    };
-    if (user) payload.user_id = user.id;
+    const payload = buildBookingPayload(form, {
+      userId: user?.id,
+      couponCode,
+      applied,
+      base,
+      discount,
+      final,
+    });
 
     try {
       // ── DB insert with 12s timeout (more reliable) ─────────────────────
@@ -421,7 +270,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
       // ── Immediate success ─────────────────────────────────────────────────
       toast.success("Request submitted! We'll contact you soon.", { id: tid, duration: 5000 });
       setDone(true);
-      setForm({ ...BLANK, service_type: preselectedService || "" });
+      setForm({ ...BLANK_FORM, service_type: preselectedService || "" });
       setTouched({});
       setCouponCode("");
       setApplied(null);
@@ -508,10 +357,9 @@ export default function RequestServiceSection({ preselectedService, preselectedO
 
               {/* Business hours notice */}
               <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-xs text-white/80 space-y-1">
-                <div className="font-semibold text-white text-sm mb-1">🕐 Business Hours</div>
-                <div>{BUSINESS.hours.weekday}</div>
-                {/* <div>{BUSINESS.hours.sunday}</div> */}
-                <div className="text-white/60">Book at least {MIN_ADVANCE_HOURS}h in advance</div>
+                <div className="font-semibold text-white text-sm mb-1">🕐 24/7 Available</div>
+                <div>We're always ready to help</div>
+                <div className="text-white/60">Select a future time for same-day bookings</div>
               </div>
 
               {/* Emergency call */}
@@ -850,14 +698,12 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                       id="field-preferred_time"
                       label="Preferred Time"
                       error={visibleError("preferred_time")}
-                      hint={`${OPEN_HOUR}:00 AM – ${CLOSE_HOUR % 12}:00 PM`}
+                      hint="24/7 Available"
                     >
                       <input
                         id="inp-preferred_time"
                         className={inp(visibleError("preferred_time"))}
                         type="time"
-                        min={`${String(OPEN_HOUR).padStart(2, "0")}:00`}
-                        max={`${String(CLOSE_HOUR).padStart(2, "0")}:00`}
                         value={form.preferred_time}
                         onChange={set("preferred_time")}
                         onBlur={() => touch("preferred_time")}
