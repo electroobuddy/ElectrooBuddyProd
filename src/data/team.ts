@@ -5,9 +5,9 @@ export interface TeamMember {
   bio: string;
 }
 
+// Fallback team members matching the actual team (Dilip, Viraj, Karan Parihar)
 export const teamMembers: TeamMember[] = [
-  { id: "1", name: "Rajesh Kumar", role: "Master Electrician", bio: "15+ years of experience in residential and commercial electrical systems." },
-  { id: "2", name: "Amit Sharma", role: "Lead Technician", bio: "Specializes in smart home installations and modern wiring solutions." },
-  { id: "3", name: "Priya Patel", role: "Safety Inspector", bio: "Certified electrical safety auditor with expertise in code compliance." },
-  { id: "4", name: "Vikram Singh", role: "Project Manager", bio: "Coordinates large-scale electrical projects with precision and efficiency." },
+  { id: "1", name: "Dilip Parihar", role: "Founder & Lead Electrician", bio: "Founded ElectrooBuddy in 1992. Over 30 years of experience in electrical services." },
+  { id: "2", name: "Viraj Parihar", role: "Director & Senior Technician", bio: "Specializes in advanced electrical systems and team management." },
+  { id: "3", name: "Karan Parihar", role: "Operations Manager", bio: "Coordinates service operations and ensures quality customer experiences." },
 ];

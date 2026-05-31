@@ -241,8 +241,8 @@ const AppContent = () => {
           </Routes>
         </AnimatePresence>
       </main>
-      {!isAdmin && !isUserPanel && <Footer />}
-      {!isAdmin && !isUserPanel && <WhatsAppFloat onBackToTopClick={() => {
+      {!isAdmin && !isUserPanel && !isTechnicianPanel && <Footer />}
+      {!isAdmin && !isUserPanel && !isTechnicianPanel && <WhatsAppFloat onBackToTopClick={() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }} backToTopVisible={false} />}
       

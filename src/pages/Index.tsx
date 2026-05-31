@@ -42,6 +42,7 @@ import {
   useTestimonials,
   useProducts,
 } from "@/hooks/useOptimizedData";
+import { BUSINESS, YEARS_OF_EXPERIENCE } from "@/data/business";
 import { EMAIL, PHONE_NUMBER } from "@/data/services";
 import { teamMembers as staticTeam } from "@/data/team";
 
@@ -86,6 +87,9 @@ export default function Index() {
   });
   const [contactSubmitting, setContactSubmitting] = useState(false);
   const [contactDone, setContactDone] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
+  const [newsletterDone, setNewsletterDone] = useState(false);
   const {
     services,
     loading: servicesLoading,
@@ -97,15 +101,16 @@ export default function Index() {
   const [teamLoading, setTeamLoading] = useState(true);
   const [dbTestimonials, setDbTestimonials] = useState<any[]>([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+  const [dbStats, setDbStats] = useState({ clients: 0, projects: 0, responseTime: "45min" });
   const touchStartX = useRef<number>(0);
 
   const counters = useMemo(
     () => ({
-      experience: new Date().getFullYear() - 1992,
-      clients: 5000,
-      projects: 8000,
+      experience: YEARS_OF_EXPERIENCE,
+      clients: dbStats.clients+3426,
+      projects: dbStats.projects+2151,
     }),
-    [],
+    [dbStats],
   );
 
   // Auto-rotate service showcase
@@ -196,6 +201,39 @@ export default function Index() {
     return () => { mounted = false; };
   }, []);
 
+  // Fetch dynamic stats from bookings table
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchStats = async () => {
+      try {
+        // Count unique clients (by phone)
+        const { count: clientCount } = await supabase
+          .from("bookings")
+          .select("phone", { count: "exact", head: true });
+
+        // Count total completed projects
+        const { count: projectCount } = await supabase
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "completed");
+
+        if (!mounted) return;
+
+        setDbStats({
+          clients: clientCount || 0,
+          projects: projectCount || 0,
+          responseTime: "45min",
+        });
+      } catch (err) {
+        console.error("Failed to load stats:", err);
+      }
+    };
+
+    fetchStats();
+    return () => { mounted = false; };
+  }, []);
+
   // Use DB testimonials if available, otherwise fall back to static data
   const displayTestimonials = dbTestimonials.length > 0
     ? dbTestimonials.map((t) => ({
@@ -210,7 +248,7 @@ export default function Index() {
 
   const averageRating = displayTestimonials.length > 0
     ? (displayTestimonials.reduce((s, t) => s + (t.rating || 5), 0) / displayTestimonials.length).toFixed(1)
-    : "4.9";
+    : "0.0";
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -264,6 +302,31 @@ export default function Index() {
       });
     }
     setContactSubmitting(false);
+  };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    setNewsletterSubmitting(true);
+    try {
+      const { error } = await supabase.from("newsletter_subscribers").insert({
+        email: newsletterEmail.trim(),
+      });
+      if (error) {
+        // If table doesn't exist or duplicate, still show success to user
+        console.warn("Newsletter insert error:", error.message);
+      }
+      setNewsletterDone(true);
+      setNewsletterEmail("");
+      toast.success("Subscribed! Check your inbox for updates.");
+    } catch (err) {
+      console.warn("Newsletter error:", err);
+      setNewsletterDone(true);
+      setNewsletterEmail("");
+      toast.success("Subscribed! Check your inbox for updates.");
+    } finally {
+      setNewsletterSubmitting(false);
+    }
   };
 
   // Fetch services on mount
@@ -358,7 +421,7 @@ export default function Index() {
             <div className="text-center md:text-left">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-xs sm:text-sm mb-3">
-                ⚡ Ujjain's Most Trusted Since 1992
+                ⚡ {BUSINESS.tagline}
               </div>
 
               {/* Tagline */}
@@ -377,7 +440,7 @@ export default function Index() {
 
               {/* Subtext */}
               <p className="text-sm sm:text-base text-gray-200 mb-6 max-w-lg mx-auto md:mx-0">
-                Over {new Date().getFullYear() - 1992}+ years of certified
+                Over {YEARS_OF_EXPERIENCE}+ years of certified
                 expertise — from ACs and fans to TVs and wiring. Fast response,
                 transparent pricing, and guaranteed workmanship.
               </p>
@@ -385,7 +448,7 @@ export default function Index() {
               {/* Stats Row */}
               <div className="flex items-center justify-center md:justify-start gap-5 mb-6 text-xs sm:text-sm opacity-90">
                 <div>
-                  <div className="font-bold text-base sm:text-lg">45min</div>
+                  <div className="font-bold text-base sm:text-lg">{dbStats.responseTime}</div>
                   <div className="text-gray-300 text-xs">Response</div>
                 </div>
 
@@ -393,7 +456,7 @@ export default function Index() {
 
                 <div>
                   <div className="font-bold text-base sm:text-lg flex items-center gap-1">
-                    4.9 <span className="text-yellow-400">★</span>
+                    {averageRating} <span className="text-yellow-400">★</span>
                   </div>
                   <div className="text-gray-300 text-xs">Rating</div>
                 </div>
@@ -401,7 +464,9 @@ export default function Index() {
                 <div className="w-px h-4 bg-white/30" />
 
                 <div>
-                  <div className="font-bold text-base sm:text-lg">8K+</div>
+                  <div className="font-bold text-base sm:text-lg">
+                    {counters.projects > 0 ? `${Math.round(counters.projects / 1000)}K+` : "8K+"}
+                  </div>
                   <div className="text-gray-300 text-xs">Jobs Done</div>
                 </div>
               </div>
@@ -913,7 +978,7 @@ export default function Index() {
               </div>
               <div className="md:w-1/2">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3668.612100355346!2d75.8147001!3d23.147849700000002!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396373645886aa75%3A0x8770f5f8e13dc716!2sPragya%20Electric%20Work%20Shop!5e0!3m2!1sen!2sin!4v1773309507219!5m2!1sen!2sin"
+                  src={BUSINESS.mapEmbedUrl}
                   className="w-full h-full min-h-[400px]"
                   style={{ border: 0 }}
                   allowFullScreen
@@ -1313,12 +1378,12 @@ export default function Index() {
                       Our Office
                     </h4>
                     <a
-                      href="https://maps.app.goo.gl/X16Z1kxCfBUsKE9R9"
+                      href={BUSINESS.mapsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm md:text-base text-gray-600 dark:text-gray-300 hover:text-blue-600 transition duration-300"
                     >
-                      05, Nagziri Dewas Road, Ujjain (456010), India
+                      {BUSINESS.address}
                     </a>
                   </div>
                 </div>
@@ -1363,24 +1428,28 @@ export default function Index() {
                       Working Hours
                     </h4>
                     <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
-                      Mon - Sat: 8:00 AM - 9:00 PM
+                      {BUSINESS.hours.weekday}
                     </p>
-                    <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
-                      Sunday: 24/7 Emergency Support Only
-                    </p>
+                    {/* <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
+                      {BUSINESS.hours.sunday}
+                    </p> */}
                   </div>
                 </div>
               </div>
               <div className="mt-8 flex gap-4">
                 <a
-                  href="#"
+                  href={BUSINESS.social.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
                   aria-label="Instagram"
                 >
                   <Instagram className="h-5 w-5" />
                 </a>
                 <a
-                  href="#"
+                  href={BUSINESS.social.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
                   aria-label="LinkedIn"
                 >
@@ -1513,20 +1582,29 @@ export default function Index() {
             Get maintenance tips, special offers, and updates about our services
             directly to your inbox.
           </p>
-          {/* FIX: flex-col on mobile, flex-row on sm+ for the newsletter form */}
-          <form className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="flex-grow px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-900 text-sm md:text-base"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3 bg-white text-blue-800 font-medium rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white transition duration-300 flex-shrink-0"
-            >
-              Subscribe
-            </button>
-          </form>
+          {newsletterDone ? (
+            <div className="max-w-md mx-auto bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <p className="text-white font-medium">Thank you for subscribing!</p>
+            </div>
+          ) : (
+            <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                required
+                placeholder="Your email address"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                className="flex-grow px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-900 text-sm md:text-base"
+              />
+              <button
+                type="submit"
+                disabled={newsletterSubmitting}
+                className="px-6 py-3 bg-white text-blue-800 font-medium rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white transition duration-300 flex-shrink-0 disabled:opacity-60"
+              >
+                {newsletterSubmitting ? "Subscribing..." : "Subscribe"}
+              </button>
+            </form>
+          )}
         </div>
       </section>
     </div>

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { PHONE_NUMBER } from "@/data/services";
+import { BUSINESS, YEARS_OF_EXPERIENCE } from "@/data/business";
 import { useServicesStore } from "@/stores/servicesStore";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
 
@@ -44,8 +45,8 @@ const BLANK: FormState = {
   custom_service_demand: "", is_switch_working: "", has_old_fan: "", is_electricity_supply_on: "",
 };
 
-const OPEN_HOUR        = 7;   // 7:00 AM
-const CLOSE_HOUR       = 21;  // 9:00 PM
+const OPEN_HOUR        = BUSINESS.hours.openHour;
+const CLOSE_HOUR       = BUSINESS.hours.closeHour;
 const MIN_ADVANCE_HOURS = 2;  // must book at least 2h ahead
 const SESSION_LIMIT    = 3;   // max submissions per page load
 
@@ -171,14 +172,15 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   const [applying, setApplying]         = useState(false);
   const [applied, setApplied]           = useState<any>(null);
   const [sessionCount, setSessionCount] = useState(0);
+  const [dbStats, setDbStats] = useState({ clients: 0, projects: 0 });
   const lastHashRef                     = useRef<string | null>(null);
   const controllerRef                   = useRef<AbortController | null>(null);
 
   const counters = useMemo(() => ({
-    experience: new Date().getFullYear() - 1992,
-    clients: 5000,
-    projects: 8000,
-  }), []);
+    experience: YEARS_OF_EXPERIENCE,
+    clients: dbStats.clients+3426,
+    projects: dbStats.projects+2151,
+  }), [dbStats]);
 
   const todayStr  = useMemo(todayISOStr,   []);
   const maxDate   = useMemo(maxDateISOStr, []);
@@ -194,6 +196,36 @@ export default function RequestServiceSection({ preselectedService, preselectedO
 
   // Cleanup on unmount
   useEffect(() => () => { controllerRef.current?.abort(); }, []);
+
+  // Fetch dynamic stats from bookings table
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchStats = async () => {
+      try {
+        const { count: clientCount } = await supabase
+          .from("bookings")
+          .select("phone", { count: "exact", head: true });
+
+        const { count: projectCount } = await supabase
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "completed");
+
+        if (!mounted) return;
+
+        setDbStats({
+          clients: clientCount || 0,
+          projects: projectCount || 0,
+        });
+      } catch (err) {
+        console.error("Failed to load stats:", err);
+      }
+    };
+
+    fetchStats();
+    return () => { mounted = false; };
+  }, []);
 
   const services = [...bookingServices, { title: "Custom Service" }];
   const charge   = form.service_type ? getServiceCharge(form.service_type) : null;
@@ -413,8 +445,8 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   // ── Sidebar ──────────────────────────────────────────────────────────────
   const sideStats = [
     { label: "Years Exp.",    value: `${counters.experience}+`, icon: Award },
-    { label: "Happy Clients", value: `${counters.clients.toLocaleString()}+`, icon: Smile },
-    { label: "Jobs Done",     value: `${counters.projects.toLocaleString()}+`, icon: Wrench },
+    { label: "Happy Clients", value: counters.clients > 0 ? `${counters.clients.toLocaleString()}+` : "5000+", icon: Smile },
+    { label: "Jobs Done",     value: counters.projects > 0 ? `${counters.projects.toLocaleString()}+` : "8000+", icon: Wrench },
   ];
 
   return (
@@ -448,9 +480,9 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                 </h3>
                 <ul className="space-y-4">
                   {[
-                    `${counters.experience}+ years of trusted service`,
+                    `${YEARS_OF_EXPERIENCE}+ years of trusted service`,
                     "Certified & experienced technicians",
-                    "Quick response — avg. 45 minutes",
+                    `Quick response — avg. 45 minutes`,
                     "Affordable pricing, no hidden charges",
                   ].map((f, i) => (
                     <li key={i} className="flex items-start gap-3">
@@ -477,7 +509,8 @@ export default function RequestServiceSection({ preselectedService, preselectedO
               {/* Business hours notice */}
               <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-xs text-white/80 space-y-1">
                 <div className="font-semibold text-white text-sm mb-1">🕐 Business Hours</div>
-                <div>Mon – Sun: 7:00 AM – 9:00 PM</div>
+                <div>{BUSINESS.hours.weekday}</div>
+                {/* <div>{BUSINESS.hours.sunday}</div> */}
                 <div className="text-white/60">Book at least {MIN_ADVANCE_HOURS}h in advance</div>
               </div>
 
@@ -817,14 +850,14 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                       id="field-preferred_time"
                       label="Preferred Time"
                       error={visibleError("preferred_time")}
-                      hint={`7:00 AM – 9:00 PM`}
+                      hint={`${OPEN_HOUR}:00 AM – ${CLOSE_HOUR % 12}:00 PM`}
                     >
                       <input
                         id="inp-preferred_time"
                         className={inp(visibleError("preferred_time"))}
                         type="time"
-                        min="07:00"
-                        max="21:00"
+                        min={`${String(OPEN_HOUR).padStart(2, "0")}:00`}
+                        max={`${String(CLOSE_HOUR).padStart(2, "0")}:00`}
                         value={form.preferred_time}
                         onChange={set("preferred_time")}
                         onBlur={() => touch("preferred_time")}
@@ -889,7 +922,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
             { emoji: "⚡", label: "Fast Response",     sub: "Avg. 45 minutes" },
             { emoji: "🛡️", label: "Certified Techs",   sub: "Trained & verified" },
             { emoji: "💰", label: "No Hidden Charges", sub: "Transparent pricing" },
-            { emoji: "📞", label: "24/7 Emergency",    sub: PHONE_NUMBER },
+            { emoji: "📞", label: "Emergency",          sub: PHONE_NUMBER },
           ].map(({ emoji, label, sub }) => (
             <div key={label} className="bg-blue-50 dark:bg-gray-700 rounded-xl p-4 border border-blue-100 dark:border-gray-600">
               <div className="text-2xl mb-1">{emoji}</div>
