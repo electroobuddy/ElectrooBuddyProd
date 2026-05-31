@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Loader2, Calendar, Plus, CheckCircle, AlertCircle, Clock, MapPin, ArrowRight } from "lucide-react";
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400", label: "Pending" },
+  assigned: { bg: "bg-indigo-100 dark:bg-indigo-900/30", text: "text-indigo-700 dark:text-indigo-400", label: "Assigned" },
   confirmed: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-400", label: "Confirmed" },
+  "in-progress": { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-700 dark:text-orange-400", label: "In Progress" },
   completed: { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-400", label: "Completed" },
   cancelled: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", label: "Cancelled" },
 };
@@ -20,13 +23,24 @@ const UserDashboard = () => {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [{ data: bData }, { data: pData }] = await Promise.all([
-        supabase.from("bookings").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
-        supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
-      ]);
-      setBookings(bData || []);
-      setProfile(pData);
-      setLoading(false);
+      try {
+        const [{ data: bData, error: bError }, { data: pData }] = await Promise.all([
+          supabase.from("bookings").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+          supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
+        ]);
+        
+        if (bError) {
+          console.error("Error fetching bookings:", bError);
+          toast.error("Failed to load bookings");
+        }
+        
+        setBookings(bData || []);
+        setProfile(pData);
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
   }, [user]);

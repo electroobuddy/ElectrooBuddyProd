@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { CreditCard, CalendarClock, ShieldCheck } from "lucide-react";
+import { CreditCard, CalendarClock, ShieldCheck, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -33,7 +33,11 @@ const UserSubscriptions = () => {
   }, [user]);
 
   if (loading) {
-    return <div className="p-6">Loading subscriptions...</div>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
