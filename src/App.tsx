@@ -78,6 +78,7 @@ const AdminShippingSettings = lazy(() => import("./pages/admin/AdminShippingSett
 const AdminTechnicians = lazy(() => import("./pages/admin/AdminTechnicians"));
 const AdminOffers = lazy(() => import("./pages/admin/AdminOffers"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminSubscribers = lazy(() => import("./pages/admin/AdminSubscribers"));
 const BookingDetails = lazy(() => import("./pages/BookingDetails"));
 const TechnicianLogin = lazy(() => import("./pages/technician/TechnicianLogin"));
 const TechnicianLayout = lazy(() => import("./pages/technician/TechnicianLayout"));
@@ -219,6 +220,7 @@ const AppContent = () => {
               <Route path="/admin/projects" element={<AdminProjects />} />
               <Route path="/admin/messages" element={<AdminMessages />} />
               <Route path="/admin/notifications" element={<AdminNotifications />} />
+              <Route path="/admin/subscribers" element={<AdminSubscribers />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/payments" element={<AdminPayments />} />
               <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />

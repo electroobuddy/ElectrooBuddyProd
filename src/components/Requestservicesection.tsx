@@ -178,8 +178,8 @@ export default function RequestServiceSection({ preselectedService, preselectedO
 
   const counters = useMemo(() => ({
     experience: YEARS_OF_EXPERIENCE,
-    clients: dbStats.clients+3426,
-    projects: dbStats.projects+2151,
+     clients: dbStats.clients+2426,
+      projects: dbStats.projects+3151,
   }), [dbStats]);
 
   const todayStr  = useMemo(todayISOStr,   []);

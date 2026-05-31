@@ -58,6 +58,22 @@ const UserAuth = () => {
         // Fetch roles to redirect based on role
         const { data: { user: currentUser } } = await supabase.auth.getUser();
         if (currentUser) {
+          // Ensure email is saved in profiles
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('user_id', currentUser.id)
+            .maybeSingle();
+          
+          if (!existingProfile?.email && currentUser.email) {
+            await supabase
+              .from('profiles')
+              .upsert({
+                user_id: currentUser.id,
+                email: currentUser.email,
+              }, { onConflict: 'user_id' });
+          }
+          
           const { data: rolesData } = await supabase
             .from('user_roles')
             .select('role')
@@ -84,20 +100,35 @@ const UserAuth = () => {
       } else {
         console.log('✅ Signup successful!');
         
-        // Log the default role that was created
+        // Save email to profiles table
         setTimeout(async () => {
           try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user: newUser } } = await supabase.auth.getUser();
             
-            if (user) {
-              console.log('🆕 New user created with ID:', user.id);
-              console.log('📧 Email:', user.email);
+            if (newUser) {
+              console.log('🆕 New user created with ID:', newUser.id);
+              console.log('📧 Email:', newUser.email);
+              
+              // Insert/update profile with email
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                  user_id: newUser.id,
+                  email: newUser.email || email,
+                  full_name: newUser.user_metadata?.full_name || null,
+                }, { onConflict: 'user_id' });
+              
+              if (profileError) {
+                console.error('❌ Error saving profile:', profileError);
+              } else {
+                console.log('✅ Profile saved with email');
+              }
               
               // Fetch the role that was automatically assigned
               const { data: rolesData, error: rolesError } = await supabase
                 .from('user_roles')
                 .select('role')
-                .eq('user_id', user.id);
+                .eq('user_id', newUser.id);
               
               if (rolesError) {
                 console.error('❌ Error fetching roles after signup:', rolesError);

@@ -19,6 +19,9 @@ import {
   Star,
   Instagram,
   Linkedin,
+  Facebook,
+  Twitter,
+  Youtube,
   Mail,
   ChevronDown,
   MessageCircle,
@@ -38,8 +41,6 @@ import OfferBannerSlider from "@/components/OfferBannerSlider";
 import RequestServiceSection from "@/components/Requestservicesection";
 import { useServicesStore } from "@/stores/servicesStore";
 import {
-  useTeamMembers,
-  useTestimonials,
   useProducts,
 } from "@/hooks/useOptimizedData";
 import { BUSINESS, YEARS_OF_EXPERIENCE } from "@/data/business";
@@ -102,13 +103,20 @@ export default function Index() {
   const [dbTestimonials, setDbTestimonials] = useState<any[]>([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const [dbStats, setDbStats] = useState({ clients: 0, projects: 0, responseTime: "45min" });
+  const [socialLinks, setSocialLinks] = useState({
+    instagram: BUSINESS.social.instagram,
+    linkedin: "",
+    facebook: "",
+    twitter: "",
+    youtube: "",
+  });
   const touchStartX = useRef<number>(0);
 
   const counters = useMemo(
     () => ({
       experience: YEARS_OF_EXPERIENCE,
-      clients: dbStats.clients+3426,
-      projects: dbStats.projects+2151,
+      clients: dbStats.clients+2426,
+      projects: dbStats.projects+3151,
     }),
     [dbStats],
   );
@@ -234,6 +242,33 @@ export default function Index() {
     return () => { mounted = false; };
   }, []);
 
+  // Fetch social links from site_settings
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchSocialLinks = async () => {
+      try {
+        const { data } = await supabase.from("site_settings").select("*");
+        if (!mounted || !data) return;
+
+        const socials = { ...socialLinks };
+        data.forEach((s: any) => {
+          if (s.key === "instagram" && s.value) socials.instagram = s.value;
+          if (s.key === "linkedin" && s.value) socials.linkedin = s.value;
+          if (s.key === "facebook" && s.value) socials.facebook = s.value;
+          if (s.key === "twitter" && s.value) socials.twitter = s.value;
+          if (s.key === "youtube" && s.value) socials.youtube = s.value;
+        });
+        setSocialLinks(socials);
+      } catch (err) {
+        console.error("Failed to load social links:", err);
+      }
+    };
+
+    fetchSocialLinks();
+    return () => { mounted = false; };
+  }, []);
+
   // Use DB testimonials if available, otherwise fall back to static data
   const displayTestimonials = dbTestimonials.length > 0
     ? dbTestimonials.map((t) => ({
@@ -313,17 +348,21 @@ export default function Index() {
         email: newsletterEmail.trim(),
       });
       if (error) {
-        // If table doesn't exist or duplicate, still show success to user
-        console.warn("Newsletter insert error:", error.message);
+        if (error.code === "23505") {
+          toast.info("You're already subscribed!");
+        } else {
+          console.warn("Newsletter insert error:", error.message);
+          toast.error("Failed to subscribe. Please try again.");
+          setNewsletterSubmitting(false);
+          return;
+        }
       }
       setNewsletterDone(true);
       setNewsletterEmail("");
       toast.success("Subscribed! Check your inbox for updates.");
     } catch (err) {
       console.warn("Newsletter error:", err);
-      setNewsletterDone(true);
-      setNewsletterEmail("");
-      toast.success("Subscribed! Check your inbox for updates.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setNewsletterSubmitting(false);
     }
@@ -1437,24 +1476,61 @@ export default function Index() {
                 </div>
               </div>
               <div className="mt-8 flex gap-4">
-                <a
-                  href={BUSINESS.social.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
-                  aria-label="Instagram"
-                >
-                  <Instagram className="h-5 w-5" />
-                </a>
-                <a
-                  href={BUSINESS.social.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
-                  aria-label="LinkedIn"
-                >
-                  <Linkedin className="h-5 w-5" />
-                </a>
+                {socialLinks.instagram && (
+                  <a
+                    href={socialLinks.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
+                    aria-label="Instagram"
+                  >
+                    <Instagram className="h-5 w-5" />
+                  </a>
+                )}
+                {socialLinks.linkedin && (
+                  <a
+                    href={socialLinks.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
+                    aria-label="LinkedIn"
+                  >
+                    <Linkedin className="h-5 w-5" />
+                  </a>
+                )}
+                {socialLinks.facebook && (
+                  <a
+                    href={socialLinks.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
+                    aria-label="Facebook"
+                  >
+                    <Facebook className="h-5 w-5" />
+                  </a>
+                )}
+                {socialLinks.twitter && (
+                  <a
+                    href={socialLinks.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
+                    aria-label="Twitter"
+                  >
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                )}
+                {socialLinks.youtube && (
+                  <a
+                    href={socialLinks.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-100 dark:bg-gray-700 p-3 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-gray-600 transition duration-300"
+                    aria-label="YouTube"
+                  >
+                    <Youtube className="h-5 w-5" />
+                  </a>
+                )}
               </div>
             </div>
             <div>

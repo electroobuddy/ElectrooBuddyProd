@@ -769,6 +769,7 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           phone: string | null
@@ -778,6 +779,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -787,6 +789,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -831,6 +834,24 @@ export type Database = {
           in_app_notifications?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
         }
         Relationships: []
       }

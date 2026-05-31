@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAdminUsers, useAdminCacheInvalidation } from "@/hooks/useOptimizedData";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Users, Search, Shield, User, Phone, MapPin,
-  Calendar, Loader2, Grid, List, RefreshCw
+  Users, Search, Shield, User, Phone, MapPin, X,
+  Calendar, Loader2, Grid, List, RefreshCw, Mail,
+  ChevronRight, Package, Clock, CheckCircle, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UserProfile {
   user_id: string;
@@ -18,10 +20,27 @@ interface UserProfile {
   booking_name?: string;
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+interface Booking {
+  id: string;
+  created_at: string;
+  service: string;
+  status: string;
+  phone: string;
+  address: string;
+  preferred_date: string;
+  preferred_time: string;
+}
+
+const statusColors: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800",
+  confirmed: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800",
+  "in-progress": "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-800",
+  completed: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
+  cancelled: "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800",
+};
 
 const AdminUsers = () => {
-  const { users: initialUsers, loading: initialLoading, error } = useAdminUsers();
+  const { users: initialUsers, loading: initialLoading } = useAdminUsers();
   const [users, setUsers] = useState<UserProfile[]>(initialUsers);
   const [loading, setLoading] = useState(initialLoading);
   const [refreshing, setRefreshing] = useState(false);
@@ -29,6 +48,11 @@ const AdminUsers = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [roleFilter, setRoleFilter] = useState("all");
   const { invalidateUsers } = useAdminCacheInvalidation();
+
+  // Detail drawer
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [userBookings, setUserBookings] = useState<Booking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
 
   useEffect(() => {
     if (!initialLoading) {
@@ -43,6 +67,7 @@ const AdminUsers = () => {
     const q = search.toLowerCase();
     const matchesSearch = (u.full_name || "").toLowerCase().includes(q) ||
       (u.phone || "").toLowerCase().includes(q) ||
+      (u.email || "").toLowerCase().includes(q) ||
       u.user_id.toLowerCase().includes(q) ||
       ((u as any).booking_name || "").toLowerCase().includes(q);
     const matchesRole = roleFilter === "all" || u.role === roleFilter;
@@ -63,6 +88,23 @@ const AdminUsers = () => {
     "from-indigo-400 to-indigo-600",
   ];
   const getAvatarColor = (id: string) => avatarColors[id.charCodeAt(0) % avatarColors.length];
+
+  const openUserDetail = async (user: UserProfile) => {
+    setSelectedUser(user);
+    setBookingsLoading(true);
+    try {
+      const { data } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("user_id", user.user_id)
+        .order("created_at", { ascending: false });
+      setUserBookings(data || []);
+    } catch (err) {
+      console.error("Failed to load bookings:", err);
+      setUserBookings([]);
+    }
+    setBookingsLoading(false);
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -114,7 +156,7 @@ const AdminUsers = () => {
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, phone, or user ID…"
+            placeholder="Search by name, email, phone, or user ID…"
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all" />
         </div>
         <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
@@ -147,10 +189,11 @@ const AdminUsers = () => {
               <thead>
                 <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/50">
                   <th className="px-5 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">User</th>
+                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden sm:table-cell">Email</th>
                   <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden sm:table-cell">Phone</th>
-                  <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden lg:table-cell">Address</th>
                   <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Role</th>
                   <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden md:table-cell">Joined</th>
+                  <th className="px-4 py-3.5 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -163,17 +206,19 @@ const AdminUsers = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-zinc-900 dark:text-white text-sm truncate">{displayName(u)}</p>
-                          <p className="text-xs text-zinc-400 font-mono truncate max-w-[160px]">{u.user_id.slice(0, 20)}…</p>
+                          <p className="text-xs text-zinc-400 font-mono truncate max-w-[160px]">{u.user_id.slice(0, 12)}…</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-4 hidden sm:table-cell">
+                      <p className="text-sm text-zinc-500 flex items-center gap-1.5 truncate max-w-[200px]">
+                        {u.email ? <><Mail size={12} className="text-zinc-400 flex-shrink-0" />{u.email}</> : <span className="text-zinc-300">—</span>}
+                      </p>
                     </td>
                     <td className="px-4 py-4 hidden sm:table-cell">
                       <p className="text-sm text-zinc-500 flex items-center gap-1.5">
                         {u.phone ? <><Phone size={12} className="text-zinc-400" />{u.phone}</> : <span className="text-zinc-300">—</span>}
                       </p>
-                    </td>
-                    <td className="px-4 py-4 hidden lg:table-cell">
-                      <p className="text-sm text-zinc-500 truncate max-w-[200px]">{u.address || "—"}</p>
                     </td>
                     <td className="px-4 py-4">
                       {u.role === "admin" ? (
@@ -192,6 +237,12 @@ const AdminUsers = () => {
                         {new Date(u.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
                     </td>
+                    <td className="px-4 py-4 text-right">
+                      <button onClick={() => openUserDetail(u)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors">
+                        View <ChevronRight size={13} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -203,7 +254,8 @@ const AdminUsers = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((u: any) => (
             <motion.div key={u.user_id} layout initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-              className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all overflow-hidden">
+              className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer"
+              onClick={() => openUserDetail(u)}>
 
               {/* Top gradient strip + avatar */}
               <div className={`h-14 bg-gradient-to-br ${getAvatarColor(u.user_id)} relative`}>
@@ -227,6 +279,11 @@ const AdminUsers = () => {
 
               <div className="pt-8 px-4 pb-4">
                 <p className="font-bold text-zinc-900 dark:text-white truncate">{displayName(u)}</p>
+                {u.email && (
+                  <p className="text-xs text-zinc-500 flex items-center gap-1.5 mt-1 truncate">
+                    <Mail size={11} className="text-zinc-400 flex-shrink-0" />{u.email}
+                  </p>
+                )}
 
                 <div className="space-y-2 mt-3">
                   {u.phone && (
@@ -244,15 +301,165 @@ const AdminUsers = () => {
                     Joined {new Date(u.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   </p>
                 </div>
-
-                <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-400 font-mono truncate">{u.user_id.slice(0, 24)}…</p>
-                </div>
               </div>
             </motion.div>
           ))}
         </div>
       )}
+
+      {/* ── User Detail Drawer ── */}
+      <AnimatePresence>
+        {selectedUser && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+              onClick={() => setSelectedUser(null)}
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-lg bg-white dark:bg-zinc-900 shadow-2xl overflow-y-auto"
+            >
+              {/* Header */}
+              <div className={`h-24 bg-gradient-to-br ${getAvatarColor(selectedUser.user_id)} relative`}>
+                <button onClick={() => setSelectedUser(null)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+                  <X size={16} />
+                </button>
+                <div className="absolute -bottom-8 left-6">
+                  <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getAvatarColor(selectedUser.user_id)} flex items-center justify-center border-4 border-white dark:border-zinc-900 shadow-lg`}>
+                    <span className="text-white font-bold text-xl">{displayName(selectedUser)[0]?.toUpperCase()}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-12 px-6 pb-6">
+                {/* User info */}
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-zinc-900 dark:text-white">{displayName(selectedUser)}</h2>
+                  {selectedUser.role === "admin" && (
+                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800">
+                      <Shield size={10} /> Admin
+                    </span>
+                  )}
+                </div>
+
+                {/* Details grid */}
+                <div className="space-y-4 mb-6">
+                  {selectedUser.email && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/20 flex items-center justify-center flex-shrink-0">
+                        <Mail size={14} className="text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Email</p>
+                        <p className="text-sm text-zinc-900 dark:text-white">{selectedUser.email}</p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedUser.phone && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 flex items-center justify-center flex-shrink-0">
+                        <Phone size={14} className="text-emerald-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Phone</p>
+                        <p className="text-sm text-zinc-900 dark:text-white">{selectedUser.phone}</p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedUser.address && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-950/20 flex items-center justify-center flex-shrink-0">
+                        <MapPin size={14} className="text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Address</p>
+                        <p className="text-sm text-zinc-900 dark:text-white">{selectedUser.address}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/20 flex items-center justify-center flex-shrink-0">
+                      <Calendar size={14} className="text-violet-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Joined</p>
+                      <p className="text-sm text-zinc-900 dark:text-white">
+                        {new Date(selectedUser.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                      <User size={14} className="text-zinc-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">User ID</p>
+                      <p className="text-xs text-zinc-500 font-mono break-all">{selectedUser.user_id}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bookings */}
+                <div className="border-t border-zinc-200 dark:border-zinc-800 pt-5">
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2 mb-4">
+                    <Package size={15} className="text-blue-500" />
+                    Bookings ({userBookings.length})
+                  </h3>
+
+                  {bookingsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                    </div>
+                  ) : userBookings.length === 0 ? (
+                    <div className="text-center py-8 text-zinc-400">
+                      <Package size={32} className="mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No bookings found</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {userBookings.map((booking) => (
+                        <div key={booking.id} className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800">
+                          <div className="flex items-start justify-between mb-2">
+                            <p className="font-medium text-sm text-zinc-900 dark:text-white">{booking.service}</p>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${statusColors[booking.status] || "bg-zinc-100 text-zinc-500 border-zinc-200"}`}>
+                              {booking.status}
+                            </span>
+                          </div>
+                          <div className="space-y-1 text-xs text-zinc-500">
+                            <p className="flex items-center gap-1.5">
+                              <Calendar size={11} className="text-zinc-400" />
+                              {booking.preferred_date} at {booking.preferred_time}
+                            </p>
+                            {booking.phone && (
+                              <p className="flex items-center gap-1.5">
+                                <Phone size={11} className="text-zinc-400" />
+                                {booking.phone}
+                              </p>
+                            )}
+                            {booking.address && (
+                              <p className="flex items-center gap-1.5 line-clamp-1">
+                                <MapPin size={11} className="text-zinc-400 flex-shrink-0" />
+                                {booking.address}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
