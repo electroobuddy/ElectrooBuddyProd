@@ -40,6 +40,7 @@ const defaultSettings: FooterSettings = {
     { label: "About Us", to: "/about" },
     { label: "Services", to: "/services" },
     { label: "Projects", to: "/projects" },
+    { label: "Maintenance Plans", to: "/subscriptions" },
     { label: "Contact", to: "/contact" },
   ],
   service_links: [

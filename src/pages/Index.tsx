@@ -30,6 +30,8 @@ import {
   Check,
   ShoppingBag,
   Send,
+  ShieldCheck,
+  Crown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -1645,6 +1647,61 @@ export default function Index() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ANNUAL MAINTENANCE PLANS CTA ── */}
+      <section className="py-16 md:py-20 bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white/10 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">
+                <ShieldCheck size={16} /> Annual Plans
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Protect Your Home Year-Round
+              </h2>
+              <p className="text-lg text-blue-100 mb-6 max-w-lg">
+                Get priority maintenance, free service calls, and exclusive discounts on parts with our annual maintenance plans.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  to="/subscriptions"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg hover:bg-gray-100 transition"
+                >
+                  View Plans <ArrowRight size={18} />
+                </Link>
+                <a
+                  href={`tel:${PHONE_NUMBER}`}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-white/40 font-semibold rounded-lg hover:bg-white/10 transition"
+                >
+                  <Phone size={18} /> Call Us
+                </a>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <Crown className="text-yellow-400 mb-3" size={28} />
+                <h3 className="text-xl font-bold mb-1">Premium Plan</h3>
+                <p className="text-3xl font-extrabold mb-2">₹2,999<span className="text-base font-normal">/year</span></p>
+                <ul className="space-y-1.5 text-sm text-blue-100">
+                  <li className="flex items-center gap-2"><Check size={14} className="text-green-400" /> 3 free service calls</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-green-400" /> 15% discount on parts</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-green-400" /> Priority support</li>
+                </ul>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <Shield className="text-blue-300 mb-3" size={28} />
+                <h3 className="text-xl font-bold mb-1">Basic Plan</h3>
+                <p className="text-3xl font-extrabold mb-2">₹999<span className="text-base font-normal">/year</span></p>
+                <ul className="space-y-1.5 text-sm text-blue-100">
+                  <li className="flex items-center gap-2"><Check size={14} className="text-green-400" /> 1 free service call</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-green-400" /> 5% discount on parts</li>
+                  <li className="flex items-center gap-2"><Check size={14} className="text-green-400" /> Annual maintenance</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>

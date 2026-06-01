@@ -26,6 +26,7 @@ const navItems = [
   { label: "Orders",              to: "/admin/orders",             icon: ShoppingCart,    group: "store"    },
   { label: "Payments",            to: "/admin/payments",           icon: DollarSign,      group: "store"    },
   { label: "Subscriptions",       to: "/admin/subscriptions",      icon: ShieldCheck,     group: "store"    },
+  { label: "Plan Management",     to: "/admin/plan-management",    icon: Settings,        group: "store"    },
   { label: "Shipping",            to: "/admin/shipping",           icon: Truck,           group: "store"    },
   { label: "Services",            to: "/admin/services",           icon: Wrench,          group: "services" },
   { label: "Bookings",            to: "/admin/bookings",           icon: CalendarDays,    group: "services" },

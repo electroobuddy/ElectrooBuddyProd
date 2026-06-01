@@ -81,8 +81,11 @@ export type Database = {
           original_amount: number | null
           final_amount: number | null
           offer_applied: boolean
+          subscription_benefit_used: string | null
+          subscription_discount: number | null
           technician_name: string | null
           technician_phone: string | null
+          user_subscription_id: string | null
         }
         Insert: {
           address: string
@@ -104,6 +107,8 @@ export type Database = {
           preferred_time: string
           service_type: string
           status?: string
+          subscription_benefit_used?: string | null
+          subscription_discount?: number | null
           updated_at?: string
           user_id?: string | null
           coupon_code?: string | null
@@ -114,6 +119,7 @@ export type Database = {
           offer_applied?: boolean
           technician_name?: string | null
           technician_phone?: string | null
+          user_subscription_id?: string | null
         }
         Update: {
           address?: string
@@ -135,6 +141,8 @@ export type Database = {
           preferred_time?: string
           service_type?: string
           status?: string
+          subscription_benefit_used?: string | null
+          subscription_discount?: number | null
           updated_at?: string
           user_id?: string | null
           coupon_code?: string | null
@@ -145,6 +153,7 @@ export type Database = {
           offer_applied?: boolean
           technician_name?: string | null
           technician_phone?: string | null
+          user_subscription_id?: string | null
         }
         Relationships: [
           {
@@ -1388,6 +1397,166 @@ export type Database = {
           visibility?: string[]
         }
         Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          currency: string
+          description: string | null
+          duration_days: number
+          features: Json
+          has_priority_support: boolean | null
+          id: string
+          is_active: boolean | null
+          max_service_calls: number | null
+          name: string
+          parts_discount_percent: number | null
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          duration_days?: number
+          features?: Json
+          has_priority_support?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          max_service_calls?: number | null
+          name: string
+          parts_discount_percent?: number | null
+          price: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          duration_days?: number
+          features?: Json
+          has_priority_support?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          max_service_calls?: number | null
+          name?: string
+          parts_discount_percent?: number | null
+          price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscription_benefits_usage: {
+        Row: {
+          benefit_type: string
+          booking_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          used_at: string | null
+          user_id: string
+          user_subscription_id: string
+        }
+        Insert: {
+          benefit_type: string
+          booking_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          used_at?: string | null
+          user_id: string
+          user_subscription_id: string
+        }
+        Update: {
+          benefit_type?: string
+          booking_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          used_at?: string | null
+          user_id?: string
+          user_subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_benefits_usage_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_benefits_usage_user_subscription_id_fkey"
+            columns: ["user_subscription_id"]
+            isOneToOne: false
+            referencedRelation: "user_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_benefits_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_subscriptions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          end_date: string
+          id: string
+          payment_id: string | null
+          plan_id: string
+          start_date: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string
+          end_date: string
+          id?: string
+          payment_id?: string | null
+          plan_id: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          end_date?: string
+          id?: string
+          payment_id?: string | null
+          plan_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

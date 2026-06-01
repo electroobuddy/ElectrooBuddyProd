@@ -89,6 +89,7 @@ const TechnicianSettings = lazy(() => import("./pages/technician/TechnicianSetti
 const TechnicianSignUp = lazy(() => import("./pages/technician/TechnicianSignUp"));
 const Subscriptions = lazy(() => import("@/components/Subscriptions"));
 const AdminSubscriptions = lazy(() => import("@/components/AdminSubscriptions"));
+const AdminPlanManagement = lazy(() => import("@/pages/admin/AdminPlanManagement"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const TestFCMNotifications = lazy(() => import("./pages/TestFCMNotifications"));
 const TestOneSignalNotifications = lazy(() => import("./pages/TestOneSignalNotifications"));
@@ -224,6 +225,7 @@ const AppContent = () => {
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/payments" element={<AdminPayments />} />
               <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+              <Route path="/admin/plan-management" element={<AdminPlanManagement />} />
               <Route path="/admin/shipping" element={<AdminShippingSettings />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
