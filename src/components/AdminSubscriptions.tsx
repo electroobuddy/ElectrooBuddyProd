@@ -16,9 +16,18 @@ import {
   X,
   Loader2,
   Download,
-  RefreshCw
+  RefreshCw,
+  ShieldCheck,
+  Plus,
+  Minus,
+  Ban,
+  ExternalLink,
+  Ticket,
+  Percent,
+  Headphones,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface Subscription {
   id: string;
@@ -31,7 +40,12 @@ interface Subscription {
   start_date: string;
   end_date: string;
   created_at: string;
-  subscription_plans?: { name: string };
+  subscription_plans?: { 
+    name: string;
+    max_service_calls: number;
+    parts_discount_percent: number;
+    has_priority_support: boolean;
+  };
   profile_full_name?: string;
   profile_phone?: string;
   profile_address?: string;
@@ -40,15 +54,30 @@ interface Subscription {
   total_days?: number;
   remaining_days?: number;
   usage_percent?: number;
+  service_calls_used?: number;
+  service_calls_remaining?: number;
+}
+
+interface BenefitUsage {
+  id: string;
+  benefit_type: string;
+  booking_id: string | null;
+  description: string | null;
+  used_at: string;
+  bookings?: { service_type: string; preferred_date: string } | null;
 }
 
 const AdminSubscriptions = () => {
+  const navigate = useNavigate();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [benefitUsage, setBenefitUsage] = useState<BenefitUsage[]>([]);
+  const [loadingBenefits, setLoadingBenefits] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -57,11 +86,11 @@ const AdminSubscriptions = () => {
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('user_subscriptions')
         .select(`
           *,
-          subscription_plans (name)
+          subscription_plans (name, max_service_calls, parts_discount_percent, has_priority_support)
         `)
         .order('created_at', { ascending: false });
 
@@ -73,18 +102,15 @@ const AdminSubscriptions = () => {
       let profileMap: Record<string, any> = {};
 
       if (userIds.length > 0) {
-        // Fetch profiles
-        const { data: profiles } = await (supabase as any)
+        const { data: profiles } = await supabase
           .from("profiles")
           .select("user_id, full_name, phone, address, email")
           .in("user_id", userIds);
 
-        // Build profile map
         (profiles || []).forEach((profile: any) => {
           profileMap[profile.user_id] = profile;
         });
 
-        // Try to fetch emails from auth (admin only)
         try {
           const { data: authUsers } = await supabase.auth.admin.listUsers();
           if (authUsers?.users) {
@@ -94,12 +120,10 @@ const AdminSubscriptions = () => {
               }
             });
           }
-        } catch {
-          // Auth admin API may not be available, use profile email
-        }
+        } catch {}
       }
 
-      const hydrated = rows.map((row: any) => {
+      const hydrated = await Promise.all(rows.map(async (row: any) => {
         const profile = profileMap[row.user_id] || {};
         const start = new Date(row.start_date).getTime();
         const end = new Date(row.end_date).getTime();
@@ -108,6 +132,16 @@ const AdminSubscriptions = () => {
         const usedDays = Math.max(0, Math.min(totalDays, Math.floor((Math.min(now, end) - start) / (1000 * 60 * 60 * 24))));
         const remainingDays = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
         const usagePercent = Math.max(0, Math.min(100, Math.round((usedDays / totalDays) * 100)));
+
+        let serviceCallsUsed = 0;
+        if (row.status === 'active') {
+          const { count } = await supabase
+            .from('subscription_benefits_usage')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_subscription_id', row.id)
+            .eq('benefit_type', 'service_call');
+          serviceCallsUsed = count || 0;
+        }
 
         return {
           ...row,
@@ -119,8 +153,10 @@ const AdminSubscriptions = () => {
           total_days: totalDays,
           remaining_days: remainingDays,
           usage_percent: usagePercent,
+          service_calls_used: serviceCallsUsed,
+          service_calls_remaining: Math.max(0, (row.subscription_plans?.max_service_calls || 0) - serviceCallsUsed),
         };
-      });
+      }));
 
       setSubscriptions(hydrated);
     } catch (error: any) {
@@ -130,10 +166,82 @@ const AdminSubscriptions = () => {
     }
   };
 
+  const fetchBenefitUsage = async (subscriptionId: string) => {
+    setLoadingBenefits(true);
+    try {
+      const { data, error } = await supabase
+        .from('subscription_benefits_usage')
+        .select('*, bookings(service_type, preferred_date)')
+        .eq('user_subscription_id', subscriptionId)
+        .order('used_at', { ascending: false });
+
+      if (error) throw error;
+      setBenefitUsage(data || []);
+    } catch (error: any) {
+      toast.error("Error fetching benefit usage: " + error.message);
+    } finally {
+      setLoadingBenefits(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedSubscription) {
+      fetchBenefitUsage(selectedSubscription.id);
+    }
+  }, [selectedSubscription?.id]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchSubscriptions();
     setRefreshing(false);
+  };
+
+  const handleUpdateStatus = async (subscriptionId: string, newStatus: string) => {
+    setUpdatingStatus(subscriptionId);
+    try {
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', subscriptionId);
+
+      if (error) throw error;
+      toast.success(`Subscription ${newStatus}`);
+      await fetchSubscriptions();
+      if (selectedSubscription?.id === subscriptionId) {
+        setSelectedSubscription(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+    } catch (error: any) {
+      toast.error("Error updating status: " + error.message);
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  const handleExtendSubscription = async (subscriptionId: string, days: number) => {
+    setUpdatingStatus(subscriptionId);
+    try {
+      const sub = subscriptions.find(s => s.id === subscriptionId);
+      if (!sub) return;
+
+      const currentEnd = new Date(sub.end_date);
+      const newEnd = new Date(currentEnd.getTime() + days * 24 * 60 * 60 * 1000);
+
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({ end_date: newEnd.toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', subscriptionId);
+
+      if (error) throw error;
+      toast.success(`Extended subscription by ${days} days`);
+      await fetchSubscriptions();
+      if (selectedSubscription?.id === subscriptionId) {
+        setSelectedSubscription(prev => prev ? { ...prev, end_date: newEnd.toISOString() } : null);
+      }
+    } catch (error: any) {
+      toast.error("Error extending subscription: " + error.message);
+    } finally {
+      setUpdatingStatus(null);
+    }
   };
 
   const filteredSubscriptions = subscriptions.filter(sub => {
@@ -160,10 +268,23 @@ const AdminSubscriptions = () => {
     }
   };
 
+  const getBenefitTypeBadge = (type: string) => {
+    switch (type) {
+      case 'service_call':
+        return <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 px-2 py-0.5 rounded-full text-xs font-medium"><Ticket size={10} /> Service Call</span>;
+      case 'parts_discount':
+        return <span className="inline-flex items-center gap-1 text-purple-700 bg-purple-50 dark:bg-purple-950/30 dark:text-purple-400 px-2 py-0.5 rounded-full text-xs font-medium"><Percent size={10} /> Parts Discount</span>;
+      case 'priority_support':
+        return <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 px-2 py-0.5 rounded-full text-xs font-medium"><Headphones size={10} /> Priority Support</span>;
+      default:
+        return <span className="text-xs text-zinc-500">{type}</span>;
+    }
+  };
+
   const exportCSV = () => {
-    const csv = "User Name,Email,Phone,Plan,Status,Amount,Start Date,End Date,Remaining Days\n" + 
+    const csv = "User Name,Email,Phone,Plan,Status,Amount,Start Date,End Date,Remaining Days,Service Calls Used,Service Calls Remaining\n" + 
       filteredSubscriptions.map(s => 
-        `${s.profile_full_name},${s.profile_email},${s.profile_phone},${s.subscription_plans?.name || ""},${s.status},${s.amount},${s.start_date},${s.end_date},${s.remaining_days}`
+        `${s.profile_full_name},${s.profile_email},${s.profile_phone},${s.subscription_plans?.name || ""},${s.status},${s.amount},${s.start_date},${s.end_date},${s.remaining_days},${s.service_calls_used},${s.service_calls_remaining}`
       ).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -181,11 +302,11 @@ const AdminSubscriptions = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2.5">
-            <CreditCard size={22} className="text-blue-500" />
-            User Subscriptions
+            <ShieldCheck size={22} className="text-blue-500" />
+            Subscription Management
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            {subscriptions.length} total · {subscriptions.filter(s => s.status === 'active').length} active
+            {subscriptions.length} total · {subscriptions.filter(s => s.status === 'active').length} active · {subscriptions.reduce((sum, s) => sum + (s.service_calls_remaining || 0), 0)} service calls available
           </p>
         </div>
         <div className="flex gap-2">
@@ -236,7 +357,7 @@ const AdminSubscriptions = () => {
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Plan</th>
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Amount</th>
-                <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden md:table-cell">Usage</th>
+                <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden md:table-cell">Service Calls</th>
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden lg:table-cell">Expiry</th>
                 <th className="px-4 py-3.5 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -281,9 +402,12 @@ const AdminSubscriptions = () => {
                     <td className="px-4 py-4 font-medium text-zinc-900 dark:text-white">₹{sub.amount}</td>
                     <td className="px-4 py-4 hidden md:table-cell">
                       <div className="space-y-1">
-                        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{sub.usage_days}/{sub.total_days} days</p>
+                        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{sub.service_calls_used}/{sub.subscription_plans?.max_service_calls || 0} used</p>
                         <div className="w-24 h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                          <div className="h-2 bg-blue-500 rounded-full transition-all" style={{ width: `${sub.usage_percent}%` }} />
+                          <div 
+                            className="h-2 bg-blue-500 rounded-full transition-all" 
+                            style={{ width: `${((sub.service_calls_used || 0) / (sub.subscription_plans?.max_service_calls || 1)) * 100}%` }} 
+                          />
                         </div>
                       </div>
                     </td>
@@ -312,7 +436,7 @@ const AdminSubscriptions = () => {
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedSubscription(null)} />
           <div className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-lg bg-white dark:bg-zinc-900 shadow-2xl overflow-y-auto">
             {/* Header */}
-            <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between">
+            <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between z-10">
               <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Subscription Details</h2>
               <button onClick={() => setSelectedSubscription(null)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition">
                 <X size={18} className="text-zinc-500" />
@@ -368,6 +492,36 @@ const AdminSubscriptions = () => {
                 </div>
               </div>
 
+              {/* Plan Benefits */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3">Plan Benefits</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Ticket className="w-4 h-4 text-blue-600" />
+                    <span className="text-blue-700 dark:text-blue-300">
+                      {selectedSubscription.subscription_plans?.max_service_calls || 0} free service calls
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Percent className="w-4 h-4 text-blue-600" />
+                    <span className="text-blue-700 dark:text-blue-300">
+                      {selectedSubscription.subscription_plans?.parts_discount_percent || 0}% parts discount
+                    </span>
+                  </div>
+                  {selectedSubscription.subscription_plans?.has_priority_support && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Headphones className="w-4 h-4 text-blue-600" />
+                      <span className="text-blue-700 dark:text-blue-300">Priority support</span>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 p-2 bg-white dark:bg-zinc-800 rounded-lg">
+                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    Service Calls: {selectedSubscription.service_calls_used} used / {selectedSubscription.service_calls_remaining} remaining
+                  </p>
+                </div>
+              </div>
+
               {/* Usage Timeline */}
               <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-200 dark:border-zinc-700">
                 <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-3">Usage Timeline</h3>
@@ -389,6 +543,79 @@ const AdminSubscriptions = () => {
                       : "Subscription duration completed"}
                   </p>
                 </div>
+              </div>
+
+              {/* Admin Actions */}
+              <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-200 dark:border-zinc-700">
+                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-3">Admin Actions</h3>
+                <div className="space-y-3">
+                  {selectedSubscription.status === 'active' ? (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleExtendSubscription(selectedSubscription.id, 30)}
+                          disabled={updatingStatus === selectedSubscription.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
+                        >
+                          <Plus size={12} /> Extend 30 Days
+                        </button>
+                        <button
+                          onClick={() => handleExtendSubscription(selectedSubscription.id, 90)}
+                          disabled={updatingStatus === selectedSubscription.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
+                        >
+                          <Plus size={12} /> Extend 90 Days
+                        </button>
+                        <button
+                          onClick={() => handleUpdateStatus(selectedSubscription.id, 'cancelled')}
+                          disabled={updatingStatus === selectedSubscription.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+                        >
+                          <Ban size={12} /> Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : selectedSubscription.status === 'expired' || selectedSubscription.status === 'cancelled' ? (
+                    <button
+                      onClick={() => handleUpdateStatus(selectedSubscription.id, 'active')}
+                      disabled={updatingStatus === selectedSubscription.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle size={12} /> Reactivate
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Benefit Usage History */}
+              <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-zinc-200 dark:border-zinc-700">
+                <h3 className="text-sm font-semibold text-zinc-500 uppercase tracking-wider mb-3">Benefit Usage History</h3>
+                {loadingBenefits ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                  </div>
+                ) : benefitUsage.length === 0 ? (
+                  <p className="text-sm text-zinc-500 text-center py-4">No benefits used yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {benefitUsage.map((usage) => (
+                      <div key={usage.id} className="flex items-center justify-between p-2 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-100 dark:border-zinc-700">
+                        <div className="flex items-center gap-2">
+                          {getBenefitTypeBadge(usage.benefit_type)}
+                          <span className="text-xs text-zinc-500">{usage.description}</span>
+                        </div>
+                        <div className="text-right">
+                          {usage.bookings && (
+                            <p className="text-xs text-zinc-500">
+                              {usage.bookings.service_type} · {new Date(usage.bookings.preferred_date).toLocaleDateString('en-IN')}
+                            </p>
+                          )}
+                          <p className="text-xs text-zinc-400">{new Date(usage.used_at).toLocaleDateString('en-IN')}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* User ID */}

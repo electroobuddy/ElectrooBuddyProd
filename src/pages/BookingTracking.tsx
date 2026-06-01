@@ -10,7 +10,9 @@ import {
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400", label: "Pending" },
+  assigned: { bg: "bg-indigo-100 dark:bg-indigo-900/30", text: "text-indigo-700 dark:text-indigo-400", label: "Assigned" },
   confirmed: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-400", label: "Confirmed" },
+  "in-progress": { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-700 dark:text-orange-400", label: "In Progress" },
   completed: { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-400", label: "Completed" },
   cancelled: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", label: "Cancelled" },
 };
@@ -39,44 +41,24 @@ const BookingTracking = () => {
       const normalizedPhone = searchValue.trim().replace(/\D/g, '');
       
       if (searchType === "phone") {
-        // Search by phone number with multiple format variations
-        // This handles +91XXXXXXXXXX, 91XXXXXXXXXX, 0XXXXXXXXXX, XXXXXXXXXX formats
-        const phonePatterns = [
-          normalizedPhone, // XXXXXXXXXX
-          `91${normalizedPhone}`, // 91XXXXXXXXXX
-          `+91${normalizedPhone}`, // +91XXXXXXXXXX
-          normalizedPhone.startsWith('0') ? normalizedPhone.slice(1) : `0${normalizedPhone}`, // 0XXXXXXXXXX
-        ];
-
-        // Remove duplicates
-        const uniquePhones = [...new Set(phonePatterns)];
-
-        // Fetch all bookings and filter client-side for phone number matches
+        // Use direct phone match with ilike for flexible matching
         const { data, error } = await supabase
           .from("bookings")
           .select("*")
-          .order("created_at", { ascending: false });
+          .ilike("phone", `%${normalizedPhone}%`)
+          .order("created_at", { ascending: false })
+          .limit(20);
         
         if (error) {
           throw error;
         }
         
-        // Filter bookings that match any of the phone patterns
-        const matchingBookings = (data || []).filter(booking => {
-          const bookingPhone = booking.phone?.replace(/\D/g, '') || '';
-          const isMatch = uniquePhones.some(pattern => 
-            bookingPhone.includes(pattern.replace(/\D/g, ''))
-          );
-          
-          return isMatch;
-        });
-
-        setBookings(matchingBookings);
+        setBookings(data || []);
         
-        if (matchingBookings.length === 0) {
+        if (!data || data.length === 0) {
           toast.info("No bookings found for this phone number");
         } else {
-          toast.success(`Found ${matchingBookings.length} booking(s)`);
+          toast.success(`Found ${data.length} booking(s)`);
         }
       } else {
         // Search by email - direct booking email match

@@ -167,9 +167,15 @@ export function buildBookingPayload(
     base?: number;
     discount?: number;
     final?: number;
+    userSubscriptionId?: string;
+    subscriptionDiscount?: number;
+    subscriptionBenefitUsed?: string;
   }
 ) {
-  const { userId, couponCode, applied, base = 0, discount = 0, final = 0 } = options || {};
+  const { userId, couponCode, applied, base = 0, discount = 0, final = 0, userSubscriptionId, subscriptionDiscount = 0, subscriptionBenefitUsed } = options || {};
+
+  const totalDiscount = discount + subscriptionDiscount;
+  const finalAmount = Math.max(0, base - totalDiscount);
 
   const payload: any = {
     name: form.name.trim(),
@@ -194,10 +200,13 @@ export function buildBookingPayload(
     is_electricity_supply_on: form.is_electricity_supply_on || null,
     coupon_code: couponCode?.trim()?.toUpperCase() || null,
     offer_id: null,
-    discount_amount: discount > 0 ? discount : null,
+    discount_amount: totalDiscount > 0 ? totalDiscount : null,
     original_amount: base > 0 ? base : null,
-    final_amount: final > 0 ? final : null,
+    final_amount: finalAmount > 0 ? finalAmount : null,
     offer_applied: applied?.success || false,
+    user_subscription_id: userSubscriptionId || null,
+    subscription_discount: subscriptionDiscount > 0 ? subscriptionDiscount : null,
+    subscription_benefit_used: subscriptionBenefitUsed || null,
   };
 
   if (userId) payload.user_id = userId;

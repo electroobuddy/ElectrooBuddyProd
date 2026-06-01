@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Check, Phone, CheckCircle, Loader2, CalendarDays,
   Tag, Award, Smile, Wrench, ChevronDown, AlertCircle, X,
+  ShieldCheck, Percent, Ticket,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { PHONE_NUMBER } from "@/data/services";
 import { BUSINESS, YEARS_OF_EXPERIENCE } from "@/data/business";
@@ -31,6 +33,7 @@ type FieldKey = keyof BookingFormData;
 export default function RequestServiceSection({ preselectedService, preselectedOffer }: Props) {
   const { user } = useAuth();
   const { bookingServices, getServiceCharge, fetchBookingServices } = useServicesStore();
+  const { activeSubscription, benefits, useServiceCall } = useSubscription();
 
   const [done, setDone]                 = useState(false);
   const [submitting, setSubmitting]     = useState(false);
@@ -42,6 +45,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   const [applied, setApplied]           = useState<any>(null);
   const [sessionCount, setSessionCount] = useState(0);
   const [dbStats, setDbStats] = useState({ clients: 0, projects: 0 });
+  const [useFreeServiceCall, setUseFreeServiceCall] = useState(false);
   const lastHashRef                     = useRef<string | null>(null);
   const controllerRef                   = useRef<AbortController | null>(null);
 
@@ -111,8 +115,22 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   const services = [...bookingServices, { title: "Custom Service" }];
   const charge   = form.service_type ? getServiceCharge(form.service_type) : null;
   const base     = charge ? parseFloat(charge.amount) : 0;
-  const discount = applied?.success ? Math.min(applied.discount_amount || 0, base) : 0;
-  const final    = base - discount;
+
+  // Calculate subscription discount
+  let subscriptionDiscount = 0;
+  let subscriptionBenefitUsed: string | null = null;
+
+  if (activeSubscription && benefits && useFreeServiceCall && benefits.serviceCallsRemaining > 0) {
+    subscriptionDiscount = base;
+    subscriptionBenefitUsed = "free_service_call";
+  } else if (activeSubscription && benefits && benefits.partsDiscountPercent > 0) {
+    subscriptionDiscount = Math.round(base * benefits.partsDiscountPercent / 100);
+    subscriptionBenefitUsed = "parts_discount";
+  }
+
+  const couponDiscount = applied?.success ? Math.min(applied.discount_amount || 0, base) : 0;
+  const totalDiscount  = couponDiscount + subscriptionDiscount;
+  const final          = Math.max(0, base - totalDiscount);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const touch = (f: FieldKey) => setTouched(t => ({ ...t, [f]: true }));
@@ -201,8 +219,11 @@ export default function RequestServiceSection({ preselectedService, preselectedO
       couponCode,
       applied,
       base,
-      discount,
+      discount: couponDiscount,
       final,
+      userSubscriptionId: activeSubscription?.id,
+      subscriptionDiscount,
+      subscriptionBenefitUsed,
     });
 
     try {
@@ -241,6 +262,11 @@ export default function RequestServiceSection({ preselectedService, preselectedO
 
       lastHashRef.current = hash;
       setSessionCount(c => c + 1);
+
+      // Record subscription benefit usage if applicable
+      if (activeSubscription && useFreeServiceCall && benefits && benefits.serviceCallsRemaining > 0) {
+        await useServiceCall(activeSubscription.id, booking.id);
+      }
 
       // ── Background tasks — never block user ───────────────────────────────
       Promise.allSettled([
@@ -301,7 +327,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     } finally {
       setSubmitting(false);
     }
-  }, [form, submitting, couponCode, applied, base, discount, final, user, sessionCount]);
+  }, [form, submitting, couponCode, applied, base, couponDiscount, subscriptionDiscount, final, user, sessionCount, activeSubscription, benefits, useFreeServiceCall]);
 
   // ── Sidebar ──────────────────────────────────────────────────────────────
   const sideStats = [
@@ -600,6 +626,71 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                     </div>
                   )}
 
+                  {/* Subscription Benefits */}
+                  {activeSubscription && benefits && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ShieldCheck className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                          Subscription Benefits Active
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
+                        Plan: {activeSubscription.subscription_plans?.name}
+                      </p>
+
+                      {benefits.serviceCallsRemaining > 0 && (
+                        <label className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-900/30 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors mb-3">
+                          <input
+                            type="checkbox"
+                            checked={useFreeServiceCall}
+                            onChange={(e) => setUseFreeServiceCall(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              Use Free Service Call
+                            </span>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {benefits.serviceCallsRemaining} of {benefits.serviceCallsTotal} remaining
+                            </p>
+                          </div>
+                          <span className="text-xs font-semibold text-green-600 dark:text-green-400">
+                            -₹{base.toFixed(2)}
+                          </span>
+                        </label>
+                      )}
+
+                      {benefits.partsDiscountPercent > 0 && (
+                        <div className={`p-3 bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-900/30 ${useFreeServiceCall ? "opacity-50" : ""}`}>
+                          <div className="flex items-center gap-2">
+                            <Percent className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {benefits.partsDiscountPercent}% discount on parts
+                            </span>
+                            {!useFreeServiceCall && (
+                              <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-semibold">
+                                AUTO
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {useFreeServiceCall
+                              ? "Disabled — free service call is active"
+                              : "Applied automatically to parts charges"
+                            }
+                          </p>
+                        </div>
+                      )}
+
+                      {benefits.serviceCallsRemaining === 0 && benefits.partsDiscountPercent === 0 && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          No benefits available for this booking.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {/* Row 3 — Coupon + Discount */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Coupon Code">
@@ -640,14 +731,22 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                     </Field>
 
                     <Field label="">
-                      {applied?.success && discount > 0 ? (
+                      {(applied?.success || subscriptionDiscount > 0) && (couponDiscount + subscriptionDiscount) > 0 ? (
                         <div className="h-full flex flex-col justify-center bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg px-4 py-3 space-y-1.5">
                           <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Original</span><span className="line-through">₹{base.toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between text-xs font-semibold text-green-600 dark:text-green-400">
-                            <span>Discount</span><span>−₹{discount.toFixed(2)}</span>
-                          </div>
+                          {couponDiscount > 0 && (
+                            <div className="flex justify-between text-xs font-semibold text-green-600 dark:text-green-400">
+                              <span>Coupon Discount</span><span>−₹{couponDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {subscriptionDiscount > 0 && (
+                            <div className="flex justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
+                              <span>Subscription ({subscriptionBenefitUsed === "free_service_call" ? "Free Service Call" : `${benefits?.parts_discount_percent || benefits?.partsDiscountPercent}% Parts Discount`})</span>
+                              <span>−₹{subscriptionDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
                           <div className="border-t border-green-200 dark:border-green-700 pt-1.5 flex justify-between text-sm font-bold text-green-700 dark:text-green-300">
                             <span>Final Amount</span><span>₹{final.toFixed(2)}</span>
                           </div>

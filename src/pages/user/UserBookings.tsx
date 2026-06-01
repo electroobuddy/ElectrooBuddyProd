@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Calendar, Clock, MapPin, Plus, CheckCircle, AlertCircle, FileText, Phone, Tag } from "lucide-react";
+import { Loader2, Calendar, Clock, MapPin, Plus, CheckCircle, AlertCircle, FileText, Phone, Tag, ShieldCheck, Percent, Ticket } from "lucide-react";
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400", label: "Pending" },
+  assigned: { bg: "bg-indigo-100 dark:bg-indigo-900/30", text: "text-indigo-700 dark:text-indigo-400", label: "Assigned" },
   confirmed: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-400", label: "Confirmed" },
+  "in-progress": { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-700 dark:text-orange-400", label: "In Progress" },
   completed: { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-400", label: "Completed" },
   cancelled: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", label: "Cancelled" },
 };
@@ -133,6 +135,34 @@ const UserBookings = () => {
                     <p className="line-clamp-2">{b.description}</p>
                   </div>
                 )}
+                {/* Subscription Benefit Used */}
+                {b.subscription_benefit_used && (
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <ShieldCheck className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">
+                        Subscription Benefit Used
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      {b.subscription_benefit_used === "free_service_call" ? (
+                        <span className="inline-flex items-center gap-1 text-blue-700 dark:text-blue-300">
+                          <Ticket className="w-3 h-3" /> Free Service Call
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-blue-700 dark:text-blue-300">
+                          <Percent className="w-3 h-3" /> Parts Discount
+                        </span>
+                      )}
+                      {b.subscription_discount > 0 && (
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                          -₹{b.subscription_discount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Offer/Coupon Details */}
                 {b.offer_applied && (
                   <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -147,6 +177,32 @@ const UserBookings = () => {
                         <span className="text-green-700 font-bold">₹{b.final_amount}</span>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Combined Price Summary */}
+                {b.subscription_benefit_used && (b.original_amount || b.final_amount) && (
+                  <div className="mt-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-zinc-500">Service Charge</span>
+                      <span className="text-zinc-500 line-through">₹{b.original_amount}</span>
+                    </div>
+                    {b.subscription_discount > 0 && (
+                      <div className="flex items-center justify-between text-xs mt-1">
+                        <span className="text-blue-600">Subscription Discount</span>
+                        <span className="text-blue-600 font-semibold">-₹{b.subscription_discount}</span>
+                      </div>
+                    )}
+                    {b.discount_amount > 0 && b.discount_amount !== b.subscription_discount && (
+                      <div className="flex items-center justify-between text-xs mt-1">
+                        <span className="text-green-600">Coupon Discount</span>
+                        <span className="text-green-600 font-semibold">-₹{b.discount_amount}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-zinc-200 dark:border-zinc-700 mt-2 pt-2 flex items-center justify-between">
+                      <span className="text-sm font-bold text-zinc-900 dark:text-white">Final Amount</span>
+                      <span className="text-sm font-bold text-green-600">₹{b.final_amount}</span>
+                    </div>
                   </div>
                 )}
               </button>

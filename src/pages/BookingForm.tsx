@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import Section from "@/components/Section";
 import {
   CalendarDays, Loader2, Zap, Phone, CheckCircle, MapPin,
-  Tag, Check, ArrowRight, Clock, Shield, Star,
+  Tag, Check, ArrowRight, Clock, Shield, Star, ShieldCheck, Percent,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ const BookingForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const { user } = useAuth();
+  const { activeSubscription, benefits, useServiceCall } = useSubscription();
   const abortControllerRef = useRef<AbortController | null>(null);
   const [selectedServiceCharge, setSelectedServiceCharge] = useState<{
     amount: string; label: string; show: boolean;
@@ -37,6 +39,7 @@ const BookingForm = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [dateError, setDateError] = useState("");
+  const [useFreeServiceCall, setUseFreeServiceCall] = useState(false);
 
   const todayStr = todayISOStr();
 
@@ -79,12 +82,35 @@ const BookingForm = () => {
 
   const calculateDiscount = () => {
     const baseAmount = selectedServiceCharge ? parseFloat(selectedServiceCharge.amount) : 0;
-    if (!appliedCoupon?.success || !baseAmount) return { original: baseAmount, discount: 0, final: baseAmount };
-    const discount = Math.min(appliedCoupon?.discount_amount || 0, baseAmount);
-    return { original: baseAmount, discount, final: baseAmount - discount };
+    let couponDiscount = 0;
+    if (appliedCoupon?.success && baseAmount) {
+      couponDiscount = Math.min(appliedCoupon?.discount_amount || 0, baseAmount);
+    }
+
+    let subscriptionDiscount = 0;
+    let subscriptionBenefitUsed = null;
+
+    if (activeSubscription && benefits && useFreeServiceCall && benefits.serviceCallsRemaining > 0) {
+      subscriptionDiscount = baseAmount;
+      subscriptionBenefitUsed = "free_service_call";
+    } else if (activeSubscription && benefits && benefits.partsDiscountPercent > 0) {
+      subscriptionDiscount = Math.round(baseAmount * benefits.partsDiscountPercent / 100);
+      subscriptionBenefitUsed = "parts_discount";
+    }
+
+    const totalDiscount = couponDiscount + subscriptionDiscount;
+    const finalAmount = Math.max(0, baseAmount - totalDiscount);
+
+    return {
+      original: baseAmount,
+      discount: couponDiscount,
+      subscriptionDiscount,
+      subscriptionBenefitUsed,
+      final: finalAmount,
+    };
   };
 
-  const { original, discount, final } = calculateDiscount();
+  const { original, discount, subscriptionDiscount, subscriptionBenefitUsed, final } = calculateDiscount();
 
   const servicesWithOptions = [...bookingServices, { title: "Custom Service" }];
 
@@ -215,6 +241,9 @@ const BookingForm = () => {
       base: original,
       discount,
       final,
+      userSubscriptionId: activeSubscription?.id,
+      subscriptionDiscount,
+      subscriptionBenefitUsed,
     });
 
     try {
@@ -228,6 +257,11 @@ const BookingForm = () => {
       if (!bookingData?.id) throw new Error("Failed to create booking");
 
       const bookingId = bookingData.id;
+
+      // Record subscription benefit usage if applicable
+      if (activeSubscription && useFreeServiceCall && benefits && benefits.serviceCallsRemaining > 0) {
+        await useServiceCall(activeSubscription.id, bookingId);
+      }
 
       toast.success("Booking submitted! We'll contact you soon.", { id: tid, duration: 5000 });
       setDone(true);
@@ -618,9 +652,81 @@ const BookingForm = () => {
                   </AnimatePresence>
                 </div>
 
+                {/* Subscription Benefits */}
+                <AnimatePresence>
+                  {activeSubscription && benefits && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <ShieldCheck className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                          Subscription Benefits Active
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
+                        Plan: {activeSubscription.subscription_plans?.name}
+                      </p>
+
+                      {benefits.serviceCallsRemaining > 0 && (
+                        <label className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-900/30 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors mb-3">
+                          <input
+                            type="checkbox"
+                            checked={useFreeServiceCall}
+                            onChange={(e) => setUseFreeServiceCall(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                              Use Free Service Call
+                            </span>
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {benefits.serviceCallsRemaining} of {benefits.serviceCallsTotal} remaining
+                            </p>
+                          </div>
+                          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            -₹{original.toFixed(2)}
+                          </span>
+                        </label>
+                      )}
+
+                      {benefits.partsDiscountPercent > 0 && (
+                        <div className={`p-3 bg-white dark:bg-zinc-800 rounded-lg border border-blue-100 dark:border-blue-900/30 ${useFreeServiceCall ? "opacity-50" : ""}`}>
+                          <div className="flex items-center gap-2">
+                            <Percent className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                              {benefits.partsDiscountPercent}% discount on parts
+                            </span>
+                            {!useFreeServiceCall && (
+                              <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-semibold">
+                                AUTO
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                            {useFreeServiceCall
+                              ? "Disabled — free service call is active"
+                              : "Applied automatically to parts charges"
+                            }
+                          </p>
+                        </div>
+                      )}
+
+                      {benefits.serviceCallsRemaining === 0 && benefits.partsDiscountPercent === 0 && (
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          No benefits available for this booking.
+                        </p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Discount summary */}
                 <AnimatePresence>
-                  {appliedCoupon?.success && discount > 0 && (
+                  {(appliedCoupon?.success || subscriptionDiscount > 0) && (discount + subscriptionDiscount) > 0 && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
@@ -631,10 +737,18 @@ const BookingForm = () => {
                         <span>Original Amount</span>
                         <span className="line-through">₹{original.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                        <span>Discount</span>
-                        <span>−₹{discount.toFixed(2)}</span>
-                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                          <span>Coupon Discount</span>
+                          <span>−₹{discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {subscriptionDiscount > 0 && (
+                        <div className="flex justify-between text-sm font-semibold text-blue-600 dark:text-blue-400">
+                          <span>Subscription Benefit ({subscriptionBenefitUsed === "free_service_call" ? "Free Service Call" : `${benefits?.partsDiscountPercent}% Parts Discount`})</span>
+                          <span>−₹{subscriptionDiscount.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="border-t border-emerald-200 dark:border-emerald-800 pt-2 flex justify-between">
                         <span className="font-bold text-zinc-900 dark:text-white">Final Amount</span>
                         <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">₹{final.toFixed(2)}</span>

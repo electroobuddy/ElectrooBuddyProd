@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, Crown, Sparkles } from "lucide-react";
 import Section from "@/components/Section";
@@ -9,16 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import SEO from "@/components/SEO";
 import { useNavigate } from "react-router-dom";
-
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  description: string;
-  features: string[];
-  duration_days: number;
-}
+import { useSubscription } from "@/hooks/useSubscription";
 
 declare global {
   interface Window {
@@ -29,41 +20,8 @@ declare global {
 const Subscriptions = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { plans, loading, activeSubscription } = useSubscription();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [activeSubscription, setActiveSubscription] = useState<any>(null);
-
-  useEffect(() => {
-    const fetchPlansAndSubscription = async () => {
-      const { data, error } = await (supabase as any)
-        .from('subscription_plans')
-        .select('*')
-        .eq('is_active', true)
-        .order('price', { ascending: true });
-
-      if (error) {
-        toast.error("Failed to load subscription plans.");
-      } else {
-        setPlans((data || []) as SubscriptionPlan[]);
-      }
-
-      if (user) {
-        const { data: activeSub } = await (supabase as any)
-          .from("user_subscriptions")
-          .select("id, plan_id, end_date, status, subscription_plans(name)")
-          .eq("user_id", user.id)
-          .eq("status", "active")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        setActiveSubscription(activeSub);
-      }
-      setLoading(false);
-    };
-
-    fetchPlansAndSubscription();
-  }, [user]);
 
   const loadRazorpay = async () => {
     if (window.Razorpay) return true;
@@ -76,7 +34,7 @@ const Subscriptions = () => {
     });
   };
 
-  const handleSubscribe = async (plan: SubscriptionPlan) => {
+  const handleSubscribe = async (plan: any) => {
     if (!user) {
       toast.info("Please log in to subscribe.");
       navigate("/login", { state: { from: "/subscriptions" } });
@@ -117,7 +75,7 @@ const Subscriptions = () => {
               Date.now() + Number(plan.duration_days || 365) * 24 * 60 * 60 * 1000,
             ).toISOString();
 
-            const { error: expireErr } = await (supabase as any)
+            const { error: expireErr } = await supabase
               .from("user_subscriptions")
               .update({ status: "expired" })
               .eq("user_id", user.id)
@@ -125,7 +83,7 @@ const Subscriptions = () => {
 
             if (expireErr) throw expireErr;
 
-            const { data: insertedSub, error: insertErr } = await (supabase as any)
+            const { data: insertedSub, error: insertErr } = await supabase
               .from("user_subscriptions")
               .insert({
                 user_id: user.id,
@@ -141,14 +99,6 @@ const Subscriptions = () => {
               .single();
 
             if (insertErr) throw insertErr;
-
-            setActiveSubscription({
-              id: insertedSub?.id,
-              plan_id: plan.id,
-              end_date: insertedSub?.end_date,
-              status: "active",
-              subscription_plans: { name: plan.name },
-            });
 
             toast.dismiss(saveToast);
             toast.success(`Successfully subscribed to ${plan.name}!`);
@@ -195,7 +145,7 @@ const Subscriptions = () => {
     }
   };
 
-  const renderPlanCta = (plan: SubscriptionPlan) => {
+  const renderPlanCta = (plan: any) => {
     if (activeSubscription?.plan_id === plan.id && activeSubscription?.status === "active") {
       return (
         <Button className="w-full" size="lg" variant="secondary" disabled>

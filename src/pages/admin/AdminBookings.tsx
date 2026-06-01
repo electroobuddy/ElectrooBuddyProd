@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, Pencil, Trash2, X, Eye, Calendar, Clock, Phone,
   MapPin, Search, Download, User, Wrench, AlignLeft, Check,
-  CalendarDays, Filter, ChevronRight, Save, CheckCircle, UserCheck, Tag, MessageCircle, PhoneCall
+  CalendarDays, Filter, ChevronRight, Save, CheckCircle, UserCheck, Tag, MessageCircle, PhoneCall,
+  ShieldCheck, Percent, Ticket, CheckSquare, Square, XSquare
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,6 +64,7 @@ const AdminBookings = () => {
     coupon_code: "", offer_applied: false, discount_amount: "", 
     original_amount: "", final_amount: ""
   });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const patchEdit = (u: any) => setEditForm(prev => ({ ...prev, ...u }));
 
   const fetchData = async () => {
@@ -138,6 +140,7 @@ const AdminBookings = () => {
     // Convert numeric fields back to numbers or null
     const updateData = {
       ...editForm,
+      assigned_technician_id: editForm.assigned_technician_id || null,
       discount_amount: editForm.discount_amount ? parseFloat(editForm.discount_amount) || null : null,
       original_amount: editForm.original_amount ? parseFloat(editForm.original_amount) || null : null,
       final_amount: editForm.final_amount ? parseFloat(editForm.final_amount) || null : null,
@@ -154,16 +157,15 @@ const AdminBookings = () => {
     try {
       const today = new Date().toISOString().split("T")[0];
       
-      // Fetch active technicians
       const { data: technicians } = await supabase
         .from("technicians" as any)
         .select("*")
         .eq("status", "active")
+        .eq("approval_status", "approved")
         .order("priority", { ascending: false });
 
       if (!technicians) return;
 
-      // Get today's count for each
       const techsWithCount = await Promise.all(
         technicians.map(async (tech: any) => {
           const { count } = await supabase
@@ -176,7 +178,6 @@ const AdminBookings = () => {
         })
       );
 
-      // Filter those with capacity
       const available = techsWithCount.filter((t: any) => t.todayCount < (t.daily_limit || 5));
       setAvailableTechnicians(available);
     } catch (error) {
@@ -265,10 +266,37 @@ const AdminBookings = () => {
     fetchData();
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected booking${selectedIds.size > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("bookings").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} booking${ids.length > 1 ? "s" : ""} deleted`);
+    setSelectedIds(new Set());
+    fetchData();
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(b => b.id)));
+    }
+  };
+
   const exportCSV = () => {
     if (!bookings.length) return;
-    const headers = ["Name", "Phone", "Address", "Service", "Date", "Time", "Description", "Status", "Original Amount", "Discount Amount", "Final Amount", "Coupon Code"];
-    const rows = bookings.map(b => [b.name, b.phone, b.address, b.service_type, b.preferred_date, b.preferred_time, b.description || "", b.status, b.original_amount || "", b.discount_amount || "", b.final_amount || "", b.coupon_code || ""]);
+    const headers = ["Name", "Phone", "Address", "Service", "Date", "Time", "Description", "Status", "Original Amount", "Discount Amount", "Final Amount", "Coupon Code", "Subscription Benefit", "Subscription Discount"];
+    const rows = bookings.map(b => [b.name, b.phone, b.address, b.service_type, b.preferred_date, b.preferred_time, b.description || "", b.status, b.original_amount || "", b.discount_amount || "", b.final_amount || "", b.coupon_code || "", b.subscription_benefit_used || "", b.subscription_discount || ""]);
     const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
@@ -278,7 +306,8 @@ const AdminBookings = () => {
   const filtered = bookings.filter(b =>
     b.name.toLowerCase().includes(search.toLowerCase()) ||
     b.service_type.toLowerCase().includes(search.toLowerCase()) ||
-    b.phone.includes(search)
+    b.phone.includes(search) ||
+    (b.email && b.email.toLowerCase().includes(search.toLowerCase()))
   );
 
   const counts = bookings.reduce((acc, b) => { acc[b.status] = (acc[b.status] || 0) + 1; return acc; }, {} as Record<string, number>);
@@ -306,15 +335,26 @@ const AdminBookings = () => {
       </div>
 
       {/* Status summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <button
+          onClick={() => setFilter("all")}
+          className={`p-4 rounded-2xl border-2 text-left transition-all hover:shadow-sm ${
+            filter === "all" ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20 shadow-sm" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-zinc-300"
+          }`}>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2.5 h-2.5 rounded-full bg-zinc-400" />
+            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">All</span>
+          </div>
+          <p className="text-2xl font-bold text-zinc-900 dark:text-white">{bookings.length}</p>
+        </button>
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
           <button key={key}
             onClick={() => setFilter(filter === key ? "all" : key)}
             className={`p-4 rounded-2xl border-2 text-left transition-all hover:shadow-sm ${
-              filter === key ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+              filter === key ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20 shadow-sm" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-zinc-300"
             }`}>
             <div className="flex items-center gap-2 mb-2">
-              <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} />
               <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{cfg.label}</span>
             </div>
             <p className="text-2xl font-bold text-zinc-900 dark:text-white">{counts[key] || 0}</p>
@@ -327,7 +367,7 @@ const AdminBookings = () => {
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, service, or phone…"
+            placeholder="Search by name, service, phone, or email…"
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all" />
         </div>
         <select value={filter} onChange={e => setFilter(e.target.value)}
@@ -339,10 +379,41 @@ const AdminBookings = () => {
 
       {/* Bookings table */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+        {/* Bulk action bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center justify-between px-5 py-3 bg-blue-50 dark:bg-blue-950/20 border-b border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setSelectedIds(new Set())}
+                className="p-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 transition-colors">
+                <XSquare size={16} />
+              </button>
+              <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                {selectedIds.size} selected
+              </span>
+            </div>
+            <button onClick={handleBulkDelete}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors">
+              <Trash2 size={14} /> Delete Selected
+            </button>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/50">
+                <th className="px-4 py-3.5 text-left w-10">
+                  <button onClick={toggleSelectAll}
+                    className="flex items-center justify-center w-5 h-5 rounded border-2 border-zinc-300 dark:border-zinc-600 hover:border-blue-400 transition-colors">
+                    {selectedIds.size === filtered.length && filtered.length > 0 ? (
+                      <CheckSquare size={14} className="text-blue-600" />
+                    ) : selectedIds.size > 0 ? (
+                      <div className="w-2.5 h-0.5 bg-blue-600 rounded" />
+                    ) : (
+                      <Square size={14} className="text-zinc-400" />
+                    )}
+                  </button>
+                </th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Customer</th>
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden sm:table-cell">Service</th>
                 <th className="px-4 py-3.5 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden md:table-cell">Date & Time</th>
@@ -354,18 +425,33 @@ const AdminBookings = () => {
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center">
+                  <td colSpan={7} className="px-6 py-16 text-center">
                     <CalendarDays size={40} className="mx-auto text-zinc-200 dark:text-zinc-700 mb-3" strokeWidth={1.5} />
                     <p className="font-semibold text-zinc-500">No bookings found</p>
                   </td>
                 </tr>
               ) : filtered.map(b => (
-                <tr key={b.id} className="group hover:bg-blue-50/30 dark:hover:bg-blue-950/10 transition-colors">
+                <tr key={b.id} className={`group hover:bg-blue-50/30 dark:hover:bg-blue-950/10 transition-colors ${
+                  selectedIds.has(b.id) ? "bg-blue-50/50 dark:bg-blue-950/20" : ""
+                }`}>
+                  <td className="px-4 py-4">
+                    <button onClick={() => toggleSelect(b.id)}
+                      className="flex items-center justify-center w-5 h-5 rounded border-2 border-zinc-300 dark:border-zinc-600 hover:border-blue-400 transition-colors">
+                      {selectedIds.has(b.id) ? (
+                        <CheckSquare size={14} className="text-blue-600" />
+                      ) : (
+                        <Square size={14} className="text-zinc-400" />
+                      )}
+                    </button>
+                  </td>
                   <td className="px-5 py-4">
                     <p className="font-semibold text-zinc-900 dark:text-white text-sm">{b.name}</p>
                     <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1"><Phone size={10} />{b.phone}</p>
                     {b.email && (
                       <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1 truncate max-w-[180px]"><MapPin size={10} style={{transform: "rotate(90deg)"}} />{b.email}</p>
+                    )}
+                    {b.technician_name && (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 flex items-center gap-1"><UserCheck size={10} />{b.technician_name}</p>
                     )}
                   </td>
                   <td className="px-4 py-4 hidden sm:table-cell">
@@ -384,6 +470,13 @@ const AdminBookings = () => {
                   <td className="px-4 py-4"><StatusPill status={b.status} /></td>
                   <td className="px-4 py-4 hidden lg:table-cell">
                     <div className="text-xs">
+                      {b.subscription_benefit_used && (
+                        <div className="mb-1 inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-1.5 py-0.5 rounded">
+                          <ShieldCheck size={10} />
+                          {b.subscription_benefit_used === "free_service_call" ? "Free Call" : "Parts %"}
+                          {b.subscription_discount > 0 && <span className="font-semibold"> -₹{b.subscription_discount}</span>}
+                        </div>
+                      )}
                       {b.offer_applied ? (
                         <div className="space-y-0.5">
                           <span className="text-zinc-400 line-through">₹{b.original_amount}</span>
@@ -517,25 +610,69 @@ const AdminBookings = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <label className="text-xs font-medium text-zinc-500 block">Assign Technician</label>
-                        <select
-                          value=""
-                          onChange={async (e) => {
-                            const techId = e.target.value;
-                            if (techId) {
-                              await handleAssignTechnician(viewing.id, techId);
-                            }
-                          }}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all">
-                          <option value="">Select a technician…</option>
-                          {availableTechnicians.map((tech) => (
-                            <option key={tech.id} value={tech.id}>
-                              {tech.name} - {tech.todayCount}/{tech.daily_limit} today (Priority: {tech.priority})
-                            </option>
-                          ))}
-                        </select>
-                        <p className="text-[10px] text-zinc-400">Only shows active technicians with available capacity</p>
+                        {availableTechnicians.length === 0 ? (
+                          <div className="p-4 text-center bg-zinc-50 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                            <p className="text-sm text-zinc-500">No technicians available with capacity</p>
+                            <p className="text-[10px] text-zinc-400 mt-1">All active technicians have reached their daily limit</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-72 overflow-y-auto">
+                            {availableTechnicians.map((tech: any) => (
+                              <button key={tech.id}
+                                onClick={() => handleAssignTechnician(viewing.id, tech.id)}
+                                disabled={assigningTechnician === viewing.id}
+                                className="w-full p-3 rounded-xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/30 dark:hover:bg-blue-950/10 transition-all text-left group">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center flex-shrink-0">
+                                      {tech.profile_url ? (
+                                        <img src={tech.profile_url} alt={tech.name} className="w-full h-full object-cover rounded-full" />
+                                      ) : (
+                                        <User size={16} className="text-blue-600 dark:text-blue-400" />
+                                      )}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-sm text-zinc-900 dark:text-white truncate">{tech.name}</p>
+                                      <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                        {tech.phone && <span className="flex items-center gap-0.5"><Phone size={9} />{tech.phone}</span>}
+                                      </div>
+                                      {tech.skills && tech.skills.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1.5">
+                                          {tech.skills.slice(0, 3).map((s: string, i: number) => (
+                                            <span key={i} className="px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] rounded">
+                                              {s}
+                                            </span>
+                                          ))}
+                                          {tech.skills.length > 3 && (
+                                            <span className="px-1.5 py-0.5 text-zinc-400 text-[10px]">+{tech.skills.length - 3}</span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3 flex-shrink-0">
+                                    <div className="text-right">
+                                      <p className={`text-sm font-bold ${tech.todayCount >= tech.daily_limit ? "text-red-500" : "text-emerald-600"}`}>
+                                        {tech.todayCount}/{tech.daily_limit}
+                                      </p>
+                                      <p className="text-[10px] text-zinc-400 uppercase">Today</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm font-bold text-violet-600">{tech.priority}</p>
+                                      <p className="text-[10px] text-zinc-400 uppercase">Priority</p>
+                                    </div>
+                                    <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <UserCheck size={14} className="text-blue-600" />
+                                    </div>
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-[10px] text-zinc-400">Shows active & approved technicians with available daily capacity</p>
                       </div>
                     )}
                   </div>
@@ -658,6 +795,29 @@ const AdminBookings = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+                  </SectionCard>
+                )}
+
+                {/* Subscription Benefit */}
+                {viewing.subscription_benefit_used && (
+                  <SectionCard title="Subscription Benefit" icon={<ShieldCheck size={13} />}>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
+                          <ShieldCheck size={18} className="text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-blue-900 dark:text-blue-300">
+                            {viewing.subscription_benefit_used === "free_service_call" ? "Free Service Call" : "Parts Discount"}
+                          </p>
+                          {viewing.subscription_discount > 0 && (
+                            <p className="text-xs text-blue-700 dark:text-blue-400">
+                              Discount: ₹{viewing.subscription_discount}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </SectionCard>
                 )}
