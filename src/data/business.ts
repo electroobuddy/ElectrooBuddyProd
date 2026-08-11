@@ -11,8 +11,8 @@ export const BUSINESS = {
   foundedYear: 1992,
 
   // ── Contact ────────────────────────────────────────────────────────────
-  phone: "+917000396039",
-  whatsappNumber: "917000396039",
+  phone: "+917000395039",
+  whatsappNumber: "917000395039",
   email: "electroobuddy@gmail.com",
   address: "05, Nagziri Dewas Road, Ujjain (456010), India",
   mapsUrl: "https://maps.app.goo.gl/X16Z1kxCfBUsKE9R9",

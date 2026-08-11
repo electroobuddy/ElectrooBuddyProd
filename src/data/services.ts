@@ -1,5 +1,5 @@
 import { Zap, Plug, Wrench, Cable, Home, ShieldCheck, Lightbulb, BatteryCharging } from "lucide-react";
-
+import { BUSINESS } from "@/data/business";
 export interface Service {
   id: string;
   title: string;
@@ -94,6 +94,6 @@ export const services: Service[] = [
   },
 ];
 
-export const PHONE_NUMBER = "+917000396039";
-export const WHATSAPP_NUMBER = "917000396039";
-export const EMAIL = 'electroobuddy@gmail.com';
+export const PHONE_NUMBER = BUSINESS.phone;
+export const WHATSAPP_NUMBER = BUSINESS.whatsappNumber;
+export const EMAIL = BUSINESS.email;
