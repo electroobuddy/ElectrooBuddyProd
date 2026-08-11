@@ -4,6 +4,7 @@ import { Phone, Mail, MapPin, ArrowRight, Instagram, Linkedin, Facebook, Twitter
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import favicon from "/favicon.png";
+import { BUSINESS } from "@/data/business";
 
 interface FooterLink {
   label: string;
@@ -27,7 +28,7 @@ interface FooterSettings {
 }
 
 const defaultSettings: FooterSettings = {
-  phone_number: "+917000396039",
+  phone_number: `${BUSINESS.phone.replace(/\D/g, '')}`,
   email: "electroobuddy@gmail.com",
   address: "05, Nagziri Dewas Road, Ujjain(456010), India",
   instagram: "https://www.instagram.com/electroo_buddy",
